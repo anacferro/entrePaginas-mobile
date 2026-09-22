@@ -76,3 +76,39 @@ A primeira versão do documento foi considerada insuficiente em alguns pontos e 
 - Revisar a paleta de cores e a identidade visual, pois a versão atual foi desenvolvida principalmente com foco na funcionalidade e não representa necessariamente a versão visual final.
 - Verificar se todas as integrações previstas realmente funcionam no ambiente de avaliação.
 - Validar se os formatos de importação e exportação definidos no PRD serão implementados integralmente na primeira versão.
+
+# 2026-09-19 — Criação das telas
+
+**O que foi pedido:**
+
+Com base na descrição a respeito do projeto, foi pedido para o Stitch gerar telas base para o projeto.
+
+**O que a IA fez:**
+
+1. Gerou uma primeira versão das telas conforme foi solicitado.
+2. Gerou icones, como o de configurações, tela inicial, criação de novo livro e etc.
+3. Deu uma noção melhor de como as telas poderiam serfeitas.
+
+**Decisões que a IA perguntou ao usuário/grupo, em vez de decidir sozinha:**
+
+- Quais funcionalidades deveriam ter em cada página.
+- O que deveria ou não ter em cada página.
+- Paleta de cores e ícone do app
+
+**Decisões técnicas que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
+
+- Formato base do layout App.
+
+**O que foi aceito pelo usuário/grupo:**
+
+O formato geral e posicionamento de alguns elementos, além dos icones.
+
+**O que foi recusado ou alterado:**
+
+A primeira versão do documento foi considerada insuficiente em alguns pontos e foi solicitada uma versão mais completa e alinhada aos requisitos da disciplina. O documento foi então reorganizado e complementado.
+
+**O que o usuário/grupo ainda precisa revisar/revisou:**
+
+- Refatorar o o layout do app para se parecer mais com o que foi imaginado
+- Validar se as decisões técnicas propostas pela IA são adequadasaos conceitos bases de ux/ui.
+- Verificar as configurações e quantidade de páginas necessárias.
