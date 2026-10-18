@@ -29,7 +29,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### DA02 (Mantida e Especificada) — Expo SDK e React Navigation
 
-* **Decisão:** Desenvolvimento com Expo SDK 58 e **React Navigation** (`@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`) em **JavaScript puro**.
+* **Decisão:** Desenvolvimento com Expo SDK 57 e **React Navigation** (`@react-navigation/native`, `@react-navigation/native-stack`, `@react-navigation/bottom-tabs`) em **JavaScript puro**.
 * **Motivação:**
   - Garantir compatibilidade nativa estável e sem fricção com o Expo Go em celulares Android e iOS.
   - Implementação de barra de navegação inferior customizada (`CustomTabBar`) idêntica ao protótipo do Figma, com botão central em destaque ("Novo Livro").

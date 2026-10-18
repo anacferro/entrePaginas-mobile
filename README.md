@@ -122,5 +122,5 @@ EntrePaginas/
 
 ## 📜 Documentos Vinculados
 
-- [Revisão das Decisões de Arquitetura e Requisitos](Docs/Decisoes_Arquitetura_Revisao.md)
+- [Revisão das Decisões de Arquitetura e Requisitos](Docs/ExplicaçãoArquiteturaTelas.md)
 - [PRD — Estante Virtual](Docs/PRD.md)
