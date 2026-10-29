@@ -112,3 +112,38 @@ A primeira versão do documento foi considerada insuficiente em alguns pontos e 
 - Refatorar o o layout do app para se parecer mais com o que foi imaginado
 - Validar se as decisões técnicas propostas pela IA são adequadasaos conceitos bases de ux/ui.
 - Verificar as configurações e quantidade de páginas necessárias.
+
+# 2026-10-18 — Criação das telas
+
+**O que foi pedido:**
+
+Com a telas já prontas foi pedido a implementação das telas funcionais sem a parte de banco e backend
+
+**O que a IA fez:**
+
+1. Inicializou a estrutura com base no expo.
+2. Implementou as telas com base no modelo feito pelo figma.
+3. Programou a navegação e passagem de parâmetros.
+4. fez uma persistência local temporária para poder realizar alterações.
+
+**Decisões que a IA perguntou ao usuário/grupo, em vez de decidir sozinha:**
+
+- Quais funcionalidades deveriam ter em cada página.
+- Se tudo deveria estar de acordo com o figma ou se seriam realizadas alterações.
+- A versão do expo utilizada para a aplicação.
+
+**Decisões técnicas que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
+
+- Uso de persistência local durante essa etapa.
+
+**O que foi aceito pelo usuário/grupo:**
+
+O uso da persistência local para validar o funcionamento das telas.
+
+**O que foi recusado ou alterado:**
+
+Nem todos os elementos acabaram ficando exatamente iguais aos do figma por fins de praticidade até para programação.
+
+**O que o usuário/grupo ainda precisa revisar/revisou:**
+
+Funcionamento geral do app em diferentes modelos de celular
