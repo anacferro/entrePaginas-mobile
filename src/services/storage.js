@@ -1,11 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
+import { relocateMarks } from './marks';
 
 const KEYS = {
   BOOKS: '@entre_paginas_books_v1',
   USER: '@entre_paginas_user_v1',
   SIMULATE_ERROR: '@entre_paginas_simulate_error',
 };
+
+function logChange(book, type, chapterTitle, before, after) {
+  if (book.isOwn !== false) return;
+  book.changeLog = [
+    {
+      id: `change-${Date.now()}`,
+      type,
+      chapterTitle,
+      before: before ? { title: before.title, content: before.content } : null,
+      after: after ? { title: after.title, content: after.content } : null,
+      date: new Date().toISOString(),
+    },
+    ...(book.changeLog || []),
+  ];
+}
 
 export const storage = {
   /**
@@ -89,6 +105,9 @@ export const storage = {
       paperColor: bookData.paperColor || '#F4EAE0',
       totalPages: bookData.totalPages || Math.floor(Math.random() * 80) + 12,
       status: 'estante',
+      isOwn: bookData.isOwn !== false,
+      bookmarks: [],
+      changeLog: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       chapters: bookData.chapters && bookData.chapters.length > 0 ? bookData.chapters : [
@@ -103,6 +122,104 @@ export const storage = {
     list.unshift(newBook);
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
     return newBook;
+  },
+
+  async addChapter(bookId, chapterData) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    const newChapter = {
+      id: `chap-${Date.now()}`,
+      title: chapterData.title?.trim() || `Capítulo ${book.chapters.length + 1}`,
+      content: chapterData.content || '',
+    };
+
+    book.chapters.push(newChapter);
+    logChange(book, 'add', newChapter.title, null, newChapter);
+    book.updatedAt = new Date().toISOString();
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
+  },
+
+  async updateChapter(bookId, chapterId, updates) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    const chapter = book?.chapters.find(c => c.id === chapterId);
+    if (!chapter) return null;
+
+    const before = { title: chapter.title, content: chapter.content };
+    chapter.title = updates.title?.trim() || chapter.title;
+    chapter.content = updates.content ?? chapter.content;
+
+    if (before.title === chapter.title && before.content === chapter.content) return book;
+
+    chapter.marks = relocateMarks(chapter.marks, chapter.content);
+    logChange(book, 'edit', chapter.title, before, chapter);
+    book.updatedAt = new Date().toISOString();
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
+  },
+
+  async deleteChapter(bookId, chapterId) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    const removed = book.chapters.find(c => c.id === chapterId);
+    book.chapters = book.chapters.filter(c => c.id !== chapterId);
+    book.bookmarks = (book.bookmarks || []).filter(bm => bm.chapterId !== chapterId);
+    if (removed) logChange(book, 'delete', removed.title, removed, null);
+    book.updatedAt = new Date().toISOString();
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
+  },
+
+  async updateChapterMarks(bookId, chapterId, marks) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    const chapter = book?.chapters.find(c => c.id === chapterId);
+    if (!chapter) return null;
+
+    chapter.marks = marks;
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
+  },
+
+  async addBookmark(bookId, bookmarkData) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.bookmarks = [
+      ...(book.bookmarks || []).filter(bm => bm.chapterId !== bookmarkData.chapterId),
+      {
+        id: `pin-${Date.now()}`,
+        chapterId: bookmarkData.chapterId,
+        title: bookmarkData.title?.trim() || 'Marcador',
+        color: bookmarkData.color,
+        page: bookmarkData.page,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
+  },
+
+  async removeBookmark(bookId, bookmarkId) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.bookmarks = (book.bookmarks || []).filter(bm => bm.id !== bookmarkId);
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
+    return book;
   },
 
   /**

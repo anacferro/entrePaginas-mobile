@@ -3,13 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
   StatusBar,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +17,8 @@ import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
+import { dialog } from '../services/dialog';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 export default function ChestScreen({ navigation }) {
@@ -56,15 +56,15 @@ export default function ChestScreen({ navigation }) {
   const handleRestoreOne = async (bookId) => {
     try {
       await storage.restoreFromChest(bookId);
-      Alert.alert('Volume Restaurado', 'O livro retornou com sucesso para a sua estante.');
+      dialog.alert('Volume Restaurado', 'O livro retornou com sucesso para a sua estante.');
       loadChestData();
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível restaurar o livro.');
+      dialog.alert('Erro', 'Não foi possível restaurar o livro.');
     }
   };
 
   const handleDeletePermanently = (bookId) => {
-    Alert.alert(
+    dialog.alert(
       'Excluir Definitivamente',
       'Tem certeza de que deseja apagar este volume do baú? Esta ação é irreversível.',
       [
@@ -83,7 +83,7 @@ export default function ChestScreen({ navigation }) {
 
   const handleRestoreAll = () => {
     if (chestBooks.length === 0) return;
-    Alert.alert(
+    dialog.alert(
       'Restaurar Todos',
       'Deseja mover todos os volumes do baú de volta para a sua estante?',
       [
@@ -92,7 +92,7 @@ export default function ChestScreen({ navigation }) {
           text: 'Restaurar Todos',
           onPress: async () => {
             await storage.restoreAllFromChest();
-            Alert.alert('Sucesso', 'Todos os livros foram restaurados para a estante.');
+            dialog.alert('Sucesso', 'Todos os livros foram restaurados para a estante.');
             loadChestData();
           },
         },
@@ -102,7 +102,7 @@ export default function ChestScreen({ navigation }) {
 
   const handleEmptyChest = () => {
     if (chestBooks.length === 0) return;
-    Alert.alert(
+    dialog.alert(
       'Esvaziar Baú',
       'Deseja apagar definitivamente todos os volumes guardados no baú? Esta ação não pode ser desfeita.',
       [
@@ -124,12 +124,13 @@ export default function ChestScreen({ navigation }) {
     const query = searchQuery.toLowerCase();
     return (
       b.title.toLowerCase().includes(query) ||
-      (b.subtitle && b.subtitle.toLowerCase().includes(query))
+      (b.subtitle && b.subtitle.toLowerCase().includes(query)) ||
+      (b.category && b.category.toLowerCase().includes(query))
     );
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
       <Header
         subtitle="Baú Literário"
@@ -155,7 +156,7 @@ export default function ChestScreen({ navigation }) {
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por título, autor ou etiqueta..."
+            placeholder="Buscar por título ou categoria..."
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}

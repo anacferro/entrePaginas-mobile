@@ -3,18 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Image,
   TouchableOpacity,
   Switch,
-  Alert,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
+import { dialog } from '../services/dialog';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 export default function ProfileScreen({ navigation }) {
@@ -57,7 +57,7 @@ export default function ProfileScreen({ navigation }) {
   const handleToggleSimulateError = async (val) => {
     setSimulateError(val);
     await storage.setSimulateError(val);
-    Alert.alert(
+    dialog.alert(
       val ? 'Simulação de Erro Ativada' : 'Simulação de Erro Desativada',
       val
         ? 'Ao abrir a Estante ou Baú, a listagem apresentará o estado de ERRO tratado com botão de retry.'
@@ -69,12 +69,12 @@ export default function ProfileScreen({ navigation }) {
     setSyncing(true);
     setTimeout(() => {
       setSyncing(false);
-      Alert.alert('Sincronização Concluída', 'Todos os compêndios locais foram sincronizados e validados.');
+      dialog.alert('Sincronização Concluída', 'Todos os compêndios locais foram sincronizados e validados.');
     }, 900);
   };
 
   const handleClearAll = () => {
-    Alert.alert(
+    dialog.alert(
       'Testar Estado Vazio',
       'Deseja esvaziar a estante para visualizar o tratamento de estado vazio?',
       [
@@ -85,7 +85,7 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             await storage.clearAllBooks();
             loadUserData();
-            Alert.alert('Estante Esvaziada', 'Abra a aba Estante para ver o estado vazio.');
+            dialog.alert('Estante Esvaziada', 'Abra a aba Estante para ver o estado vazio.');
           },
         },
       ]
@@ -93,7 +93,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleResetDefaults = () => {
-    Alert.alert(
+    dialog.alert(
       'Restaurar Dados Padrão',
       'Deseja restaurar a biblioteca com os livros e configurações iniciais do Figma?',
       [
@@ -103,7 +103,25 @@ export default function ProfileScreen({ navigation }) {
           onPress: async () => {
             await storage.resetToDefaults();
             loadUserData();
-            Alert.alert('Restaurado', 'A biblioteca foi recarregada com o acervo original.');
+            dialog.alert('Restaurado', 'A biblioteca foi recarregada com o acervo original.');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteLibrary = () => {
+    dialog.alert(
+      'Excluir Dados da Biblioteca',
+      'Deseja apagar definitivamente todos os livros da estante e do baú? Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            await storage.clearAllBooks();
+            loadUserData();
           },
         },
       ]
@@ -111,7 +129,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   const handleLogout = () => {
-    Alert.alert(
+    dialog.alert(
       'Desconectar da Conta',
       'Deseja encerrar a sessão local e retornar para a tela de boas-vindas?',
       [
@@ -125,7 +143,7 @@ export default function ProfileScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
       <Header subtitle="Perfil" />
 
@@ -308,7 +326,7 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.logoutBtnText}>Desconectar da conta</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.dangerBtn} onPress={handleResetDefaults} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.dangerBtn} onPress={handleDeleteLibrary} activeOpacity={0.8}>
             <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: 8 }} />
             <Text style={styles.dangerBtnText}>Excluir dados da biblioteca</Text>
           </TouchableOpacity>

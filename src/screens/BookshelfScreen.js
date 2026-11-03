@@ -3,13 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   TouchableOpacity,
   RefreshControl,
   StatusBar,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,6 +17,8 @@ import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
+import { dialog } from '../services/dialog';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 export default function BookshelfScreen({ navigation }) {
@@ -72,15 +72,15 @@ export default function BookshelfScreen({ navigation }) {
   const handleMoveToChest = async (bookId) => {
     try {
       await storage.moveToChest(bookId);
-      Alert.alert('Volume Guardado', 'O livro foi transferido com segurança para o Baú Literário.');
+      dialog.alert('Volume Guardado', 'O livro foi transferido com segurança para o Baú Literário.');
       loadData();
     } catch (e) {
-      Alert.alert('Erro', 'Não foi possível mover o livro para o baú.');
+      dialog.alert('Erro', 'Não foi possível mover o livro para o baú.');
     }
   };
 
   const handleDeleteBook = (bookId) => {
-    Alert.alert(
+    dialog.alert(
       'Excluir Definitivamente',
       'Deseja remover este livro permanentemente da sua biblioteca?',
       [
@@ -121,7 +121,7 @@ export default function BookshelfScreen({ navigation }) {
     });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
       <Header
         subtitle="Estante"
@@ -154,7 +154,7 @@ export default function BookshelfScreen({ navigation }) {
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por título, autor ou etiqueta..."
+            placeholder="Buscar por título ou categoria..."
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -217,7 +217,9 @@ export default function BookshelfScreen({ navigation }) {
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleWithCount}>
             <Text style={styles.sectionTitle}>Minha Estante</Text>
-            <Text style={styles.volumeCountText}>{books.length} volumes</Text>
+            <Text style={styles.volumeCountText}>
+              {books.length} {books.length === 1 ? 'volume' : 'volumes'}
+            </Text>
           </View>
           <TouchableOpacity style={styles.sortButton} onPress={toggleSort} activeOpacity={0.7}>
             <Text style={styles.sortButtonText}>

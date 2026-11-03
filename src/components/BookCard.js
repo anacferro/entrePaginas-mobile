@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import BookCover from './BookCover';
+import ChangeHistoryModal from './ChangeHistoryModal';
 import { colors } from '../theme/colors';
 
 export default function BookCard({
@@ -13,6 +14,9 @@ export default function BookCard({
   isChest = false,
 }) {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const isOwn = book.isOwn !== false;
+  const changeCount = book.changeLog?.length || 0;
 
   return (
     <View style={styles.cardContainer}>
@@ -40,7 +44,12 @@ export default function BookCard({
             {book.title}
           </Text>
           <Text style={styles.bookMeta} numberOfLines={1}>
-            {book.subtitle ? `${book.subtitle.slice(0, 14)}...` : 'Volume'} • {book.totalPages}p
+            {book.subtitle
+              ? book.subtitle.length > 14
+                ? `${book.subtitle.slice(0, 14).trim()}...`
+                : book.subtitle
+              : 'Volume'}{' '}
+            • {book.totalPages}p
           </Text>
         </TouchableOpacity>
 
@@ -79,6 +88,24 @@ export default function BookCard({
               <Ionicons name="book-outline" size={20} color={colors.primary} />
               <Text style={styles.menuItemText}>Abrir para Leitura</Text>
             </TouchableOpacity>
+
+            {!isOwn && (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  setHistoryVisible(true);
+                }}
+              >
+                <Ionicons name="git-compare-outline" size={20} color={colors.accentGold} />
+                <Text style={styles.menuItemText}>Histórico de Alterações</Text>
+                {changeCount > 0 && (
+                  <View style={styles.menuBadge}>
+                    <Text style={styles.menuBadgeText}>{changeCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
 
             {!isChest ? (
               <TouchableOpacity
@@ -119,6 +146,12 @@ export default function BookCard({
           </View>
         </Pressable>
       </Modal>
+
+      <ChangeHistoryModal
+        visible={historyVisible}
+        book={book}
+        onClose={() => setHistoryVisible(false)}
+      />
     </View>
   );
 }
@@ -195,6 +228,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRadius: 8,
+  },
+  menuBadge: {
+    marginLeft: 'auto',
+    backgroundColor: colors.accentGold,
+    borderRadius: 10,
+    minWidth: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  menuBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   menuItemDanger: {
     marginTop: 4,

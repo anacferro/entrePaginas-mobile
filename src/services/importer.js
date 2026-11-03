@@ -1,0 +1,202 @@
+import { Platform } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
+import { parsePdf } from './pdfParser';
+
+const CHAPTER_SIZE = 1800;
+
+const PICKER_TYPES = {
+  pdf: 'application/pdf',
+  epub: 'application/epub+zip',
+  txt: '*/*',
+  json: '*/*',
+};
+
+async function readBytes(asset) {
+  if (Platform.OS === 'web') {
+    return new Uint8Array(await asset.file.arrayBuffer());
+  }
+  return new File(asset.uri).bytes();
+}
+
+async function readText(asset) {
+  if (Platform.OS === 'web') {
+    return asset.file.text();
+  }
+  return new File(asset.uri).text();
+}
+
+function titleFromFileName(name) {
+  const base = name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+  return base ? base.charAt(0).toUpperCase() + base.slice(1) : 'Obra Importada';
+}
+
+function estimatePages(text) {
+  return Math.max(1, Math.ceil(text.length / CHAPTER_SIZE));
+}
+
+function chunkIntoChapters(text, prefix = 'Parte') {
+  const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  const chapters = [];
+  let buffer = '';
+
+  paragraphs.forEach((p) => {
+    if (buffer && buffer.length + p.length > CHAPTER_SIZE) {
+      chapters.push(buffer);
+      buffer = '';
+    }
+    buffer = buffer ? `${buffer}\n\n${p}` : p;
+  });
+  if (buffer) chapters.push(buffer);
+
+  return chapters.map((content, idx) => ({
+    id: `chap-${Date.now()}-${idx + 1}`,
+    title: chapters.length > 1 ? `${prefix} ${idx + 1}` : 'Capítulo 1',
+    content,
+  }));
+}
+
+function splitByHeadings(text) {
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
+  const sections = [];
+  let current = null;
+
+  lines.forEach((line) => {
+    const heading = line.match(/^#{1,3}\s+(.+)$/) || line.match(/^\s*((cap[ií]tulo|parte)\b.*)$/i);
+    if (heading) {
+      current = { title: heading[1].trim(), lines: [] };
+      sections.push(current);
+    } else {
+      if (!current) {
+        current = { title: null, lines: [] };
+        sections.push(current);
+      }
+      current.lines.push(line);
+    }
+  });
+
+  const filled = sections
+    .map(s => ({ title: s.title, content: s.lines.join('\n').trim() }))
+    .filter(s => s.content);
+
+  if (filled.length <= 1 || !filled.some(s => s.title)) {
+    return chunkIntoChapters(text.replace(/\r\n?/g, '\n'));
+  }
+
+  return filled.map((s, idx) => ({
+    id: `chap-${Date.now()}-${idx + 1}`,
+    title: s.title || 'Introdução',
+    content: s.content,
+  }));
+}
+
+function isReadable(text) {
+  if (text.length < 30) return false;
+  const letters = text.match(/[A-Za-zÀ-ÿ]/g)?.length || 0;
+  return letters / text.length > 0.55;
+}
+
+async function importPdf(asset) {
+  const { pages, title, text } = parsePdf(await readBytes(asset));
+  const bookTitle = title || titleFromFileName(asset.name);
+
+  if (!isReadable(text)) {
+    return {
+      title: bookTitle,
+      subtitle: 'Importado de PDF',
+      pages,
+      warning: 'O texto deste PDF não pôde ser extraído. Ele pode ser digitalizado (imagem) ou usar fontes protegidas.',
+      chapters: [
+        {
+          id: `chap-${Date.now()}-1`,
+          title: 'Documento Importado',
+          content: `Este PDF possui ${pages} ${pages === 1 ? 'página' : 'páginas'}, mas o texto não pôde ser extraído automaticamente. Use o editor do leitor para transcrever o conteúdo.`,
+        },
+      ],
+    };
+  }
+
+  return {
+    title: bookTitle,
+    subtitle: 'Importado de PDF',
+    pages,
+    chapters: splitByHeadings(text),
+  };
+}
+
+async function importText(asset) {
+  const text = (await readText(asset)).trim();
+  if (!text) throw new Error('O arquivo de texto está vazio.');
+
+  return {
+    title: titleFromFileName(asset.name),
+    subtitle: 'Importado de arquivo de texto',
+    pages: estimatePages(text),
+    chapters: splitByHeadings(text),
+  };
+}
+
+async function importJson(asset) {
+  let data;
+  try {
+    data = JSON.parse(await readText(asset));
+  } catch (e) {
+    throw new Error('O arquivo JSON está mal formatado.');
+  }
+
+  const book = Array.isArray(data) ? { chapters: data } : data;
+  const chapters = (book.chapters || book.pages || [])
+    .filter(c => c && (c.content || c.text))
+    .map((c, idx) => ({
+      id: `chap-${Date.now()}-${idx + 1}`,
+      title: c.title || `Capítulo ${idx + 1}`,
+      content: String(c.content || c.text),
+    }));
+
+  if (chapters.length === 0) {
+    throw new Error('O JSON precisa ter uma lista "chapters" com "title" e "content".');
+  }
+
+  const fullText = chapters.map(c => c.content).join('\n\n');
+  return {
+    title: book.title || titleFromFileName(asset.name),
+    subtitle: book.subtitle || 'Importado de estrutura JSON',
+    pages: book.totalPages || estimatePages(fullText),
+    chapters,
+  };
+}
+
+export const importer = {
+  async pickAndImport(format) {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: PICKER_TYPES[format] || '*/*',
+      copyToCacheDirectory: true,
+      base64: false,
+    });
+
+    if (result.canceled || !result.assets?.length) return null;
+
+    const asset = result.assets[0];
+    const extension = asset.name.split('.').pop().toLowerCase();
+
+    if (format === 'epub') {
+      throw new Error('A importação de EPUB ainda não está disponível nesta versão.');
+    }
+    if (format === 'pdf' && extension !== 'pdf') {
+      throw new Error('Selecione um arquivo com extensão .pdf.');
+    }
+    if (format === 'txt' && !['txt', 'md', 'markdown'].includes(extension)) {
+      throw new Error('Selecione um arquivo .txt ou .md.');
+    }
+    if (format === 'json' && extension !== 'json') {
+      throw new Error('Selecione um arquivo com extensão .json.');
+    }
+
+    const imported =
+      format === 'pdf' ? await importPdf(asset) :
+      format === 'json' ? await importJson(asset) :
+      await importText(asset);
+
+    return { ...imported, name: asset.name };
+  },
+};

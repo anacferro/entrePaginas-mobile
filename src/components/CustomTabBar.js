@@ -1,11 +1,17 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
+  const insets = useSafeAreaInsets();
+  const basePadding = Platform.OS === 'ios' ? 24 : 10;
+  const bottomPadding = Math.max(basePadding, insets.bottom);
+  const barHeight = (Platform.OS === 'ios' ? 84 : 68) - basePadding + bottomPadding;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: bottomPadding, height: barHeight }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
         const isFocused = state.index === index;
