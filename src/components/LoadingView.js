@@ -35,7 +35,7 @@ const createStyles = (colors) => StyleSheet.create({
   text: {
     fontSize: 14,
     color: colors.textSecondary,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     fontStyle: 'italic',
     textAlign: 'center',
   },

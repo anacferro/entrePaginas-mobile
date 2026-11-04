@@ -4,9 +4,10 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   Modal,
   KeyboardAvoidingView,
+  Keyboard,
+  Platform,
   Image,
   ActivityIndicator,
 } from 'react-native';
@@ -16,6 +17,7 @@ import { camera } from '../services/camera';
 import { ai } from '../services/ai';
 import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function ChapterEditor({
   visible,
@@ -28,6 +30,7 @@ export default function ChapterEditor({
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -46,6 +49,15 @@ export default function ChapterEditor({
   const theme = colors.reader;
   const mutedColor = colors.textSecondary;
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   const canSave = (content.trim().length > 0 || !!photo) && !saving;
 
   const handleTakePhoto = async () => {
@@ -85,25 +97,25 @@ export default function ChapterEditor({
       <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior="padding"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <View style={[styles.topBar, { backgroundColor: colors.surfaceWarm }]}>
-            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Touchable onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.cancelText, { color: mutedColor }]}>Cancelar</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             <Text style={[styles.topBarTitle, { color: theme.text }]}>
               {chapter ? 'Editar Capítulo' : 'Novo Capítulo'}
             </Text>
 
-            <TouchableOpacity
+            <Touchable
               style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}
               onPress={handleSave}
               disabled={!canSave}
               activeOpacity={0.8}
             >
               <Text style={styles.saveBtnText}>{saving ? 'Salvando...' : 'Salvar'}</Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
 
           {notice && (
@@ -131,7 +143,7 @@ export default function ChapterEditor({
                 <Image source={{ uri: photo }} style={styles.photoThumb} />
                 <Text style={[styles.photoLabel, { color: mutedColor }]}>Página fotografada</Text>
                 {ai.isAvailable && (
-                  <TouchableOpacity
+                  <Touchable
                     style={styles.transcribeBtn}
                     onPress={handleTranscribe}
                     disabled={transcribing}
@@ -143,15 +155,15 @@ export default function ChapterEditor({
                       <Ionicons name="sparkles" size={14} color={colors.primary} />
                     )}
                     <Text style={styles.transcribeText}>{transcribing ? 'Lendo...' : 'Transcrever'}</Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 )}
-                <TouchableOpacity
+                <Touchable
                   onPress={() => setPhoto(null)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityLabel="Remover foto"
                 >
                   <Ionicons name="close-circle" size={22} color={colors.danger} />
-                </TouchableOpacity>
+                </Touchable>
               </View>
             )}
 
@@ -172,7 +184,18 @@ export default function ChapterEditor({
               {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
             </Text>
 
-            <TouchableOpacity
+            {keyboardVisible && (
+              <Touchable
+                style={styles.cameraBtn}
+                onPress={() => Keyboard.dismiss()}
+                accessibilityLabel="Recolher teclado"
+              >
+                <Ionicons name="chevron-down" size={18} color={colors.primary} />
+                <Text style={styles.cameraText}>Recolher teclado</Text>
+              </Touchable>
+            )}
+
+            <Touchable
               style={styles.cameraBtn}
               onPress={handleTakePhoto}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -180,17 +203,17 @@ export default function ChapterEditor({
             >
               <Ionicons name="camera-outline" size={18} color={colors.primary} />
               <Text style={styles.cameraText}>Fotografar</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             {chapter && onDelete && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.deleteBtn}
                 onPress={onDelete}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="trash-outline" size={16} color={colors.danger} />
                 <Text style={styles.deleteText}>Excluir capítulo</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
           </View>
         </KeyboardAvoidingView>
@@ -222,7 +245,7 @@ const createStyles = (colors) => StyleSheet.create({
   topBarTitle: {
     fontSize: 15,
     fontWeight: '700',
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   saveBtn: {
     backgroundColor: colors.primary,
@@ -265,7 +288,7 @@ const createStyles = (colors) => StyleSheet.create({
   titleInput: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     paddingVertical: 8,
     borderBottomWidth: 1,
     marginBottom: 14,
@@ -274,7 +297,7 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     fontSize: 17,
     lineHeight: 28,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     paddingBottom: 16,
   },
   footer: {

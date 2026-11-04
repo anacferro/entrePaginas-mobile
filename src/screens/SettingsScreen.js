@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +14,7 @@ import { authService } from '../services/auth';
 import { dialog } from '../services/dialog';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from '../components/Touchable';
 
 const THEME_OPTIONS = [
   { value: 'system', label: 'Automático', icon: 'phone-portrait-outline', hint: 'Segue o tema do aparelho' },
@@ -74,13 +74,13 @@ export default function SettingsScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <View style={styles.topBar}>
-        <TouchableOpacity
+        <Touchable
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
           accessibilityLabel="Voltar"
         >
           <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        </Touchable>
         <Text style={styles.topTitle}>Configurações</Text>
         <View style={styles.backBtn} />
       </View>
@@ -96,7 +96,7 @@ export default function SettingsScreen({ navigation }) {
           {THEME_OPTIONS.map((option) => {
             const active = mode === option.value;
             return (
-              <TouchableOpacity
+              <Touchable
                 key={option.value}
                 style={[styles.option, active && styles.optionActive]}
                 onPress={() => setMode(option.value)}
@@ -117,7 +117,7 @@ export default function SettingsScreen({ navigation }) {
                   size={22}
                   color={active ? colors.primary : colors.textMuted}
                 />
-              </TouchableOpacity>
+              </Touchable>
             );
           })}
         </View>
@@ -136,7 +136,7 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity
+          <Touchable
             style={styles.secondaryBtn}
             onPress={handleSignOut}
             activeOpacity={0.8}
@@ -144,7 +144,7 @@ export default function SettingsScreen({ navigation }) {
           >
             <Ionicons name="log-out-outline" size={18} color={colors.text} style={styles.btnIcon} />
             <Text style={styles.secondaryBtnText}>Sair da conta</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
         <View style={styles.card}>
@@ -156,7 +156,7 @@ export default function SettingsScreen({ navigation }) {
             Apaga todos os livros, capítulos, marcadores e grifos deste aparelho e da nuvem. Sua conta continua ativa.
           </Text>
 
-          <TouchableOpacity
+          <Touchable
             style={[styles.dangerBtn, deleting && styles.btnDisabled]}
             onPress={handleDeleteData}
             disabled={deleting}
@@ -169,7 +169,7 @@ export default function SettingsScreen({ navigation }) {
               <Ionicons name="trash-outline" size={18} color={colors.danger} style={styles.btnIcon} />
             )}
             <Text style={styles.dangerBtnText}>{deleting ? 'Apagando...' : 'Apagar todos os dados'}</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       </ScrollView>
     </SafeAreaView>

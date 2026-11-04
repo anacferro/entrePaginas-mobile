@@ -4,13 +4,14 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { googleBooks } from '../services/googleBooks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
+import { fieldStyles } from './FormBlocks';
 
 export default function GoogleBooksSearch({ onSelect }) {
   const { colors } = useTheme();
@@ -61,7 +62,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           returnKeyType="search"
           accessibilityLabel="Buscar no Google Books"
         />
-        <TouchableOpacity
+        <Touchable
           style={[styles.searchButton, (!query.trim() || loading) && styles.searchButtonDisabled]}
           onPress={handleSearch}
           disabled={!query.trim() || loading}
@@ -69,7 +70,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           accessibilityLabel="Buscar"
         >
           <Ionicons name="search" size={18} color={colors.onPrimary} />
-        </TouchableOpacity>
+        </Touchable>
       </View>
 
       {loading && (
@@ -83,9 +84,9 @@ export default function GoogleBooksSearch({ onSelect }) {
         <View style={styles.stateBox}>
           <Ionicons name="alert-circle-outline" size={22} color={colors.danger} />
           <Text style={styles.stateText}>{error}</Text>
-          <TouchableOpacity onPress={handleSearch} style={styles.retryButton}>
+          <Touchable onPress={handleSearch} style={styles.retryButton}>
             <Text style={styles.retryText}>Tentar novamente</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       )}
 
@@ -96,7 +97,7 @@ export default function GoogleBooksSearch({ onSelect }) {
       )}
 
       {results && !loading && results.map((book) => (
-        <TouchableOpacity
+        <Touchable
           key={book.id}
           style={styles.resultRow}
           onPress={() => handleSelect(book)}
@@ -116,7 +117,7 @@ export default function GoogleBooksSearch({ onSelect }) {
               {[book.authors, book.pageCount && `${book.pageCount}p`].filter(Boolean).join(' • ') || 'Autor não informado'}
             </Text>
           </View>
-        </TouchableOpacity>
+        </Touchable>
       ))}
     </View>
   );
@@ -145,7 +146,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginLeft: 8,
   },
   metaLabel: {
@@ -158,21 +159,14 @@ const createStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
   },
   searchInput: {
+    ...fieldStyles(colors).input,
     flex: 1,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.text,
   },
   searchButton: {
     marginLeft: 8,
-    width: 42,
-    height: 42,
-    borderRadius: 10,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

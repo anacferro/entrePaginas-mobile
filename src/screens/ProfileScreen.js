@@ -4,15 +4,12 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
-  Switch,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
-import { dialog } from '../services/dialog';
 import Avatar from '../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -23,16 +20,14 @@ export default function ProfileScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [activeBooksCount, setActiveBooksCount] = useState(0);
   const [chestBooksCount, setChestBooksCount] = useState(0);
-  const [simulateError, setSimulateError] = useState(false);
   const [libraryStats, setLibraryStats] = useState({ chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
 
   const loadUserData = async () => {
     try {
-      const [u, books, chest, isErr] = await Promise.all([
+      const [u, books, chest] = await Promise.all([
         storage.getUserProfile(),
         storage.getBooks(0).catch(() => []),
         storage.getChestBooks(0).catch(() => []),
-        storage.getSimulateError(),
       ]);
       setUser(u);
       setActiveBooksCount(books.length);
@@ -47,7 +42,6 @@ export default function ProfileScreen({ navigation }) {
         ),
         sizeKb: Math.max(1, Math.round(JSON.stringify(allBooks).length / 1024)),
       });
-      setSimulateError(isErr);
     } catch {
     }
   };
@@ -57,54 +51,6 @@ export default function ProfileScreen({ navigation }) {
       loadUserData();
     }, [])
   );
-
-  const handleToggleSimulateError = async (val) => {
-    setSimulateError(val);
-    await storage.setSimulateError(val);
-    dialog.alert(
-      val ? 'Simulação de Erro Ativada' : 'Simulação de Erro Desativada',
-      val
-        ? 'Ao abrir a Estante ou Baú, a listagem apresentará o estado de ERRO tratado com botão de retry.'
-        : 'As listagens agora carregarão normalmente.'
-    );
-  };
-
-  const handleClearAll = () => {
-    dialog.alert(
-      'Testar Estado Vazio',
-      'Deseja esvaziar a estante para visualizar o tratamento de estado vazio?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Esvaziar',
-          style: 'destructive',
-          onPress: async () => {
-            await storage.clearAllBooks();
-            loadUserData();
-            dialog.alert('Estante Esvaziada', 'Abra a aba Estante para ver o estado vazio.');
-          },
-        },
-      ]
-    );
-  };
-
-  const handleResetDefaults = () => {
-    dialog.alert(
-      'Restaurar Dados Padrão',
-      'Deseja restaurar a biblioteca com os livros e configurações iniciais de exemplo?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Restaurar',
-          onPress: async () => {
-            await storage.resetToDefaults();
-            loadUserData();
-            dialog.alert('Restaurado', 'A biblioteca foi recarregada com o acervo original.');
-          },
-        },
-      ]
-    );
-  };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -162,17 +108,6 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </View>
 
-          <View style={styles.storageStatusBanner}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={styles.greenPulse} />
-              <View>
-                <Text style={styles.storageStatusTitle}>Salvo no aparelho e na nuvem</Text>
-                <Text style={styles.storageStatusSubtitle}>Funciona sem internet e sincroniza ao reconectar</Text>
-              </View>
-            </View>
-            <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
-          </View>
-
           <View style={styles.storageRow}>
             <Text style={styles.storageLabel}>Espaço do acervo</Text>
             <Text style={styles.storageValue}>{libraryStats.sizeKb.toLocaleString('pt-BR')} KB</Text>
@@ -185,56 +120,8 @@ export default function ProfileScreen({ navigation }) {
             <Text style={styles.storageLabel}>Trechos grifados</Text>
             <Text style={styles.storageValue}>{libraryStats.marks}</Text>
           </View>
-          <Text style={styles.storageFooterText}>
-            Seus livros, destaques e anotações ficam salvos no aparelho e sincronizados com a sua conta.
-          </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.settingsRow}
-          onPress={() => navigation.navigate('Settings')}
-          activeOpacity={0.8}
-          accessibilityLabel="Abrir configurações"
-        >
-          <View style={styles.settingsIcon}>
-            <Ionicons name="settings-outline" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.settingsText}>
-            <Text style={styles.settingsTitle}>Configurações</Text>
-            <Text style={styles.settingsSub}>Tema, conta e dados</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-        </TouchableOpacity>
-
-        <View style={[styles.sectionCard, { borderColor: colors.borderLight }]}>
-          <Text style={styles.academicTitle}>Ferramentas de Avaliação (Estados de Listagem)</Text>
-          <Text style={styles.academicDesc}>
-            Recursos para demonstrar os requisitos avaliativos de estados vazio e erro.
-          </Text>
-
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={styles.switchLabel}>Simular Erro nas Listagens</Text>
-              <Text style={styles.switchSub}>Dispara o tratamento de erro com retry</Text>
-            </View>
-            <Switch
-              value={simulateError}
-              onValueChange={handleToggleSimulateError}
-              trackColor={{ false: colors.border, true: colors.secondary }}
-              thumbColor={simulateError ? colors.onPrimary : colors.card}
-            />
-          </View>
-
-          <View style={styles.testButtonsRow}>
-            <TouchableOpacity style={styles.testBtn} onPress={handleClearAll}>
-              <Text style={styles.testBtnText}>Testar Estado Vazio</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.testBtn, { backgroundColor: colors.surfaceSoft }]} onPress={handleResetDefaults}>
-              <Text style={[styles.testBtnText, { color: colors.primary }]}>Restaurar Padrões</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -326,7 +213,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 19,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   userEmail: {
     fontSize: 13,
@@ -362,7 +249,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   statLabel: {
     fontSize: 10,
@@ -389,7 +276,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   storageTag: {
     backgroundColor: colors.surfaceMuted,

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ai } from '../services/ai';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function AiSummary({ chapter }) {
   const { colors } = useTheme();
@@ -39,7 +40,7 @@ export default function AiSummary({ chapter }) {
 
   if (!summary && !loading && !error) {
     return (
-      <TouchableOpacity
+      <Touchable
         style={[styles.pill, { backgroundColor: cardColor }]}
         onPress={handleSummarize}
         activeOpacity={0.8}
@@ -47,7 +48,7 @@ export default function AiSummary({ chapter }) {
       >
         <Ionicons name="sparkles" size={15} color={colors.accentGold} />
         <Text style={[styles.pillText, { color: textColor }]}>Resumir capítulo com IA</Text>
-      </TouchableOpacity>
+      </Touchable>
     );
   }
 
@@ -57,7 +58,7 @@ export default function AiSummary({ chapter }) {
         <Ionicons name="sparkles" size={15} color={colors.accentGold} />
         <Text style={[styles.title, { color: textColor }]}>Resumo por IA</Text>
         {!loading && (
-          <TouchableOpacity
+          <Touchable
             onPress={() => {
               setSummary(null);
               setError(null);
@@ -66,7 +67,7 @@ export default function AiSummary({ chapter }) {
             accessibilityLabel="Fechar resumo"
           >
             <Ionicons name="close" size={18} color={mutedColor} />
-          </TouchableOpacity>
+          </Touchable>
         )}
       </View>
 
@@ -80,9 +81,9 @@ export default function AiSummary({ chapter }) {
       {error && !loading && (
         <View>
           <Text style={[styles.body, { color: colors.danger }]}>{error}</Text>
-          <TouchableOpacity onPress={handleSummarize} style={styles.retry}>
+          <Touchable onPress={handleSummarize} style={styles.retry}>
             <Text style={styles.retryText}>Tentar novamente</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       )}
 

@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   StatusBar,
   KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GoogleBooksSearch from '../components/GoogleBooksSearch';
-import AiSuggest from '../components/AiSuggest';
-import BookCover from '../components/BookCover';
+import { Section, Field, CoverPicker, ColorRow, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
+import Touchable from '../components/Touchable';
 
 export default function CreateBookScreen({ navigation, route }) {
   const { colors } = useTheme();
@@ -37,12 +37,30 @@ export default function CreateBookScreen({ navigation, route }) {
   const [firstChapterTitle, setFirstChapterTitle] = useState('');
   const [firstChapterContent, setFirstChapterContent] = useState('');
   const [saving, setSaving] = useState(false);
-  const [suggestedPages, setSuggestedPages] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
+  const [searchKey, setSearchKey] = useState(0);
   const [tags, setTags] = useState([]);
 
   const [selectedFormat, setSelectedFormat] = useState('pdf');
   const [importedFile, setImportedFile] = useState(null);
   const [importing, setImporting] = useState(false);
+
+  const resetForm = useCallback(() => {
+    setTitle('');
+    setSubtitle('');
+    setCategory('Literatura');
+    setTags([]);
+    setCoverColor('#215C50');
+    setTitleColor('#FFFFFF');
+    setPaperColor('#F4EAE0');
+    setFirstChapterTitle('');
+    setFirstChapterContent('');
+    setImportedFile(null);
+    setCoverImage(null);
+    setSearchKey(key => key + 1);
+  }, []);
+
+  useEffect(() => navigation.addListener('blur', resetForm), [navigation, resetForm]);
 
   useEffect(() => {
     if (route?.params?.initialTab) {
@@ -77,22 +95,11 @@ export default function CreateBookScreen({ navigation, route }) {
   const handleSelectGoogleBook = (book) => {
     setTitle(book.title);
     setSubtitle(book.authors ? `Por ${book.authors}` : '');
-    setSuggestedPages(book.pageCount);
     if (book.category) {
       const match = CATEGORIES.find(c => book.category.toLowerCase().includes(c.toLowerCase().split(' ')[0]));
       setCategory(match || book.category);
     }
   };
-
-  const handleApplySuggestion = (suggestion) => {
-    if (suggestion.category) setCategory(suggestion.category);
-    if (suggestion.tags) setTags(suggestion.tags);
-    if (suggestion.synopsis && !subtitle.trim()) setSubtitle(suggestion.synopsis);
-  };
-
-  const suggestionText = importedFile
-    ? importedFile.chapters.map(c => c.content).join('\n\n')
-    : firstChapterContent;
 
   const handleSaveBook = async () => {
     if (activeTab === 'import' && !importedFile) {
@@ -114,7 +121,8 @@ export default function CreateBookScreen({ navigation, route }) {
         coverColor,
         titleColor,
         paperColor,
-        totalPages: importedFile ? importedFile.pages : suggestedPages || Math.floor(Math.random() * 60) + 20,
+        coverImage,
+        totalPages: importedFile ? importedFile.pages : undefined,
         isOwn: activeTab === 'create',
         chapters: activeTab === 'import'
           ? importedFile.chapters
@@ -129,11 +137,7 @@ export default function CreateBookScreen({ navigation, route }) {
             : undefined,
       });
 
-      setTitle('');
-      setSubtitle('');
-      setFirstChapterTitle('');
-      setFirstChapterContent('');
-      setImportedFile(null);
+      resetForm();
 
       dialog.alert(
         'Obra Encadernada!',
@@ -160,20 +164,21 @@ export default function CreateBookScreen({ navigation, route }) {
         onProfilePress={() => navigation.navigate('Perfil')}
       />
 
-      <KeyboardAvoidingView style={styles.scrollView} behavior="padding">
+      <KeyboardAvoidingView style={styles.scrollView} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
         >
-          <TouchableOpacity
+          <Touchable
             style={styles.backRow}
             onPress={() => navigation.navigate('Estante')}
             activeOpacity={0.7}
           >
             <Ionicons name="arrow-back" size={17} color={colors.textSecondary} />
             <Text style={styles.backText}>Voltar para a Estante</Text>
-          </TouchableOpacity>
+          </Touchable>
 
           <View style={styles.pageHeaderRow}>
             <View>
@@ -186,7 +191,7 @@ export default function CreateBookScreen({ navigation, route }) {
           </View>
 
           <View style={styles.tabsSwitcher}>
-            <TouchableOpacity
+            <Touchable
               style={[styles.tabButton, activeTab === 'create' && styles.tabButtonActive]}
               onPress={() => setActiveTab('create')}
               activeOpacity={0.8}
@@ -200,9 +205,9 @@ export default function CreateBookScreen({ navigation, route }) {
               <Text style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}>
                 Criar Livro
               </Text>
-            </TouchableOpacity>
+            </Touchable>
 
-            <TouchableOpacity
+            <Touchable
               style={[styles.tabButton, activeTab === 'import' && styles.tabButtonActive]}
               onPress={() => setActiveTab('import')}
               activeOpacity={0.8}
@@ -216,203 +221,98 @@ export default function CreateBookScreen({ navigation, route }) {
               <Text style={[styles.tabButtonText, activeTab === 'import' && styles.tabButtonTextActive]}>
                 Importar
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
 
           {activeTab === 'create' ? (
             <View>
-              <View style={styles.previewSection}>
-                <Text style={styles.sectionLabel}>VISUALIZAÇÃO TÁTIL</Text>
-                <View style={styles.previewCenterBox}>
-                  <BookCover
-                    title={title.trim() || 'Novo Livro'}
-                    coverColor={coverColor}
-                    titleColor={titleColor}
-                    totalPages={384}
-                    size="medium"
-                  />
-                </View>
-              </View>
+              <GoogleBooksSearch key={searchKey} onSelect={handleSelectGoogleBook} />
 
-              <View style={styles.formCard}>
-                <View style={styles.cardHeader}>
-                  <Ionicons name="color-palette-outline" size={18} color={colors.secondary} />
-                  <Text style={styles.cardHeaderTitle}>Revestimento & Detalhes</Text>
-                </View>
-
-                <Text style={styles.swatchTitle}>Cor da Capa</Text>
-                <View style={styles.swatchesRow}>
-                  {COVER_COLORS.map((item) => (
-                    <TouchableOpacity
-                      key={item.color}
-                      style={styles.swatchItem}
-                      onPress={() => setCoverColor(item.color)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.colorCircle,
-                          { backgroundColor: item.color },
-                          coverColor === item.color && styles.colorCircleSelected,
-                        ]}
-                      />
-                      <Text style={styles.colorName}>{item.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text style={[styles.swatchTitle, { marginTop: 14 }]}>Cor do Título</Text>
-                <View style={styles.swatchesRow}>
-                  {TITLE_COLORS.map((item) => (
-                    <TouchableOpacity
-                      key={item.color}
-                      style={styles.swatchItem}
-                      onPress={() => setTitleColor(item.color)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.colorCircle,
-                          { backgroundColor: item.color, borderWidth: 1, borderColor: colors.border },
-                          titleColor === item.color && styles.colorCircleSelected,
-                        ]}
-                      />
-                      <Text style={styles.colorName}>{item.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                <Text style={[styles.swatchTitle, { marginTop: 14 }]}>Cor da Folha</Text>
-                <View style={styles.swatchesRow}>
-                  {PAPER_COLORS.map((item) => (
-                    <TouchableOpacity
-                      key={item.color}
-                      style={styles.swatchItem}
-                      onPress={() => setPaperColor(item.color)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.colorCircle,
-                          { backgroundColor: item.color, borderWidth: 1, borderColor: colors.border },
-                          paperColor === item.color && styles.colorCircleSelected,
-                        ]}
-                      />
-                      <Text style={styles.colorName}>{item.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              <GoogleBooksSearch onSelect={handleSelectGoogleBook} />
-
-              <View style={styles.formCard}>
-                <View style={styles.cardHeaderWithMeta}>
-                  <View style={styles.cardHeader}>
-                    <Ionicons name="receipt-outline" size={18} color={colors.primary} />
-                    <Text style={styles.cardHeaderTitle}>Ficha Catalográfica</Text>
-                  </View>
-                  <Text style={styles.metaLabel}>Metadados</Text>
-                </View>
-
-                <Text style={styles.fieldLabel}>Título da Obra *</Text>
-                <View style={styles.inputWrapper}>
-                  <Ionicons name="text-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <Section icon="create-outline" title="Informações">
+                <Field label="Título da obra *">
                   <TextInput
-                    style={styles.textInput}
-                    placeholder="Nome do livro..."
+                    style={styles.input}
+                    placeholder="Nome do livro"
                     placeholderTextColor={colors.textMuted}
                     value={title}
                     onChangeText={setTitle}
+                    returnKeyType="next"
+                    accessibilityLabel="Título da obra"
                   />
-                </View>
+                </Field>
 
-                <Text style={styles.fieldLabel}>Subtítulo ou Resumo Curto</Text>
-                <View style={[styles.inputWrapper, { height: 72, alignItems: 'flex-start', paddingTop: 8 }]}>
+                <Field label="Subtítulo ou resumo curto">
                   <TextInput
-                    style={[styles.textInput, { height: '100%', textAlignVertical: 'top' }]}
-                    placeholder="Escreva aqui uma breve descrição ou notas editoriais..."
+                    style={[styles.input, styles.textarea]}
+                    placeholder="Breve descrição ou notas"
                     placeholderTextColor={colors.textMuted}
                     value={subtitle}
                     onChangeText={setSubtitle}
                     multiline
+                    blurOnSubmit
+                    accessibilityLabel="Subtítulo"
                   />
-                </View>
+                </Field>
 
-                <Text style={styles.fieldLabel}>Categoria</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                  {(CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES]).map((cat) => (
-                    <TouchableOpacity
-                      key={cat}
-                      style={[
-                        styles.categoryChip,
-                        category === cat && styles.categoryChipActive,
-                      ]}
-                      onPress={() => setCategory(cat)}
-                    >
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          category === cat && styles.categoryChipTextActive,
-                        ]}
+                <Field label="Categoria">
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                    {(CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES]).map((cat) => (
+                      <Touchable
+                        key={cat}
+                        style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                        onPress={() => setCategory(cat)}
                       >
-                        {cat}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-
-                {tags.length > 0 && (
-                  <View style={styles.tagsRow}>
-                    {tags.map((tag) => (
-                      <TouchableOpacity
-                        key={tag}
-                        style={styles.tagChip}
-                        onPress={() => setTags(tags.filter(t => t !== tag))}
-                        accessibilityLabel={`Remover etiqueta ${tag}`}
-                      >
-                        <Text style={styles.tagText}>{tag} ×</Text>
-                      </TouchableOpacity>
+                        <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                          {cat}
+                        </Text>
+                      </Touchable>
                     ))}
-                  </View>
+                  </ScrollView>
+                </Field>
+              </Section>
+
+              <Section icon="image-outline" title="Capa" hint="Use uma foto sua ou escolha as cores da capa.">
+                <CoverPicker
+                  title={title}
+                  coverColor={coverColor}
+                  titleColor={titleColor}
+                  coverImage={coverImage}
+                  onChange={setCoverImage}
+                />
+                {!coverImage && (
+                  <>
+                    <ColorRow label="Cor da capa" options={COVER_COLORS} value={coverColor} onChange={setCoverColor} />
+                    <ColorRow label="Cor do título" options={TITLE_COLORS} value={titleColor} onChange={setTitleColor} outlined />
+                  </>
                 )}
+              </Section>
 
-                <AiSuggest title={title} text={suggestionText} onApply={handleApplySuggestion} />
-              </View>
+              <Section icon="document-text-outline" title="Folha de leitura" hint="Cor do fundo das páginas ao ler.">
+                <ColorRow label="Cor da folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
+              </Section>
 
-              <View style={styles.formCard}>
-                <View style={styles.cardHeaderWithMeta}>
-                  <View style={styles.cardHeader}>
-                    <Ionicons name="create-outline" size={18} color={colors.secondary} />
-                    <Text style={styles.cardHeaderTitle}>Primeiro Capítulo</Text>
-                  </View>
-                  <Text style={styles.metaLabel}>Opcional</Text>
-                </View>
-
-                <Text style={styles.fieldLabel}>Título do Capítulo</Text>
-                <View style={styles.inputWrapper}>
+              <Section icon="reader-outline" title="Primeiro capítulo" hint="Opcional. Você pode escrever depois, direto no leitor.">
+                <Field label="Título do capítulo">
                   <TextInput
-                    style={styles.textInput}
+                    style={styles.input}
                     placeholder="Capítulo 1"
                     placeholderTextColor={colors.textMuted}
                     value={firstChapterTitle}
                     onChangeText={setFirstChapterTitle}
+                    returnKeyType="next"
                   />
-                </View>
-
-                <Text style={styles.fieldLabel}>Texto</Text>
-                <View style={[styles.inputWrapper, styles.writingWrapper]}>
+                </Field>
+                <Field label="Texto">
                   <TextInput
-                    style={[styles.textInput, styles.writingInput]}
-                    placeholder="Comece a escrever seu livro aqui. Você poderá continuar e criar novos capítulos pelo leitor."
+                    style={[styles.input, styles.writingBox]}
+                    placeholder="Comece a escrever seu livro aqui."
                     placeholderTextColor={colors.textMuted}
                     value={firstChapterContent}
                     onChangeText={setFirstChapterContent}
                     multiline
-                    textAlignVertical="top"
                   />
-                </View>
-              </View>
+                </Field>
+              </Section>
             </View>
           ) : (
             <View>
@@ -425,7 +325,7 @@ export default function CreateBookScreen({ navigation, route }) {
               </View>
 
               <View style={styles.formatsGrid}>
-                <TouchableOpacity
+                <Touchable
                   style={[styles.formatCard, selectedFormat === 'pdf' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('pdf')}
                 >
@@ -434,9 +334,9 @@ export default function CreateBookScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.formatName}>PDF</Text>
                   <Text style={styles.formatDesc}>Livro diagramado</Text>
-                </TouchableOpacity>
+                </Touchable>
 
-                <TouchableOpacity
+                <Touchable
                   style={[styles.formatCard, selectedFormat === 'epub' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('epub')}
                 >
@@ -445,9 +345,9 @@ export default function CreateBookScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.formatName}>EPUB</Text>
                   <Text style={styles.formatDesc}>Livro digital</Text>
-                </TouchableOpacity>
+                </Touchable>
 
-                <TouchableOpacity
+                <Touchable
                   style={[styles.formatCard, selectedFormat === 'txt' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('txt')}
                 >
@@ -456,9 +356,9 @@ export default function CreateBookScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.formatName}>Texto Puro</Text>
                   <Text style={styles.formatDesc}>.txt, .markdown</Text>
-                </TouchableOpacity>
+                </Touchable>
 
-                <TouchableOpacity
+                <Touchable
                   style={[styles.formatCard, selectedFormat === 'json' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('json')}
                 >
@@ -467,10 +367,10 @@ export default function CreateBookScreen({ navigation, route }) {
                   </View>
                   <Text style={styles.formatName}>Estrutura</Text>
                   <Text style={styles.formatDesc}>JSON serializado</Text>
-                </TouchableOpacity>
+                </Touchable>
               </View>
 
-              <TouchableOpacity
+              <Touchable
                 style={styles.dropZone}
                 activeOpacity={0.8}
                 onPress={handlePickFile}
@@ -502,7 +402,7 @@ export default function CreateBookScreen({ navigation, route }) {
                     Sumário e capítulos detectados automaticamente
                   </Text>
                 </View>
-              </TouchableOpacity>
+              </Touchable>
 
               {importedFile && !importedFile.warning && (
                 <View style={styles.importSuccessBox}>
@@ -527,15 +427,7 @@ export default function CreateBookScreen({ navigation, route }) {
           )}
 
           <View style={styles.bottomCard}>
-            <View style={styles.syncStatusRow}>
-              <View style={styles.statusIndicatorRow}>
-                <View style={styles.statusDot} />
-                <Text style={styles.statusTitle}>Armazenamento: Pronto</Text>
-              </View>
-              <Text style={styles.statusSubtitle}>No aparelho e na nuvem</Text>
-            </View>
-
-            <TouchableOpacity
+            <Touchable
               style={[styles.saveButton, saving && styles.saveButtonDisabled]}
               activeOpacity={0.85}
               onPress={handleSaveBook}
@@ -545,7 +437,7 @@ export default function CreateBookScreen({ navigation, route }) {
               <Text style={styles.saveButtonText}>
                 {saving ? 'Gravando Volume...' : 'Salvar Livro na Estante'}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -554,6 +446,12 @@ export default function CreateBookScreen({ navigation, route }) {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+  input: fieldStyles(colors).input,
+  textarea: fieldStyles(colors).textarea,
+  writingBox: {
+    ...fieldStyles(colors).textarea,
+    height: 220,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -587,7 +485,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   pageSubtitle: {
     fontSize: 13,
@@ -676,7 +574,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   metaLabel: {
     fontSize: 11,
@@ -750,7 +648,7 @@ const createStyles = (colors) => StyleSheet.create({
     height: '100%',
     fontSize: 15,
     lineHeight: 23,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -806,7 +704,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   extractBadge: {
     fontSize: 11,

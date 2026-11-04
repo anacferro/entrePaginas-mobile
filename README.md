@@ -111,6 +111,7 @@ O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio pr
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
 
 7. Opcional: `EXPO_PUBLIC_GEMINI_MODEL` troca o modelo de IA (padrão `gemini-3.5-flash`).
+8. Opcional: `EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY` aumenta a cota da busca do Google Books. Sem ela, a busca usa a cota compartilhada e, se ela estourar, cai automaticamente para a Open Library.
 8. Reinicie o Metro com cache limpo: `npx expo start -c`.
 
 **Para quem vai avaliar o projeto:** o `.env` não está no repositório. Há duas opções: usar o `.env` enviado junto com a entrega (por exemplo, anexado no Moodle), copiando-o para a raiz do projeto, ou criar o próprio projeto Firebase seguindo os passos acima (leva alguns minutos). Depois, `npm install` e `npx expo start -c`.

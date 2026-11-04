@@ -22,7 +22,7 @@ export default function Avatar({ size = 38, style }) {
         style,
       ]}
     >
-      <Text style={[styles.text, { fontSize: size * 0.38 }]}>{initialsOf(user)}</Text>
+      <Text style={[styles.text, { fontSize: size * 0.38, lineHeight: size }]}>{initialsOf(user)}</Text>
     </View>
   );
 }
@@ -36,5 +36,7 @@ const createStyles = (colors) => StyleSheet.create({
   text: {
     color: colors.onPrimary,
     fontWeight: '700',
+    textAlign: 'center',
+    includeFontPadding: false,
   },
 });

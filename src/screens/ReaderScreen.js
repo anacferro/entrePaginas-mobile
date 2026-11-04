@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
   Modal,
   StatusBar,
   TextInput,
@@ -23,6 +22,7 @@ import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles, ThemeScope } from '../theme/ThemeContext';
+import Touchable from '../components/Touchable';
 
 export default function ReaderScreen(props) {
   const { isDark: appDark } = useTheme();
@@ -52,6 +52,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [selection, setSelection] = useState(null);
   const [showTypography, setShowTypography] = useState(false);
   const [editorMode, setEditorMode] = useState(null);
+  const [focusMode, setFocusMode] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -92,7 +93,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
   const chapters = book?.chapters && book.chapters.length > 0 ? book.chapters : defaultChapters;
   const currentChapter = chapters[currentPageIndex] || chapters[0];
-  const totalPages = book?.totalPages || 82;
+  const totalPages = book?.totalPages || Math.max(1, chapters.length);
   const pageForIndex = (idx) => Math.floor((idx / chapters.length) * totalPages) + 1;
   const currentPageNumber = pageForIndex(currentPageIndex);
   const isLastChapter = currentPageIndex >= chapters.length - 1;
@@ -220,112 +221,128 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.surfaceSoft} />
       
-      <Header
-        subtitle="Leitura"
-        onProfilePress={() => navigation.navigate('MainTabs', { screen: 'Perfil' })}
-      />
+      {!focusMode && (
+        <>
+        <Header
+          subtitle="Leitura"
+          onProfilePress={() => navigation.navigate('MainTabs', { screen: 'Perfil' })}
+        />
 
-      <View style={[styles.readerNavHeader, { backgroundColor: colors.surfaceWarm }]}>
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="arrow-back" size={20} color={readerTextColor} />
-        </TouchableOpacity>
-
-        <View style={styles.titleWrapper}>
-          <Text style={[styles.bookHeaderTitle, { color: readerTextColor }]} numberOfLines={1}>
-            {book?.title || bookTitle || 'Crônicas do Silêncio'}
-          </Text>
-          <Text style={[styles.chapterHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-            {currentChapter.title}
-          </Text>
-        </View>
-
-        <View style={styles.navIconsRow}>
-          {book && (
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => setEditorMode('edit')}
-              accessibilityLabel="Editar capítulo"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="create-outline" size={20} color={readerTextColor} />
-            </TouchableOpacity>
-          )}
-
-          {book && (
-            <TouchableOpacity
-              style={[styles.iconBtn, annotating && styles.iconBtnActive]}
-              onPress={toggleAnnotating}
-              accessibilityLabel="Marca-texto"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="brush-outline" size={20} color={annotating ? colors.onPrimary : readerTextColor} />
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => {
-              setSummaryTab('chapters');
-              setShowSummary(true);
-            }}
-            accessibilityLabel="Sumário"
+        <View style={[styles.readerNavHeader, { backgroundColor: colors.surfaceWarm }]}>
+          <Touchable
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="list" size={20} color={readerTextColor} />
-          </TouchableOpacity>
+            <Ionicons name="arrow-back" size={20} color={readerTextColor} />
+          </Touchable>
 
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => setShowTypography(!showTypography)}
-            accessibilityLabel="Tamanho do texto"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="text" size={20} color={readerTextColor} />
-          </TouchableOpacity>
+          <View style={styles.titleWrapper}>
+            <Text style={[styles.bookHeaderTitle, { color: readerTextColor }]} numberOfLines={1}>
+              {book?.title || bookTitle || 'Crônicas do Silêncio'}
+            </Text>
+            <Text style={[styles.chapterHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+              {currentChapter.title}
+            </Text>
+          </View>
 
-          {book && (
-            <TouchableOpacity
+          <View style={styles.navIconsRow}>
+            {book && (
+              <Touchable
+                style={styles.iconBtn}
+                onPress={() => setEditorMode('edit')}
+                accessibilityLabel="Editar capítulo"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="create-outline" size={20} color={readerTextColor} />
+              </Touchable>
+            )}
+
+            {book && (
+              <Touchable
+                style={[styles.iconBtn, annotating && styles.iconBtnActive]}
+                onPress={toggleAnnotating}
+                accessibilityLabel="Marca-texto"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="brush-outline" size={20} color={annotating ? colors.onPrimary : readerTextColor} />
+              </Touchable>
+            )}
+
+            <Touchable
               style={styles.iconBtn}
-              onPress={openBookmarkSheet}
-              accessibilityLabel="Marcar página"
+              onPress={() => {
+                setShowTypography(false);
+                setFocusMode(true);
+              }}
+              accessibilityLabel="Leitura sem distrações"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons
-                name={currentBookmark ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color={currentBookmark ? currentBookmark.color : readerTextColor}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+              <Ionicons name="expand-outline" size={20} color={readerTextColor} />
+            </Touchable>
 
-      {showTypography && (
+            <Touchable
+              style={styles.iconBtn}
+              onPress={() => {
+                setSummaryTab('chapters');
+                setShowSummary(true);
+              }}
+              accessibilityLabel="Sumário"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="list" size={20} color={readerTextColor} />
+            </Touchable>
+
+            <Touchable
+              style={styles.iconBtn}
+              onPress={() => setShowTypography(!showTypography)}
+              accessibilityLabel="Tamanho do texto"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="text" size={20} color={readerTextColor} />
+            </Touchable>
+
+            {book && (
+              <Touchable
+                style={styles.iconBtn}
+                onPress={openBookmarkSheet}
+                accessibilityLabel="Marcar página"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons
+                  name={currentBookmark ? 'bookmark' : 'bookmark-outline'}
+                  size={20}
+                  color={currentBookmark ? currentBookmark.color : readerTextColor}
+                />
+              </Touchable>
+            )}
+          </View>
+        </View>
+        </>
+      )}
+
+      {showTypography && !focusMode && (
         <View style={[styles.typoBar, { backgroundColor: colors.surfaceMuted }]}>
           <Text style={[styles.typoLabel, { color: readerTextColor }]}>Tamanho do Texto:</Text>
           <View style={styles.fontControlsRow}>
-            <TouchableOpacity
+            <Touchable
               style={styles.fontBtn}
               onPress={() => setFontSize(Math.max(14, fontSize - 2))}
             >
               <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A-</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             <Text style={[styles.fontSizeIndicator, { color: readerTextColor }]}>{fontSize}px</Text>
 
-            <TouchableOpacity
+            <Touchable
               style={styles.fontBtn}
               onPress={() => setFontSize(Math.min(26, fontSize + 2))}
             >
               <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A+</Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
 
-          <TouchableOpacity
+          <Touchable
             style={[styles.themePill, { backgroundColor: colors.card }]}
             onPress={() => setReaderDark(!isDark)}
           >
@@ -333,7 +350,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Text style={[styles.themePillText, { color: readerTextColor }]}>
               {isDark ? 'Claro' : 'Escuro'}
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
       )}
 
@@ -341,15 +358,15 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         <ScrollView
           ref={scrollRef}
           style={styles.readerScroll}
-          contentContainerStyle={[styles.readerContentContainer, annotating && { paddingBottom: 170 }]}
+          contentContainerStyle={[styles.readerContentContainer, annotating && { paddingBottom: 170 }, focusMode && { paddingTop: 68 }]}
         >
           {currentBookmark && (
-            <TouchableOpacity style={styles.bookmarkNote} onPress={openBookmarkSheet} activeOpacity={0.7}>
+            <Touchable style={styles.bookmarkNote} onPress={openBookmarkSheet} activeOpacity={0.7}>
               <Ionicons name="bookmark" size={13} color={currentBookmark.color} />
               <Text style={[styles.bookmarkNoteText, { color: currentBookmark.color }]} numberOfLines={1}>
                 {currentBookmark.title}
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           )}
 
           <AiSummary chapter={currentChapter} />
@@ -379,7 +396,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
           />
 
           {book && isLastChapter && (
-            <TouchableOpacity
+            <Touchable
               style={[styles.addChapterBtn, { borderColor: colors.border }]}
               onPress={openNewChapter}
               activeOpacity={0.8}
@@ -388,18 +405,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               <Text style={[styles.addChapterText, { color: isDark ? readerTextColor : colors.primary }]}>
                 Escrever novo capítulo
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           )}
 
           <View style={styles.pageFooter}>
-            <TouchableOpacity
+            <Touchable
               style={[styles.pageNavBtn, currentPageIndex === 0 && { opacity: 0.3 }]}
               disabled={currentPageIndex === 0}
               onPress={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))}
             >
               <Ionicons name="chevron-back" size={20} color={readerTextColor} />
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Anterior</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             <View style={styles.pageIndicatorBox}>
               <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
@@ -410,22 +427,22 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               </Text>
             </View>
 
-            <TouchableOpacity
+            <Touchable
               style={[styles.pageNavBtn, isLastChapter && { opacity: 0.3 }]}
               disabled={isLastChapter}
               onPress={() => setCurrentPageIndex(Math.min(chapters.length - 1, currentPageIndex + 1))}
             >
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Próxima</Text>
               <Ionicons name="chevron-forward" size={20} color={readerTextColor} />
-            </TouchableOpacity>
+            </Touchable>
           </View>
         </ScrollView>
 
         {currentBookmark && (
-          <TouchableOpacity style={styles.ribbon} onPress={openBookmarkSheet} activeOpacity={0.85}>
+          <Touchable style={styles.ribbon} onPress={openBookmarkSheet} activeOpacity={0.85}>
             <View style={[styles.ribbonBody, { backgroundColor: currentBookmark.color }]} />
             <View style={[styles.ribbonTail, { borderLeftColor: currentBookmark.color, borderRightColor: currentBookmark.color }]} />
-          </TouchableOpacity>
+          </Touchable>
         )}
 
         {annotating && (
@@ -438,14 +455,14 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                     ? 'Selecione um trecho arrastando o mouse'
                     : 'Toque e segure para selecionar um trecho'}
               </Text>
-              <TouchableOpacity style={styles.annotateDone} onPress={toggleAnnotating}>
+              <Touchable style={styles.annotateDone} onPress={toggleAnnotating}>
                 <Text style={styles.annotateDoneText}>Concluir</Text>
-              </TouchableOpacity>
+              </Touchable>
             </View>
 
             <View style={[styles.annotateTools, !selection && { opacity: 0.4 }]}>
               {HIGHLIGHT_COLORS.map(item => (
-                <TouchableOpacity
+                <Touchable
                   key={item.color}
                   style={[styles.markerDot, { backgroundColor: item.color }]}
                   onPress={() => applyFormat('highlight', item.color)}
@@ -456,18 +473,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
               <View style={styles.toolDivider} />
 
-              <TouchableOpacity style={styles.toolBtn} onPress={() => applyFormat('bold')} disabled={!selection}>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('bold')} disabled={!selection}>
                 <Text style={[styles.toolText, { color: readerTextColor, fontWeight: '800' }]}>B</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.toolBtn} onPress={() => applyFormat('italic')} disabled={!selection}>
+              </Touchable>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('italic')} disabled={!selection}>
                 <Text style={[styles.toolText, { color: readerTextColor, fontStyle: 'italic' }]}>I</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.toolBtn} onPress={() => applyFormat('underline')} disabled={!selection}>
+              </Touchable>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('underline')} disabled={!selection}>
                 <Text style={[styles.toolText, { color: readerTextColor, textDecorationLine: 'underline' }]}>U</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.toolBtn} onPress={() => applyFormat('clear')} disabled={!selection}>
+              </Touchable>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('clear')} disabled={!selection}>
                 <Ionicons name="backspace-outline" size={19} color={readerTextColor} />
-              </TouchableOpacity>
+              </Touchable>
             </View>
           </View>
         )}
@@ -486,9 +503,9 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 <Ionicons name="list" size={20} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>Sumário da Obra</Text>
               </View>
-              <TouchableOpacity onPress={() => setShowSummary(false)}>
+              <Touchable onPress={() => setShowSummary(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
+              </Touchable>
             </View>
 
             {book && (
@@ -497,7 +514,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                   { key: 'chapters', label: 'Capítulos' },
                   { key: 'bookmarks', label: `Marcadores (${bookmarks.length})` },
                 ].map(tab => (
-                  <TouchableOpacity
+                  <Touchable
                     key={tab.key}
                     style={[styles.summaryTab, summaryTab === tab.key && styles.summaryTabActive]}
                     onPress={() => setSummaryTab(tab.key)}
@@ -505,7 +522,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                     <Text style={[styles.summaryTabText, summaryTab === tab.key && styles.summaryTabTextActive]}>
                       {tab.label}
                     </Text>
-                  </TouchableOpacity>
+                  </Touchable>
                 ))}
               </View>
             )}
@@ -518,7 +535,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                   </Text>
                 )}
                 {bookmarks.map(bm => (
-                  <TouchableOpacity key={bm.id} style={styles.tocItem} onPress={() => goToBookmark(bm)}>
+                  <Touchable key={bm.id} style={styles.tocItem} onPress={() => goToBookmark(bm)}>
                     <Ionicons name="bookmark" size={18} color={bm.color} style={{ width: 32 }} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.tocItemTitle} numberOfLines={1}>{bm.title}</Text>
@@ -526,19 +543,19 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                         {chapters.find(c => c.id === bm.chapterId)?.title} • Folha {bm.page}
                       </Text>
                     </View>
-                    <TouchableOpacity
+                    <Touchable
                       onPress={() => handleRemoveBookmark(bm.id)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                       <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  </TouchableOpacity>
+                    </Touchable>
+                  </Touchable>
                 ))}
               </ScrollView>
             ) : (
             <ScrollView style={styles.tocList}>
               {chapters.map((chap, idx) => (
-                <TouchableOpacity
+                <Touchable
                   key={chap.id || idx}
                   style={[
                     styles.tocItem,
@@ -577,34 +594,34 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                   )}
                   {book && chapters.length > 1 && (
                     <View style={styles.tocMove}>
-                      <TouchableOpacity
+                      <Touchable
                         onPress={() => handleMoveChapter(chap.id, -1)}
                         disabled={idx === 0}
                         hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
                         accessibilityLabel={`Subir capítulo ${idx + 1}`}
                       >
                         <Ionicons name="chevron-up" size={20} color={idx === 0 ? colors.border : colors.textSecondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      </Touchable>
+                      <Touchable
                         onPress={() => handleMoveChapter(chap.id, 1)}
                         disabled={idx === chapters.length - 1}
                         hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
                         accessibilityLabel={`Descer capítulo ${idx + 1}`}
                       >
                         <Ionicons name="chevron-down" size={20} color={idx === chapters.length - 1 ? colors.border : colors.textSecondary} />
-                      </TouchableOpacity>
+                      </Touchable>
                     </View>
                   )}
-                </TouchableOpacity>
+                </Touchable>
               ))}
             </ScrollView>
             )}
 
             {book && summaryTab === 'chapters' && (
-              <TouchableOpacity style={styles.tocAddBtn} onPress={openNewChapter} activeOpacity={0.85}>
+              <Touchable style={styles.tocAddBtn} onPress={openNewChapter} activeOpacity={0.85}>
                 <Ionicons name="add" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
                 <Text style={styles.tocAddText}>Novo Capítulo</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
           </View>
         </View>
@@ -623,9 +640,9 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 <Ionicons name="bookmark" size={20} color={bookmarkColor} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>{currentBookmark ? 'Página Marcada' : 'Marcar Página'}</Text>
               </View>
-              <TouchableOpacity onPress={() => setShowBookmarkSheet(false)}>
+              <Touchable onPress={() => setShowBookmarkSheet(false)}>
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
-              </TouchableOpacity>
+              </Touchable>
             </View>
 
             <Text style={styles.sheetLabel}>Título da marcação</Text>
@@ -641,13 +658,13 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Text style={styles.sheetLabel}>Cor do pin</Text>
             <View style={styles.pinColorsRow}>
               {PIN_COLORS.map(color => (
-                <TouchableOpacity
+                <Touchable
                   key={color}
                   onPress={() => setBookmarkColor(color)}
                   style={[styles.pinOption, bookmarkColor === color && { borderColor: color }]}
                 >
                   <Ionicons name="bookmark" size={22} color={color} />
-                </TouchableOpacity>
+                </Touchable>
               ))}
             </View>
 
@@ -655,18 +672,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               {currentChapter.title} • Folha {currentPageNumber}
             </Text>
 
-            <TouchableOpacity style={styles.tocAddBtn} onPress={handleSaveBookmark} activeOpacity={0.85}>
+            <Touchable style={styles.tocAddBtn} onPress={handleSaveBookmark} activeOpacity={0.85}>
               <Ionicons name="bookmark" size={16} color={colors.onPrimary} style={{ marginRight: 6 }} />
               <Text style={styles.tocAddText}>{currentBookmark ? 'Atualizar Marcador' : 'Marcar Página'}</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             {currentBookmark && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.removePinBtn}
                 onPress={() => handleRemoveBookmark(currentBookmark.id)}
               >
                 <Text style={styles.removePinText}>Remover marcador</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
           </View>
         </KeyboardAvoidingView>
@@ -681,11 +698,31 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         onSave={handleSaveChapter}
         onDelete={handleDeleteChapter}
       />
+      {focusMode && (
+        <Touchable
+          style={[styles.focusExit, { backgroundColor: colors.surfaceMuted }]}
+          onPress={() => setFocusMode(false)}
+          accessibilityLabel="Mostrar menus"
+        >
+          <Ionicons name="contract-outline" size={20} color={readerTextColor} />
+        </Touchable>
+      )}
     </SafeAreaView>
   );
 }
 
 const createStyles = (colors) => StyleSheet.create({
+  focusExit: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.85,
+  },
   safeArea: {
     flex: 1,
   },

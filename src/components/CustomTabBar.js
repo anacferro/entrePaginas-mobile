@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   const { colors } = useTheme();
@@ -31,7 +32,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
 
         if (route.name === 'CriarObra') {
           return (
-            <TouchableOpacity
+            <Touchable
               key={route.key}
               activeOpacity={0.85}
               onPress={onPress}
@@ -43,7 +44,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
               <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 Novo Livro
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           );
         }
 
@@ -62,7 +63,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         }
 
         return (
-          <TouchableOpacity
+          <Touchable
             key={route.key}
             activeOpacity={0.7}
             onPress={onPress}
@@ -76,7 +77,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
             <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
               {label}
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         );
       })}
     </View>

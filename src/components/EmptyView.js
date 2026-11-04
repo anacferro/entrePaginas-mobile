@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function EmptyView({
   icon = 'book-outline',
@@ -21,14 +22,14 @@ export default function EmptyView({
       <Text style={styles.description}>{description}</Text>
 
       {actionLabel && onActionPress && (
-        <TouchableOpacity
+        <Touchable
           style={styles.actionButton}
           activeOpacity={0.8}
           onPress={onActionPress}
         >
           <Ionicons name="add" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
           <Text style={styles.actionButtonText}>{actionLabel}</Text>
-        </TouchableOpacity>
+        </Touchable>
       )}
     </View>
   );
@@ -63,7 +64,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginBottom: 6,
     textAlign: 'center',
   },

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function ErrorView({
   title = 'Erro ao carregar o acervo',
@@ -19,14 +20,14 @@ export default function ErrorView({
       <Text style={styles.message}>{message}</Text>
 
       {onRetry && (
-        <TouchableOpacity
+        <Touchable
           style={styles.retryButton}
           activeOpacity={0.8}
           onPress={onRetry}
         >
           <Ionicons name="refresh-outline" size={17} color={colors.onPrimary} style={{ marginRight: 6 }} />
           <Text style={styles.retryText}>Tentar Novamente</Text>
-        </TouchableOpacity>
+        </Touchable>
       )}
     </View>
   );
@@ -58,7 +59,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.secondary,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginBottom: 4,
     textAlign: 'center',
   },

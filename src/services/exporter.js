@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, Share } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
@@ -67,17 +67,19 @@ export const exporter = {
       return;
     }
 
-    if (!(await Sharing.isAvailableAsync())) {
-      throw new Error('O compartilhamento de arquivos não está disponível neste aparelho.');
+    try {
+      if (!(await Sharing.isAvailableAsync())) throw new Error('sharing-unavailable');
+      const file = new File(Paths.cache, name);
+      if (file.exists) file.delete();
+      file.create();
+      file.write(content);
+      await Sharing.shareAsync(file.uri, {
+        mimeType: info.mime,
+        UTI: info.uti,
+        dialogTitle: `Exportar ${book.title}`,
+      });
+    } catch {
+      await Share.share({ title: name, message: content });
     }
-
-    const file = new File(Paths.cache, name);
-    file.create({ overwrite: true });
-    file.write(content);
-    await Sharing.shareAsync(file.uri, {
-      mimeType: info.mime,
-      UTI: info.uti,
-      dialogTitle: `Exportar ${book.title}`,
-    });
   },
 };

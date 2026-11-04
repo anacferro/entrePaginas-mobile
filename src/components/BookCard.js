@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import BookCover from './BookCover';
+import BookCover, { useShelfCoverWidth } from './BookCover';
 import ChangeHistoryModal from './ChangeHistoryModal';
 import BookEditModal from './BookEditModal';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 export default function BookCard({
   book,
@@ -22,12 +23,13 @@ export default function BookCard({
   const [menuVisible, setMenuVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
+  const coverWidth = useShelfCoverWidth();
   const isOwn = book.isOwn !== false;
   const changeCount = book.changeLog?.length || 0;
 
   return (
     <View style={styles.cardContainer}>
-      <TouchableOpacity
+      <Touchable
         activeOpacity={0.85}
         onPress={() => onPress && onPress(book)}
         style={styles.coverWrapper}
@@ -37,6 +39,8 @@ export default function BookCard({
           coverColor={book.coverColor}
           titleColor={book.titleColor}
           totalPages={book.totalPages}
+          coverImage={book.coverImage}
+          width={coverWidth}
           size="medium"
         />
         {book.locked && (
@@ -44,10 +48,10 @@ export default function BookCard({
             <Ionicons name="lock-closed" size={13} color="#FFFFFF" />
           </View>
         )}
-      </TouchableOpacity>
+      </Touchable>
 
-      <View style={styles.infoRow}>
-        <TouchableOpacity
+      <View style={[styles.infoRow, { width: coverWidth }]}>
+        <Touchable
           style={styles.titleArea}
           onPress={() => onPress && onPress(book)}
           activeOpacity={0.7}
@@ -63,15 +67,15 @@ export default function BookCard({
               : 'Volume'}{' '}
             • {book.totalPages}p
           </Text>
-        </TouchableOpacity>
+        </Touchable>
 
-        <TouchableOpacity
+        <Touchable
           style={styles.moreButton}
           onPress={() => setMenuVisible(true)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+        </Touchable>
       </View>
 
       <Modal
@@ -89,19 +93,19 @@ export default function BookCard({
               {book.title}
             </Text>
 
-            <TouchableOpacity
+            <Touchable
               style={styles.menuItem}
               onPress={() => {
                 setMenuVisible(false);
-                onPress && onPress(book);
+                setTimeout(() => onPress && onPress(book), 350);
               }}
             >
               <Ionicons name="book-outline" size={20} color={colors.primary} />
               <Text style={styles.menuItemText}>Abrir para Leitura</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             {onEdit && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
@@ -110,15 +114,15 @@ export default function BookCard({
               >
                 <Ionicons name="create-outline" size={20} color={colors.secondary} />
                 <Text style={styles.menuItemText}>Editar Livro</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
 
             {onToggleLock && !isChest && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
-                  setMenuVisible(false);
-                  onToggleLock(book);
+                setMenuVisible(false);
+                setTimeout(() => onToggleLock(book), 350);
                 }}
               >
                 <Ionicons
@@ -129,37 +133,37 @@ export default function BookCard({
                 <Text style={styles.menuItemText}>
                   {book.locked ? 'Remover proteção' : 'Proteger com biometria'}
                 </Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
 
             {onExport && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
-                  setMenuVisible(false);
-                  onExport(book, 'txt');
+                setMenuVisible(false);
+                setTimeout(() => onExport(book, 'txt'), 350);
                 }}
               >
                 <Ionicons name="document-text-outline" size={20} color={colors.primary} />
                 <Text style={styles.menuItemText}>Exportar como TXT</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
 
             {onExport && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
-                  setMenuVisible(false);
-                  onExport(book, 'json');
+                setMenuVisible(false);
+                setTimeout(() => onExport(book, 'json'), 350);
                 }}
               >
                 <Ionicons name="code-slash-outline" size={20} color={colors.primary} />
                 <Text style={styles.menuItemText}>Exportar como JSON</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
 
             {!isOwn && (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
@@ -173,11 +177,11 @@ export default function BookCard({
                     <Text style={styles.menuBadgeText}>{changeCount}</Text>
                   </View>
                 )}
-              </TouchableOpacity>
+              </Touchable>
             )}
 
             {!isChest ? (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
@@ -186,9 +190,9 @@ export default function BookCard({
               >
                 <Ionicons name="archive-outline" size={20} color={colors.secondary} />
                 <Text style={styles.menuItemText}>Mover para o Baú</Text>
-              </TouchableOpacity>
+              </Touchable>
             ) : (
-              <TouchableOpacity
+              <Touchable
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
@@ -197,10 +201,10 @@ export default function BookCard({
               >
                 <Ionicons name="arrow-up-circle-outline" size={20} color={colors.success} />
                 <Text style={styles.menuItemText}>Restaurar para a Estante</Text>
-              </TouchableOpacity>
+              </Touchable>
             )}
 
-            <TouchableOpacity
+            <Touchable
               style={[styles.menuItem, styles.menuItemDanger]}
               onPress={() => {
                 setMenuVisible(false);
@@ -211,7 +215,7 @@ export default function BookCard({
               <Text style={[styles.menuItemText, { color: colors.danger }]}>
                 Excluir Definitivamente
               </Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
         </Pressable>
       </Modal>

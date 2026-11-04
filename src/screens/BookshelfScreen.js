@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   RefreshControl,
   StatusBar,
 } from 'react-native';
@@ -22,6 +21,7 @@ import { biometrics } from '../services/biometrics';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from '../components/Touchable';
 
 export default function BookshelfScreen({ navigation }) {
   const { colors } = useTheme();
@@ -167,6 +167,8 @@ export default function BookshelfScreen({ navigation }) {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -178,10 +180,6 @@ export default function BookshelfScreen({ navigation }) {
       >
         <View style={styles.collectionHeaderRow}>
           <Text style={styles.collectionTitle}>Sua Coleção</Text>
-          <View style={styles.cloudBadge}>
-            <Ionicons name="phone-portrait-outline" size={13} color={colors.primary} />
-            <Text style={styles.cloudBadgeText}>Aparelho e nuvem</Text>
-          </View>
         </View>
 
         <View style={styles.searchContainer}>
@@ -193,23 +191,15 @@ export default function BookshelfScreen({ navigation }) {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          {searchQuery.length > 0 ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          {searchQuery.length > 0 && (
+            <Touchable onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.filterButton}
-              onPress={toggleSort}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Ionicons name="options-outline" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
+            </Touchable>
           )}
         </View>
 
         <View style={styles.bannersRow}>
-          <TouchableOpacity
+          <Touchable
             style={styles.chestBanner}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('Bau')}
@@ -224,9 +214,9 @@ export default function BookshelfScreen({ navigation }) {
             </View>
             <Text style={styles.bannerTitle}>Baú Literário</Text>
             <Text style={styles.bannerSubtitle}>Volumes em descanso</Text>
-          </TouchableOpacity>
+          </Touchable>
 
-          <TouchableOpacity
+          <Touchable
             style={styles.newBookBanner}
             activeOpacity={0.85}
             onPress={() => navigation.navigate('CriarObra', { initialTab: 'create' })}
@@ -241,7 +231,7 @@ export default function BookshelfScreen({ navigation }) {
             <Text style={[styles.bannerSubtitle, { color: colors.onDark }]}>
               Criar encadernação
             </Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
         <View style={styles.sectionHeaderRow}>
@@ -251,12 +241,12 @@ export default function BookshelfScreen({ navigation }) {
               {books.length} {books.length === 1 ? 'volume' : 'volumes'}
             </Text>
           </View>
-          <TouchableOpacity style={styles.sortButton} onPress={toggleSort} activeOpacity={0.7}>
+          <Touchable style={styles.sortButton} onPress={toggleSort} activeOpacity={0.7}>
             <Text style={styles.sortButtonText}>
               Organizar {sortOrder === 'az' ? 'A-Z' : sortOrder === 'pages' ? 'Páginas' : 'Recentes'}
             </Text>
             <Ionicons name="swap-vertical" size={15} color={colors.textSecondary} />
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
         {loading && <LoadingView message="Organizando as prateleiras da estante..." />}
@@ -330,7 +320,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   cloudBadge: {
     flexDirection: 'row',
@@ -353,10 +343,10 @@ const createStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.card,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 46,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+    paddingHorizontal: 14,
+    height: 48,
+    borderWidth: 1.5,
+    borderColor: colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -443,7 +433,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginBottom: 2,
   },
   bannerSubtitle: {
@@ -452,8 +442,10 @@ const createStyles = (colors) => StyleSheet.create({
   },
   sectionHeaderRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
     marginBottom: 16,
   },
   sectionTitleWithCount: {
@@ -465,7 +457,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   volumeCountText: {
     fontSize: 12,
@@ -475,7 +467,13 @@ const createStyles = (colors) => StyleSheet.create({
   sortButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
   },
   sortButtonText: {
     fontSize: 12,

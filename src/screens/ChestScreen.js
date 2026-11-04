@@ -5,14 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableOpacity,
   RefreshControl,
   StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
-import BookCover from '../components/BookCover';
+import BookCover, { useShelfCoverWidth } from '../components/BookCover';
 import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
@@ -20,10 +19,12 @@ import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from '../components/Touchable';
 
 export default function ChestScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const coverWidth = useShelfCoverWidth();
   const [chestBooks, setChestBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -163,30 +164,30 @@ export default function ChestScreen({ navigation }) {
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Touchable onPress={() => setSearchQuery('')}>
               <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
+            </Touchable>
           )}
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity
+          <Touchable
             style={[styles.actionBtn, styles.restoreAllBtn, chestBooks.length === 0 && styles.disabledBtn]}
             onPress={handleRestoreAll}
             disabled={chestBooks.length === 0}
             activeOpacity={0.8}
           >
             <Text style={styles.restoreAllBtnText}>Restaurar Todos</Text>
-          </TouchableOpacity>
+          </Touchable>
 
-          <TouchableOpacity
+          <Touchable
             style={[styles.actionBtn, styles.emptyChestBtn, chestBooks.length === 0 && styles.disabledBtn]}
             onPress={handleEmptyChest}
             disabled={chestBooks.length === 0}
             activeOpacity={0.8}
           >
             <Text style={styles.emptyChestBtnText}>Esvaziar Baú</Text>
-          </TouchableOpacity>
+          </Touchable>
         </View>
 
         {loading && <LoadingView message="Abrindo o baú literário..." />}
@@ -222,26 +223,28 @@ export default function ChestScreen({ navigation }) {
                   coverColor={book.coverColor}
                   titleColor={book.titleColor}
                   totalPages={book.totalPages}
+                  coverImage={book.coverImage}
+                  width={coverWidth}
                   size="medium"
                 />
 
-                <View style={styles.cardButtonsRow}>
-                  <TouchableOpacity
+                <View style={[styles.cardButtonsRow, { width: coverWidth }]}>
+                  <Touchable
                     style={styles.restoreBookBtn}
                     activeOpacity={0.8}
                     onPress={() => handleRestoreOne(book.id)}
                   >
                     <Ionicons name="arrow-up" size={13} color={colors.onPrimary} style={{ marginRight: 4 }} />
                     <Text style={styles.restoreBookBtnText}>Restaurar</Text>
-                  </TouchableOpacity>
+                  </Touchable>
 
-                  <TouchableOpacity
+                  <Touchable
                     style={styles.deleteBookBtn}
                     activeOpacity={0.8}
                     onPress={() => handleDeletePermanently(book.id)}
                   >
                     <Ionicons name="trash-outline" size={16} color={colors.danger} />
-                  </TouchableOpacity>
+                  </Touchable>
                 </View>
               </View>
             ))}
@@ -269,7 +272,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginBottom: 14,
   },
   searchContainer: {

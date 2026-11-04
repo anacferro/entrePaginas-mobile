@@ -1,31 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from './Avatar';
-import { cloud } from '../services/cloud';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
-
-const syncInfo = (colors) => ({
-  idle: { label: 'Salvo', color: colors.success },
-  synced: { label: 'Sincronizado', color: colors.success },
-  syncing: { label: 'Sincronizando', color: colors.accentGold },
-  offline: { label: 'Offline', color: colors.textMuted },
-  error: { label: 'Falha ao sincronizar', color: colors.danger },
-});
+import Touchable from './Touchable';
 
 export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPress }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const [syncStatus, setSyncStatus] = useState(cloud.getStatus());
-
-  useEffect(() => cloud.subscribe(setSyncStatus), []);
-
-  const infos = syncInfo(colors);
-  const sync = infos[syncStatus] || infos.idle;
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <Touchable 
         style={styles.brandRow} 
         activeOpacity={0.7}
         onPress={onLogoPress}
@@ -37,21 +25,26 @@ export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPre
           <Text style={styles.brandTitle}>Entre Páginas</Text>
           <Text style={styles.brandSubtitle}>{subtitle}</Text>
         </View>
-      </TouchableOpacity>
+      </Touchable>
 
       <View style={styles.rightRow}>
-        <View style={styles.syncBadge}>
-          <View style={[styles.syncDot, { backgroundColor: sync.color }]} />
-          <Text style={styles.syncText}>{sync.label}</Text>
-        </View>
+        <Touchable
+          style={styles.iconButton}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Settings')}
+          accessibilityRole="button"
+          accessibilityLabel="Abrir configurações"
+        >
+          <Ionicons name="settings-outline" size={20} color={colors.primary} />
+        </Touchable>
 
-        <TouchableOpacity 
+        <Touchable 
           style={styles.avatarButton} 
           activeOpacity={0.8}
           onPress={onProfilePress}
         >
-          <Avatar size={38} />
-        </TouchableOpacity>
+          <Avatar size={35} />
+        </Touchable>
       </View>
     </View>
   );
@@ -94,7 +87,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.primary,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     letterSpacing: -0.3,
   },
   brandSubtitle: {
@@ -108,34 +101,24 @@ const createStyles = (colors) => StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  syncBadge: {
-    flexDirection: 'row',
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.card,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  syncDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.success,
-    marginRight: 6,
-  },
-  syncText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
+    borderWidth: 1.5,
+    borderColor: colors.border,
   },
   avatarButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
     borderWidth: 1.5,
-    borderColor: colors.accentPeach,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
   avatarImage: {

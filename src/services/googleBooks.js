@@ -1,11 +1,12 @@
-const ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
+const GOOGLE_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
+const OPEN_LIBRARY_ENDPOINT = 'https://openlibrary.org/search.json';
 const TIMEOUT_MS = 10000;
 
 function secureUrl(url) {
   return url ? url.replace(/^http:/, 'https:') : null;
 }
 
-function toBook(item) {
+function fromGoogle(item) {
   const info = item.volumeInfo || {};
   return {
     id: item.id,
@@ -18,39 +19,71 @@ function toBook(item) {
   };
 }
 
+function fromOpenLibrary(doc) {
+  return {
+    id: doc.key,
+    title: doc.title || 'Sem título',
+    authors: (doc.author_name || []).slice(0, 3).join(', '),
+    description: '',
+    category: doc.subject?.[0] || null,
+    pageCount: doc.number_of_pages_median || null,
+    thumbnail: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+  };
+}
+
+async function request(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function searchGoogle(term) {
+  const key = process.env.EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY;
+  const url =
+    `${GOOGLE_ENDPOINT}?q=${encodeURIComponent(term)}&maxResults=8&printType=books` +
+    (key ? `&key=${key}` : '');
+  const response = await request(url);
+  if (!response.ok) {
+    const error = new Error('google-unavailable');
+    error.status = response.status;
+    throw error;
+  }
+  const data = await response.json();
+  return (data.items || []).map(fromGoogle);
+}
+
+async function searchOpenLibrary(term) {
+  const fields = 'key,title,author_name,number_of_pages_median,subject,cover_i';
+  const response = await request(
+    `${OPEN_LIBRARY_ENDPOINT}?q=${encodeURIComponent(term)}&limit=8&fields=${fields}`
+  );
+  if (!response.ok) throw new Error('open-library-unavailable');
+  const data = await response.json();
+  return (data.docs || []).map(fromOpenLibrary);
+}
+
 export const googleBooks = {
   async search(query) {
     const term = query.trim();
     if (!term) return [];
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
     try {
-      const response = await fetch(
-        `${ENDPOINT}?q=${encodeURIComponent(term)}&maxResults=8&printType=books`,
-        { signal: controller.signal }
-      );
-
-      if (response.status === 429) {
-        throw new Error('O limite de consultas do Google Books foi atingido. Tente novamente em instantes.');
+      return await searchGoogle(term);
+    } catch (googleError) {
+      try {
+        return await searchOpenLibrary(term);
+      } catch (fallbackError) {
+        const failure = googleError.name === 'AbortError' || fallbackError.name === 'AbortError'
+          ? 'A consulta demorou demais. Verifique a conexão e tente novamente.'
+          : googleError instanceof TypeError || fallbackError instanceof TypeError
+            ? 'Não foi possível conectar. Verifique a conexão com a internet.'
+            : 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
+        throw new Error(failure);
       }
-      if (!response.ok) {
-        throw new Error('O Google Books não respondeu como esperado. Tente novamente.');
-      }
-
-      const data = await response.json();
-      return (data.items || []).map(toBook);
-    } catch (e) {
-      if (e.name === 'AbortError') {
-        throw new Error('A consulta ao Google Books demorou demais. Verifique a conexão e tente novamente.');
-      }
-      if (e instanceof TypeError) {
-        throw new Error('Não foi possível conectar ao Google Books. Verifique a conexão com a internet.');
-      }
-      throw e;
-    } finally {
-      clearTimeout(timer);
     }
   },
 };

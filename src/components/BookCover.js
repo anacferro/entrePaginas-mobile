@@ -1,11 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
+
+export function useShelfCoverWidth() {
+  const { width } = useWindowDimensions();
+  return Math.min(155, Math.floor((width - 32) * 0.46));
+}
 
 export default function BookCover({
   title = 'Sem Título',
   coverColor = '#215C50',
   titleColor = '#FFFFFF',
   totalPages = 0,
+  coverImage = null,
+  width,
   size = 'medium',
   style,
 }) {
@@ -14,6 +21,13 @@ export default function BookCover({
     medium: { width: 155, height: 230, titleSize: 16, pageCountSize: 11, spineWidth: 7 },
     large: { width: 220, height: 320, titleSize: 22, pageCountSize: 13, spineWidth: 10 },
   }[size] || { width: 155, height: 230, titleSize: 16, pageCountSize: 11, spineWidth: 7 };
+
+  if (width && width < dimensions.width) {
+    const scale = width / dimensions.width;
+    dimensions.width = width;
+    dimensions.height = Math.round(dimensions.height * scale);
+    dimensions.titleSize = Math.max(11, Math.round(dimensions.titleSize * scale));
+  }
 
   return (
     <View
@@ -27,6 +41,10 @@ export default function BookCover({
         style,
       ]}
     >
+      {coverImage && (
+        <Image source={{ uri: coverImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      )}
+
       <View
         style={[
           styles.spineStrip,
@@ -38,6 +56,7 @@ export default function BookCover({
         ]}
       />
 
+      {!coverImage && (
       <View style={styles.contentArea}>
         <View style={styles.centerSection}>
           <Text
@@ -75,6 +94,7 @@ export default function BookCover({
           </Text>
         )}
       </View>
+      )}
     </View>
   );
 }

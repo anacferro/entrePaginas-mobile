@@ -4,48 +4,16 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   Modal,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import BookCover from './BookCover';
-import AiSuggest from './AiSuggest';
+import { Section, Field, CoverPicker, ColorRow, fieldStyles } from './FormBlocks';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
-
-function ColorRow({ label, options, value, onChange, outlined }) {
-  const { colors } = useTheme();
-  const styles = useThemedStyles(createStyles);
-  return (
-    <View style={styles.group}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <View style={styles.swatchesRow}>
-        {options.map((item) => (
-          <TouchableOpacity
-            key={item.color}
-            style={styles.swatchItem}
-            onPress={() => onChange(item.color)}
-            activeOpacity={0.7}
-            accessibilityLabel={`${label} ${item.label}`}
-          >
-            <View
-              style={[
-                styles.colorCircle,
-                { backgroundColor: item.color },
-                outlined && { borderWidth: 1, borderColor: colors.border },
-                value === item.color && styles.colorCircleSelected,
-              ]}
-            />
-            <Text style={styles.colorName}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-}
+import Touchable from './Touchable';
 
 export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const { colors } = useTheme();
@@ -57,6 +25,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [paperColor, setPaperColor] = useState('#F4EAE0');
   const [tags, setTags] = useState([]);
+  const [coverImage, setCoverImage] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -68,6 +37,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
       setTitleColor(book.titleColor);
       setPaperColor(book.paperColor || '#F4EAE0');
       setTags(book.tags || []);
+      setCoverImage(book.coverImage || null);
       setSaving(false);
     }
   }, [visible, book]);
@@ -75,17 +45,10 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const canSave = title.trim().length > 0 && !saving;
   const categories = CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES];
 
-  const handleApplySuggestion = (suggestion) => {
-    if (suggestion.category) setCategory(suggestion.category);
-    if (suggestion.tags) setTags(suggestion.tags);
-    if (suggestion.synopsis && !subtitle.trim()) setSubtitle(suggestion.synopsis);
-  };
-
-  const bookText = (book?.chapters || []).map(c => c.content).join('\n\n');
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor, tags });
+    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor, tags, coverImage });
     setSaving(false);
   };
 
@@ -97,94 +60,107 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
           <View style={styles.topBar}>
-            <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Touchable onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
+            </Touchable>
 
             <Text style={styles.topBarTitle}>Editar Livro</Text>
 
-            <TouchableOpacity
+            <Touchable
               style={[styles.saveBtn, !canSave && styles.saveBtnDisabled]}
               onPress={handleSave}
               disabled={!canSave}
               activeOpacity={0.8}
             >
               <Text style={styles.saveBtnText}>{saving ? 'Salvando...' : 'Salvar'}</Text>
-            </TouchableOpacity>
+            </Touchable>
           </View>
 
           <ScrollView
             style={styles.flex}
             contentContainerStyle={styles.body}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
           >
-            <View style={styles.previewBox}>
-              <BookCover
-                title={title.trim() || 'Novo Livro'}
+            <Section icon="image-outline" title="Capa" hint="Use uma foto sua ou escolha as cores da capa.">
+              <CoverPicker
+                title={title}
                 coverColor={coverColor}
                 titleColor={titleColor}
-                totalPages={book?.totalPages}
-                size="small"
+                coverImage={coverImage}
+                onChange={setCoverImage}
               />
-            </View>
+              {!coverImage && (
+                <>
+                  <ColorRow label="Cor da capa" options={COVER_COLORS} value={coverColor} onChange={setCoverColor} />
+                  <ColorRow label="Cor do título" options={TITLE_COLORS} value={titleColor} onChange={setTitleColor} outlined />
+                </>
+              )}
+            </Section>
 
-            <Text style={styles.fieldLabel}>Título da Obra *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome do livro..."
-              placeholderTextColor={colors.textMuted}
-              value={title}
-              onChangeText={setTitle}
-              accessibilityLabel="Título da obra"
-            />
+            <Section icon="create-outline" title="Informações">
+              <Field label="Título da obra *">
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nome do livro"
+                  placeholderTextColor={colors.textMuted}
+                  value={title}
+                  onChangeText={setTitle}
+                  returnKeyType="next"
+                  accessibilityLabel="Título da obra"
+                />
+              </Field>
 
-            <Text style={styles.fieldLabel}>Subtítulo ou Resumo Curto</Text>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              placeholder="Breve descrição ou notas editoriais..."
-              placeholderTextColor={colors.textMuted}
-              value={subtitle}
-              onChangeText={setSubtitle}
-              multiline
-              textAlignVertical="top"
-              accessibilityLabel="Subtítulo"
-            />
+              <Field label="Subtítulo ou resumo curto">
+                <TextInput
+                  style={[styles.input, styles.textarea]}
+                  placeholder="Breve descrição ou notas"
+                  placeholderTextColor={colors.textMuted}
+                  value={subtitle}
+                  onChangeText={setSubtitle}
+                  multiline
+                  blurOnSubmit
+                  accessibilityLabel="Subtítulo"
+                />
+              </Field>
 
-            <Text style={styles.fieldLabel}>Categoria</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-              {categories.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-                  onPress={() => setCategory(cat)}
-                >
-                  <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+              <Field label="Categoria">
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                  {categories.map((cat) => (
+                    <Touchable
+                      key={cat}
+                      style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                      onPress={() => setCategory(cat)}
+                    >
+                      <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                        {cat}
+                      </Text>
+                    </Touchable>
+                  ))}
+                </ScrollView>
+              </Field>
 
-            {tags.length > 0 && (
-              <View style={styles.tagsRow}>
-                {tags.map((tag) => (
-                  <TouchableOpacity
-                    key={tag}
-                    style={styles.tagChip}
-                    onPress={() => setTags(tags.filter(t => t !== tag))}
-                    accessibilityLabel={`Remover etiqueta ${tag}`}
-                  >
-                    <Text style={styles.tagText}>{tag} ×</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+              {tags.length > 0 && (
+                <Field label="Etiquetas">
+                  <View style={styles.tagsRow}>
+                    {tags.map((tag) => (
+                      <Touchable
+                        key={tag}
+                        style={styles.tagChip}
+                        onPress={() => setTags(tags.filter(t => t !== tag))}
+                        accessibilityLabel={`Remover etiqueta ${tag}`}
+                      >
+                        <Text style={styles.tagText}>{tag} ×</Text>
+                      </Touchable>
+                    ))}
+                  </View>
+                </Field>
+              )}
+            </Section>
 
-            <AiSuggest title={title} text={bookText} onApply={handleApplySuggestion} />
-
-            <ColorRow label="Cor da Capa" options={COVER_COLORS} value={coverColor} onChange={setCoverColor} />
-            <ColorRow label="Cor do Título" options={TITLE_COLORS} value={titleColor} onChange={setTitleColor} outlined />
-            <ColorRow label="Cor da Folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
+            <Section icon="document-text-outline" title="Folha de leitura" hint="Cor do fundo das páginas ao ler.">
+              <ColorRow label="Cor da folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
+            </Section>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -218,7 +194,7 @@ const createStyles = (colors) => StyleSheet.create({
   topBarTitle: {
     fontSize: 15,
     fontWeight: '700',
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     color: colors.text,
   },
   saveBtn: {
@@ -240,10 +216,6 @@ const createStyles = (colors) => StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 40,
   },
-  previewBox: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
   group: {
     marginTop: 4,
   },
@@ -254,19 +226,8 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 14,
     marginBottom: 6,
   },
-  input: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: colors.text,
-  },
-  multiline: {
-    height: 80,
-  },
+  input: fieldStyles(colors).input,
+  textarea: fieldStyles(colors).textarea,
   categoryScroll: {
     flexDirection: 'row',
   },

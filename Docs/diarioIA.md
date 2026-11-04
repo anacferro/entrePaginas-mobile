@@ -236,3 +236,11 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 
 - Testar no celular real a câmera, a permissão negada e o marca-texto.
 - Conferir no console do Firebase se os dados de teste (conta `teste.entrepaginas@example.com` e um livro de teste) devem ser apagados antes da apresentação.
+
+## 14. Rodada de ajustes de uso (revisão do usuário)
+
+**O que foi pedido:** corrigir páginas sorteadas ao criar livro, busca do Google Books que lembrava a pesquisa anterior e dava limite de consultas, ficha do livro em blocos, capa com foto, modo de leitura sem menus, exportação, biometria em etapas, botão de configurações no cabeçalho, padronização de botões e campos, e retirada de itens sem utilidade (selo de sincronização, ferramentas de avaliação, sugestão de categoria com IA).
+
+**O que foi feito:** o total de páginas passou a ser calculado pelo texto; a busca cai para a Open Library quando o Google Books recusa; os formulários ganharam blocos e campos de mesma altura; todos os botões passaram por um componente único com efeito ao passar o mouse e ao tocar; a biometria tenta a digital ou o rosto até 3 vezes e só depois pede a senha do aparelho.
+
+**O que o usuário/grupo ainda precisa revisar:** testar no celular real a foto de capa (galeria e câmera), a exportação pelo compartilhamento e a biometria em etapas.

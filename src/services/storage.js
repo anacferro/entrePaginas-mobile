@@ -18,6 +18,17 @@ async function saveBooks(list) {
   cloud.schedule(list);
 }
 
+const PAGE_SIZE = 1800;
+
+function pagesOf(chapters) {
+  const chars = (chapters || []).reduce((sum, chapter) => sum + (chapter.content || '').length, 0);
+  return Math.max(1, Math.ceil(chars / PAGE_SIZE));
+}
+
+function syncPages(book) {
+  if (book.isOwn !== false) book.totalPages = pagesOf(book.chapters);
+}
+
 function logChange(book, type, chapterTitle, before, after) {
   if (book.isOwn !== false) return;
   book.changeLog = [
@@ -120,7 +131,7 @@ export const storage = {
       coverColor: bookData.coverColor || '#215C50',
       titleColor: bookData.titleColor || '#FFFFFF',
       paperColor: bookData.paperColor || '#F4EAE0',
-      totalPages: bookData.totalPages || Math.floor(Math.random() * 80) + 12,
+      coverImage: bookData.coverImage || null,
       status: 'estante',
       isOwn: bookData.isOwn !== false,
       bookmarks: [],
@@ -135,6 +146,8 @@ export const storage = {
         }
       ]
     };
+
+    newBook.totalPages = bookData.totalPages || pagesOf(newBook.chapters);
 
     list.unshift(newBook);
     await saveBooks(list);
@@ -154,6 +167,7 @@ export const storage = {
     book.coverColor = updates.coverColor || book.coverColor;
     book.titleColor = updates.titleColor || book.titleColor;
     book.paperColor = updates.paperColor || book.paperColor;
+    if ('coverImage' in updates) book.coverImage = updates.coverImage || null;
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
     return book;
@@ -185,6 +199,7 @@ export const storage = {
     };
 
     book.chapters.push(newChapter);
+    syncPages(book);
     logChange(book, 'add', newChapter.title, null, newChapter);
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
@@ -209,6 +224,7 @@ export const storage = {
     }
 
     chapter.marks = relocateMarks(chapter.marks, chapter.content);
+    syncPages(book);
     logChange(book, 'edit', chapter.title, before, chapter);
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
@@ -242,6 +258,7 @@ export const storage = {
     const removed = book.chapters.find(c => c.id === chapterId);
     book.chapters = book.chapters.filter(c => c.id !== chapterId);
     book.bookmarks = (book.bookmarks || []).filter(bm => bm.chapterId !== chapterId);
+    syncPages(book);
     if (removed) logChange(book, 'delete', removed.title, removed, null);
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { diffSnippet } from '../services/marks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import Touchable from './Touchable';
 
 const typeInfo = (colors) => ({
   edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accentGold },
@@ -110,9 +111,9 @@ export default function ChangeHistoryModal({ visible, book, onClose }) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
+          </Touchable>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.topBarTitle}>Histórico de Alterações</Text>
             <Text style={styles.topBarSubtitle} numberOfLines={1}>{book?.title}</Text>
@@ -159,7 +160,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   topBarSubtitle: {
     fontSize: 12,
@@ -216,7 +217,7 @@ const createStyles = (colors) => StyleSheet.create({
   entryChapter: {
     fontSize: 12,
     color: colors.textSecondary,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
     marginTop: 1,
   },
   entryDate: {
@@ -252,7 +253,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: colors.text,
-    fontFamily: 'serif',
+    fontFamily: 'SpaceGrotesk_700Bold',
   },
   removedText: {
     backgroundColor: colors.diffRemove,

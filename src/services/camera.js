@@ -30,8 +30,8 @@ function explainDenied(canAskAgain) {
   );
 }
 
-async function keepPhoto(uri) {
-  const destination = new File(Paths.document, `page-${Date.now()}.jpg`);
+async function keepPhoto(uri, prefix = 'page') {
+  const destination = new File(Paths.document, `${prefix}-${Date.now()}.jpg`);
   await new File(uri).copy(destination);
   return destination.uri;
 }
@@ -57,6 +57,48 @@ export const camera = {
       return Platform.OS === 'web' ? uri : await keepPhoto(uri);
     } catch {
       dialog.alert('Falha na câmera', 'Não foi possível abrir a câmera ou salvar a foto. Tente novamente.');
+      return null;
+    }
+  },
+
+  async captureCover() {
+    if (Platform.OS !== 'web') {
+      const permission = await requestPermission();
+      if (!permission.granted) {
+        explainDenied(permission.canAskAgain);
+        return null;
+      }
+    }
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.length) return null;
+      const uri = result.assets[0].uri;
+      return Platform.OS === 'web' ? uri : await keepPhoto(uri, 'cover');
+    } catch {
+      dialog.alert('Falha na câmera', 'Não foi possível abrir a câmera ou salvar a foto. Tente novamente.');
+      return null;
+    }
+  },
+
+  async pickCover() {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [3, 4],
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.length) return null;
+      const uri = result.assets[0].uri;
+      return Platform.OS === 'web' ? uri : await keepPhoto(uri, 'cover');
+    } catch {
+      dialog.alert('Falha na galeria', 'Não foi possível abrir a galeria ou ler a imagem escolhida. Tente novamente.');
       return null;
     }
   },

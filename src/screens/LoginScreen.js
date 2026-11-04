@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   StatusBar,
   ScrollView,
   ActivityIndicator,
@@ -15,14 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
-
-const SPINES = [
-  { height: 92, width: 22 },
-  { height: 120, width: 26 },
-  { height: 104, width: 20 },
-  { height: 134, width: 28 },
-  { height: 98, width: 24 },
-];
+import Touchable from '../components/Touchable';
 
 function useEntrance(delay) {
   const [value] = useState(() => new Animated.Value(0));
@@ -41,6 +33,33 @@ function useEntrance(delay) {
   };
 }
 
+function useFloat(duration) {
+  const [value] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(value, {
+          toValue: 1,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(value, {
+          toValue: 0,
+          duration: duration / 2,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [value, duration]);
+  return {
+    transform: [{ translateY: value.interpolate({ inputRange: [0, 1], outputRange: [0, -9] }) }],
+  };
+}
+
 export default function LoginScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -49,6 +68,8 @@ export default function LoginScreen() {
 
   const heroAnim = useEntrance(0);
   const cardAnim = useEntrance(220);
+  const floatCard = useFloat(6000);
+  const floatPill = useFloat(7500);
 
   const handleGoogle = async () => {
     if (loading) return;
@@ -71,31 +92,42 @@ export default function LoginScreen() {
         bounces={false}
       >
         <LinearGradient colors={colors.hero} style={styles.hero}>
+          <View style={styles.blobA} />
+          <View style={styles.blobB} />
           <SafeAreaView edges={['top']} style={styles.heroSafe}>
             <Animated.View style={[styles.heroContent, heroAnim]}>
-              <View style={styles.spines}>
-                {SPINES.map((spine, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.spine,
-                      {
-                        height: spine.height,
-                        width: spine.width,
-                        backgroundColor: colors.heroSpines[index],
-                      },
-                    ]}
-                  >
-                    <View style={styles.spineBand} />
-                  </View>
-                ))}
+              <View style={styles.brandRow}>
+                <View style={styles.logo}>
+                  <Ionicons name="book" size={22} color={colors.onPrimary} />
+                </View>
+                <Text style={styles.brandName}>Entre Páginas</Text>
               </View>
-              <View style={styles.shelf} />
 
-              <Text style={styles.brandTitle}>Entre Páginas</Text>
-              <Text style={styles.brandTagline}>
-                Sua estante particular, criada e personalizada página por página.
+              <Text style={styles.headline}>
+                Sua estante particular, criada e personalizada{' '}
+                <Text style={styles.headlineGold}>página por página.</Text>
               </Text>
+
+              <View style={styles.art}>
+                <Animated.View style={[styles.artCard, floatCard]}>
+                  <View style={styles.artCover}>
+                    <Ionicons name="book" size={22} color={colors.onDark} />
+                  </View>
+                  <View style={styles.artInfo}>
+                    <View style={styles.artLineTitle} />
+                    <View style={styles.artLineSub} />
+                    <View style={styles.artTrack}>
+                      <View style={styles.artFill} />
+                    </View>
+                  </View>
+                </Animated.View>
+                <Animated.View style={[styles.artPill, floatPill]}>
+                  <View style={styles.artCheck}>
+                    <Ionicons name="checkmark" size={12} color={colors.onPrimary} />
+                  </View>
+                  <View style={styles.artPillLine} />
+                </Animated.View>
+              </View>
             </Animated.View>
           </SafeAreaView>
         </LinearGradient>
@@ -122,7 +154,7 @@ export default function LoginScreen() {
             </View>
           )}
 
-          <TouchableOpacity
+          <Touchable
             style={[styles.googleButton, loading && styles.googleButtonDisabled]}
             onPress={handleGoogle}
             disabled={loading}
@@ -140,7 +172,7 @@ export default function LoginScreen() {
                 <Text style={styles.googleText}>Continuar com o Google</Text>
               </>
             )}
-          </TouchableOpacity>
+          </Touchable>
 
           <View style={styles.trustRow}>
             <Ionicons name="shield-checkmark-outline" size={15} color={colors.textMuted} />
@@ -163,58 +195,152 @@ const createStyles = (colors) => StyleSheet.create({
     flexGrow: 1,
   },
   hero: {
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     overflow: 'hidden',
   },
   heroSafe: {
-    paddingHorizontal: 28,
-    paddingBottom: 40,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
   },
   heroContent: {
-    alignItems: 'center',
-    paddingTop: 36,
+    paddingTop: 20,
   },
-  spines: {
+  blobA: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    top: -90,
+    right: -80,
+    backgroundColor: 'rgba(242,182,50,0.16)',
+  },
+  blobB: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    bottom: -70,
+    left: -60,
+    backgroundColor: 'rgba(120,220,170,0.14)',
+  },
+  brandRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
   },
-  spine: {
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    justifyContent: 'flex-start',
-    paddingTop: 14,
-  },
-  spineBand: {
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.45)',
-  },
-  shelf: {
-    width: 190,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-    marginBottom: 26,
-  },
-  brandTitle: {
-    fontFamily: 'serif',
-    fontSize: 36,
-    fontWeight: '700',
+  brandName: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 20,
     color: colors.heroText,
-    textAlign: 'center',
-    letterSpacing: 0.4,
   },
-  brandTagline: {
-    fontFamily: 'serif',
-    fontStyle: 'italic',
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.heroTextMuted,
-    textAlign: 'center',
-    marginTop: 10,
-    maxWidth: 300,
+  headline: {
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 30,
+    lineHeight: 34,
+    letterSpacing: -1,
+    color: colors.heroText,
+    marginTop: 28,
+  },
+  headlineGold: {
+    color: '#F2B632',
+  },
+  art: {
+    marginTop: 28,
+    height: 110,
+    justifyContent: 'center',
+  },
+  artCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 14,
+    width: '86%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  artCover: {
+    width: 44,
+    height: 60,
+    borderRadius: 6,
+    backgroundColor: colors.covers.vinho,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  artInfo: {
+    flex: 1,
+    gap: 8,
+  },
+  artLineTitle: {
+    height: 9,
+    width: '70%',
+    borderRadius: 5,
+    backgroundColor: colors.text,
+    opacity: 0.85,
+  },
+  artLineSub: {
+    height: 7,
+    width: '45%',
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
+    opacity: 0.5,
+  },
+  artTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.surfaceMuted,
+    overflow: 'hidden',
+  },
+  artFill: {
+    width: '64%',
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+  },
+  artPill: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  artCheck: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  artPillLine: {
+    height: 7,
+    width: 44,
+    borderRadius: 4,
+    backgroundColor: colors.textMuted,
+    opacity: 0.5,
   },
   sheet: {
     flex: 1,
@@ -223,9 +349,9 @@ const createStyles = (colors) => StyleSheet.create({
     paddingBottom: 28,
   },
   formTitle: {
-    fontFamily: 'serif',
-    fontSize: 24,
-    fontWeight: '700',
+    fontFamily: 'SpaceGrotesk_700Bold',
+    fontSize: 26,
+    letterSpacing: -0.5,
     color: colors.text,
     textAlign: 'center',
   },
@@ -272,17 +398,17 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.danger,
   },
   googleButton: {
-    height: 56,
-    borderRadius: 28,
+    minHeight: 54,
+    borderRadius: 14,
     backgroundColor: colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    shadowColor: colors.primaryDark,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
     elevation: 5,
   },
   googleButtonDisabled: {
@@ -292,7 +418,7 @@ const createStyles = (colors) => StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: colors.card,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -309,8 +435,8 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 16,
   },
   trustText: {
-    fontSize: 12,
-    color: colors.textMuted,
+    fontSize: 12.5,
+    color: colors.textSecondary,
   },
   copyrightText: {
     fontSize: 11,
