@@ -30,7 +30,7 @@ export default function BookshelfScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('recent'); // 'recent' | 'az' | 'pages'
+  const [sortOrder, setSortOrder] = useState('recent');
 
   const loadData = async (isPullRefresh = false) => {
     try {
@@ -137,7 +137,6 @@ export default function BookshelfScreen({ navigation }) {
     else setSortOrder('recent');
   };
 
-  // Filter and sort
   const filteredBooks = books
     .filter((b) => {
       if (!searchQuery.trim()) return true;
@@ -175,7 +174,6 @@ export default function BookshelfScreen({ navigation }) {
           />
         }
       >
-        {/* Section: Sua Coleção */}
         <View style={styles.collectionHeaderRow}>
           <Text style={styles.collectionTitle}>Sua Coleção</Text>
           <View style={styles.cloudBadge}>
@@ -184,7 +182,6 @@ export default function BookshelfScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
@@ -209,9 +206,7 @@ export default function BookshelfScreen({ navigation }) {
           )}
         </View>
 
-        {/* Quick Action Banners */}
         <View style={styles.bannersRow}>
-          {/* Card: Baú Literário */}
           <TouchableOpacity
             style={styles.chestBanner}
             activeOpacity={0.85}
@@ -229,7 +224,6 @@ export default function BookshelfScreen({ navigation }) {
             <Text style={styles.bannerSubtitle}>Volumes em descanso</Text>
           </TouchableOpacity>
 
-          {/* Card: Novo Livro */}
           <TouchableOpacity
             style={styles.newBookBanner}
             activeOpacity={0.85}
@@ -248,7 +242,6 @@ export default function BookshelfScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Section: Minha Estante */}
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleWithCount}>
             <Text style={styles.sectionTitle}>Minha Estante</Text>
@@ -264,7 +257,6 @@ export default function BookshelfScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Listing State Handling: Loading, Error, Empty, List */}
         {loading && <LoadingView message="Organizando as prateleiras da estante..." />}
 
         {!loading && error && (

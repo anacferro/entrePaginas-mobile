@@ -26,7 +26,6 @@ export default function CreateBookScreen({ navigation, route }) {
   const initialTab = route?.params?.initialTab || 'create';
   const [activeTab, setActiveTab] = useState(initialTab === 'import' ? 'import' : 'create');
 
-  // Book Form State
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [category, setCategory] = useState('Literatura');
@@ -39,7 +38,6 @@ export default function CreateBookScreen({ navigation, route }) {
   const [suggestedPages, setSuggestedPages] = useState(null);
   const [tags, setTags] = useState([]);
 
-  // Import State
   const [selectedFormat, setSelectedFormat] = useState('pdf');
   const [importedFile, setImportedFile] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -166,7 +164,6 @@ export default function CreateBookScreen({ navigation, route }) {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Back Link */}
           <TouchableOpacity
             style={styles.backRow}
             onPress={() => navigation.navigate('Estante')}
@@ -176,7 +173,6 @@ export default function CreateBookScreen({ navigation, route }) {
             <Text style={styles.backText}>Voltar para a Estante</Text>
           </TouchableOpacity>
 
-          {/* Header Title with decorative icon */}
           <View style={styles.pageHeaderRow}>
             <View>
               <Text style={styles.pageTitle}>Criar Obra</Text>
@@ -187,7 +183,6 @@ export default function CreateBookScreen({ navigation, route }) {
             </View>
           </View>
 
-          {/* Segmented Switcher: Criar Livro | Importar */}
           <View style={styles.tabsSwitcher}>
             <TouchableOpacity
               style={[styles.tabButton, activeTab === 'create' && styles.tabButtonActive]}
@@ -223,9 +218,7 @@ export default function CreateBookScreen({ navigation, route }) {
           </View>
 
           {activeTab === 'create' ? (
-            /* TAB 1: CRIAR LIVRO MANUAL */
             <View>
-              {/* Visualização Tátil (Live Preview) */}
               <View style={styles.previewSection}>
                 <Text style={styles.sectionLabel}>VISUALIZAÇÃO TÁTIL</Text>
                 <View style={styles.previewCenterBox}>
@@ -239,14 +232,12 @@ export default function CreateBookScreen({ navigation, route }) {
                 </View>
               </View>
 
-              {/* Revestimento & Detalhes */}
               <View style={styles.formCard}>
                 <View style={styles.cardHeader}>
                   <Ionicons name="color-palette-outline" size={18} color={colors.secondary} />
                   <Text style={styles.cardHeaderTitle}>Revestimento & Detalhes</Text>
                 </View>
 
-                {/* Cor da Capa */}
                 <Text style={styles.swatchTitle}>Cor da Capa</Text>
                 <View style={styles.swatchesRow}>
                   {COVER_COLORS.map((item) => (
@@ -268,7 +259,6 @@ export default function CreateBookScreen({ navigation, route }) {
                   ))}
                 </View>
 
-                {/* Cor do Título */}
                 <Text style={[styles.swatchTitle, { marginTop: 14 }]}>Cor do Título</Text>
                 <View style={styles.swatchesRow}>
                   {TITLE_COLORS.map((item) => (
@@ -290,7 +280,6 @@ export default function CreateBookScreen({ navigation, route }) {
                   ))}
                 </View>
 
-                {/* Cor da Folha */}
                 <Text style={[styles.swatchTitle, { marginTop: 14 }]}>Cor da Folha</Text>
                 <View style={styles.swatchesRow}>
                   {PAPER_COLORS.map((item) => (
@@ -315,7 +304,6 @@ export default function CreateBookScreen({ navigation, route }) {
 
               <GoogleBooksSearch onSelect={handleSelectGoogleBook} />
 
-              {/* Ficha Catalográfica */}
               <View style={styles.formCard}>
                 <View style={styles.cardHeaderWithMeta}>
                   <View style={styles.cardHeader}>
@@ -425,7 +413,6 @@ export default function CreateBookScreen({ navigation, route }) {
               </View>
             </View>
           ) : (
-            /* TAB 2: IMPORTAR CONTEÚDO */
             <View>
               <View style={styles.importHeaderRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -435,7 +422,6 @@ export default function CreateBookScreen({ navigation, route }) {
                 <Text style={styles.extractBadge}>Extração Automática</Text>
               </View>
 
-              {/* 4 Format Options (2x2 Grid) */}
               <View style={styles.formatsGrid}>
                 <TouchableOpacity
                   style={[styles.formatCard, selectedFormat === 'pdf' && styles.formatCardActive]}
@@ -482,7 +468,6 @@ export default function CreateBookScreen({ navigation, route }) {
                 </TouchableOpacity>
               </View>
 
-              {/* Upload Area */}
               <TouchableOpacity
                 style={styles.dropZone}
                 activeOpacity={0.8}
@@ -539,7 +524,6 @@ export default function CreateBookScreen({ navigation, route }) {
             </View>
           )}
 
-          {/* Bottom Persistence Status & Action */}
           <View style={styles.bottomCard}>
             <View style={styles.syncStatusRow}>
               <View style={styles.statusIndicatorRow}>

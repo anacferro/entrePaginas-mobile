@@ -7,31 +7,26 @@ export const colors = {
   border: '#E6DCD1',
   borderLight: '#EFE6DC',
   
-  // Brand colors
   primary: '#215C50',
   primaryDark: '#17433A',
   primaryLight: '#E7F0ED',
   
-  // Secondary / Accents
   secondary: '#C05C46',
   secondaryLight: '#FBEBE7',
   accentPeach: '#F2A68D',
   accentGold: '#C9933B',
   
-  // Texts
   text: '#2A2523',
   textSecondary: '#6F665E',
   textMuted: '#9B928A',
   textLight: '#FDFCFA',
   
-  // Status
   success: '#2E7D32',
   successLight: '#E8F5E9',
   warning: '#ED6C02',
   danger: '#B3261E',
   dangerLight: '#FDECEA',
   
-  // Book cover presets
   covers: {
     clean: '#D9C8B5',
     floresta: '#215C50',
@@ -43,7 +38,6 @@ export const colors = {
     grafite: '#2C3539',
   },
 
-  // Reader Themes
   reader: {
     light: {
       background: '#F4EAE0',

@@ -109,7 +109,6 @@ export const INITIAL_BOOKS = [
       }
     ]
   },
-  // Livros guardados no Baú
   {
     id: 'book-6',
     title: 'Manuscritos de Outono',
@@ -156,6 +155,6 @@ export const INITIAL_USER = {
   name: 'Camila Duarte',
   email: 'camila.livros@gmail.com',
   avatarUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=240&auto=format&fit=crop&q=80',
-  readerTheme: 'light', // 'light' | 'dark'
+  readerTheme: 'light',
   fontSize: 18
 };

@@ -56,9 +56,6 @@ export const storage = {
     await saveBooks(merged);
   },
 
-  /**
-   * Inicializa o armazenamento local caso ainda esteja vazio.
-   */
   async init(authUser) {
     try {
       const stored = await AsyncStorage.getItem(KEYS.BOOKS);
@@ -74,10 +71,6 @@ export const storage = {
     }
   },
 
-  /**
-   * Retorna os livros da Estante (status = 'estante').
-   * Permite simulação de atraso e erro para fins avaliativos de UI.
-   */
   async getBooks(delayMs = 400) {
     if (delayMs > 0) {
       await new Promise(r => setTimeout(r, delayMs));
@@ -93,9 +86,6 @@ export const storage = {
     return list.filter(b => b.status === 'estante');
   },
 
-  /**
-   * Retorna os livros arquivados no Baú (status = 'bau').
-   */
   async getChestBooks(delayMs = 400) {
     if (delayMs > 0) {
       await new Promise(r => setTimeout(r, delayMs));
@@ -111,18 +101,12 @@ export const storage = {
     return list.filter(b => b.status === 'bau');
   },
 
-  /**
-   * Busca um livro por ID (para o leitor e detalhes).
-   */
   async getBookById(id) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : INITIAL_BOOKS;
     return list.find(b => b.id === id) || null;
   },
 
-  /**
-   * Adiciona um novo livro à estante com persistência local.
-   */
   async addBook(bookData) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -308,9 +292,6 @@ export const storage = {
     return book;
   },
 
-  /**
-   * Move um livro para o Baú.
-   */
   async moveToChest(id) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -323,9 +304,6 @@ export const storage = {
     return list;
   },
 
-  /**
-   * Restaura um livro do Baú de volta para a Estante.
-   */
   async restoreFromChest(id) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -338,9 +316,6 @@ export const storage = {
     return list;
   },
 
-  /**
-   * Restaura todos os livros do Baú de volta para a Estante.
-   */
   async restoreAllFromChest() {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -354,9 +329,6 @@ export const storage = {
     return list;
   },
 
-  /**
-   * Esvazia o Baú (exclui definitivamente os livros arquivados).
-   */
   async emptyChest() {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -365,9 +337,6 @@ export const storage = {
     return remaining;
   },
 
-  /**
-   * Exclusão definitiva de um livro específico.
-   */
   async deleteBookPermanently(id) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -376,9 +345,6 @@ export const storage = {
     return filtered;
   },
 
-  /**
-   * Perfil do usuário e preferências
-   */
   async getUserProfile() {
     const json = await AsyncStorage.getItem(KEYS.USER);
     return json ? JSON.parse(json) : INITIAL_USER;
@@ -391,9 +357,6 @@ export const storage = {
     return updated;
   },
 
-  /**
-   * Utilitários de controle para simulação de estados (Erro / Vazio)
-   */
   async setSimulateError(flag) {
     await AsyncStorage.setItem(KEYS.SIMULATE_ERROR, JSON.stringify(!!flag));
   },
@@ -403,16 +366,10 @@ export const storage = {
     return val ? JSON.parse(val) : false;
   },
 
-  /**
-   * Limpar toda a estante (para testar estado vazio)
-   */
   async clearAllBooks() {
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
   },
 
-  /**
-   * Redefinir para o estado padrão inicial
-   */
   async resetToDefaults() {
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(INITIAL_BOOKS));
     await AsyncStorage.setItem(KEYS.USER, JSON.stringify(INITIAL_USER));

@@ -74,7 +74,7 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 | **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. |
 | **Recurso nativo com permissão negada** | No editor de capítulo, toque em **Fotografar**. Se negar a câmera, o app explica e permite continuar; se o sistema bloquear, oferece abrir os ajustes. A biometria (*Proteger com biometria*, menu `⋮`) também explica quando não há biometria cadastrada. |
 | **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor), *Transcrever* (foto) e *Sugerir categoria e etiquetas com IA* (Novo Livro e Editar Livro). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
-| **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) e nega todo o resto. Teste: uma requisição REST sem login a `users/qualquer/books` retorna `403 PERMISSION_DENIED`. |
+| **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) e nega todo o resto. Teste feito com duas contas: o dono lê e grava; outra conta, dados inválidos e coleções não previstas recebem `403` (tabela em [Docs/EstruturaDados.md](Docs/EstruturaDados.md)). |
 | **Estrutura dos dados** | [Docs/EstruturaDados.md](Docs/EstruturaDados.md) e o arquivo de exemplo [Docs/exemplo-dados.json](Docs/exemplo-dados.json). |
 
 ### Estados de listagem (carregamento, vazio e erro)

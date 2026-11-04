@@ -49,8 +49,7 @@ export default function ProfileScreen({ navigation }) {
       });
       setReaderTheme(u.readerTheme || 'light');
       setSimulateError(isErr);
-    } catch (e) {
-      console.log('Error loading profile:', e);
+    } catch {
     }
   };
 
@@ -151,7 +150,6 @@ export default function ProfileScreen({ navigation }) {
       <Header subtitle="Perfil" />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* User Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarWrapper}>
             <Avatar size={60} style={styles.avatarImg} />
@@ -165,7 +163,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Stats Grid */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <View style={styles.statIconCircle}>
@@ -192,7 +189,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Armazenamento */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionCardHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -232,7 +228,6 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Preferências de Leitura */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionCardHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -275,7 +270,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Academic / Evaluator Test Utilities */}
         <View style={[styles.sectionCard, { borderColor: colors.borderLight }]}>
           <Text style={styles.academicTitle}>Ferramentas de Avaliação (Estados de Listagem)</Text>
           <Text style={styles.academicDesc}>
@@ -306,7 +300,6 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Danger / Logout Actions */}
         <View style={styles.logoutSection}>
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
             <Ionicons name="log-out-outline" size={18} color={colors.text} style={{ marginRight: 8 }} />

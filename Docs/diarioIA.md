@@ -214,7 +214,7 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 8. Acrescentou a proteção de livros por biometria, escolhida pelo usuário (menu do livro, cadeado na capa, bloqueio ao ir para segundo plano).
 9. Documentou estrutura de dados, regras, decisões (DA10 a DA14) e escreveu o tutorial de uso.
 10. Criou a sugestão de categoria, etiquetas e resumo curto com IA em JSON estruturado, com validação própria (`suggestion.js`) que recusa respostas fora do formato; testou os casos válidos, com cerca de crases, categoria desconhecida, lista, `null`, vazio e texto solto.
-11. Gerou `Docs/exemplo-dados.json`, atualizou o PRD (login por e-mail e senha) e testou que o Firestore recusa leitura e escrita sem login (HTTP 403).
+11. Gerou `Docs/exemplo-dados.json`, atualizou o PRD (login por e-mail e senha) e testou as regras do Firestore com duas contas temporárias (dono permitido; outra conta, dados inválidos e coleções não previstas negados), removendo as contas depois. Também retirou os comentários do código, a pedido do usuário, e achou e corrigiu uma função apagada por engano (`logChange`), que quebrava a edição de capítulos.
 
 **Decisões que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
 

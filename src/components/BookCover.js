@@ -6,7 +6,7 @@ export default function BookCover({
   coverColor = '#215C50',
   titleColor = '#FFFFFF',
   totalPages = 0,
-  size = 'medium', // 'small' | 'medium' | 'large'
+  size = 'medium',
   style,
 }) {
   const dimensions = {
@@ -27,7 +27,6 @@ export default function BookCover({
         style,
       ]}
     >
-      {/* Book spine crease */}
       <View
         style={[
           styles.spineStrip,
@@ -39,7 +38,6 @@ export default function BookCover({
         ]}
       />
 
-      {/* Book cover content */}
       <View style={styles.contentArea}>
         <View style={styles.centerSection}>
           <Text

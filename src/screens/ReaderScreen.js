@@ -25,7 +25,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 export default function ReaderScreen({ route, navigation }) {
-  // Navigation parameter passing: bookId, bookTitle
   const { bookId, bookTitle } = route.params || {};
 
   const [book, setBook] = useState(null);
@@ -39,7 +38,7 @@ export default function ReaderScreen({ route, navigation }) {
   const [annotating, setAnnotating] = useState(false);
   const [selection, setSelection] = useState(null);
   const [showTypography, setShowTypography] = useState(false);
-  const [themeMode, setThemeMode] = useState('light'); // 'light' | 'dark'
+  const [themeMode, setThemeMode] = useState('light');
   const [editorMode, setEditorMode] = useState(null);
   const scrollRef = useRef(null);
 
@@ -214,13 +213,11 @@ export default function ReaderScreen({ route, navigation }) {
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.surfaceSoft} />
       
-      {/* App Header */}
       <Header
         subtitle="Leitura"
         onProfilePress={() => navigation.navigate('MainTabs', { screen: 'Perfil' })}
       />
 
-      {/* Reader Specific Navigation Bar */}
       <View style={[styles.readerNavHeader, { backgroundColor: isDark ? '#242220' : colors.surfaceWarm }]}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -239,7 +236,6 @@ export default function ReaderScreen({ route, navigation }) {
           </Text>
         </View>
 
-        {/* Action icons: Sumário, Tipografia, Marcador */}
         <View style={styles.navIconsRow}>
           {book && (
             <TouchableOpacity
@@ -301,7 +297,6 @@ export default function ReaderScreen({ route, navigation }) {
         </View>
       </View>
 
-      {/* Typography settings popup */}
       {showTypography && (
         <View style={[styles.typoBar, { backgroundColor: isDark ? '#2B2826' : '#EFE7DC' }]}>
           <Text style={[styles.typoLabel, { color: readerTextColor }]}>Tamanho do Texto:</Text>
@@ -335,7 +330,6 @@ export default function ReaderScreen({ route, navigation }) {
         </View>
       )}
 
-      {/* Reader Content Body */}
       <View style={styles.readerScroll}>
         <ScrollView
           ref={scrollRef}
@@ -390,7 +384,6 @@ export default function ReaderScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
-          {/* Page counter & Navigation footer */}
           <View style={styles.pageFooter}>
             <TouchableOpacity
               style={[styles.pageNavBtn, currentPageIndex === 0 && { opacity: 0.3 }]}
@@ -473,7 +466,6 @@ export default function ReaderScreen({ route, navigation }) {
         )}
       </View>
 
-      {/* Sumário Modal (Table of Contents) */}
       <Modal
         visible={showSummary}
         transparent

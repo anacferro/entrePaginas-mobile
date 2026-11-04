@@ -151,7 +151,6 @@ export default function ChestScreen({ navigation }) {
       >
         <Text style={styles.screenTitle}>Baú de Livros</Text>
 
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
@@ -168,7 +167,6 @@ export default function ChestScreen({ navigation }) {
           )}
         </View>
 
-        {/* Global Batch Action Buttons */}
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={[styles.actionBtn, styles.restoreAllBtn, chestBooks.length === 0 && styles.disabledBtn]}
@@ -189,7 +187,6 @@ export default function ChestScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Listing States: Loading, Error, Empty, Grid */}
         {loading && <LoadingView message="Abrindo o baú literário..." />}
 
         {!loading && error && (
@@ -226,7 +223,6 @@ export default function ChestScreen({ navigation }) {
                   size="medium"
                 />
 
-                {/* Chest card actions matching Figma */}
                 <View style={styles.cardButtonsRow}>
                   <TouchableOpacity
                     style={styles.restoreBookBtn}

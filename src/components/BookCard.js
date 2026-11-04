@@ -72,7 +72,6 @@ export default function BookCard({
         </TouchableOpacity>
       </View>
 
-      {/* Action modal for options */}
       <Modal
         visible={menuVisible}
         transparent

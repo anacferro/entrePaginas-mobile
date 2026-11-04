@@ -98,6 +98,20 @@ Arquivo: [`firestore.rules`](../firestore.rules), publicado com `firebase deploy
   - capítulo: `title` texto com até 200 caracteres e `content` texto com até 200.000 caracteres.
 - **Negar por padrão:** qualquer outro caminho do banco é bloqueado.
 
+### Teste das regras (via API REST, com duas contas temporárias)
+
+| Operação | Resultado |
+| :--- | :--- |
+| Dono grava e lê o próprio livro | 200 |
+| Outra conta lê um livro alheio | 403 |
+| Outra conta grava no caminho de outro usuário | 403 |
+| Dono grava livro com `status` inválido | 403 |
+| Dono grava livro com título vazio | 403 |
+| Dono grava em coleção não prevista | 403 |
+| Requisição sem login válido | 401 (sem token, 403) |
+
+As contas de teste foram removidas ao final.
+
 ## 4. Como a sincronização funciona
 
 1. Ao entrar, o app lê os livros da nuvem e mescla com os locais. Para o mesmo livro vence a versão com `updatedAt` mais recente. Livros que só existem num dos lados são mantidos.

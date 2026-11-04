@@ -27,7 +27,6 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
           }
         };
 
-        // Custom render for the prominent center "Novo Livro" button
         if (route.name === 'CriarObra') {
           return (
             <TouchableOpacity
@@ -46,7 +45,6 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
           );
         }
 
-        // Standard tabs
         let iconName = 'book-outline';
         let label = 'Estante';
 
