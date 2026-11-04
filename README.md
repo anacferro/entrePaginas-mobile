@@ -9,17 +9,21 @@ Aplicativo mobile desenvolvido em **React Native com Expo (JavaScript)** onde ca
 O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (disponível em `Telas/` e `Docs/TelasMockup.md`):
 
 1. **Tela de Autenticação (`LoginScreen`):** Identidade visual editorial vintage, login somente com a conta Google (Firebase Authentication), sessão que permanece salva e rodapé institucional.
-2. **Minha Estante (`BookshelfScreen`):** Vitrine da coleção em grade de 2 colunas com capas táteis personalizadas, barra de busca com filtro em tempo real, banners de atalho rápido e menu de opções por livro.
-3. **Criar Obra (`CreateBookScreen`):** Ateliê de encadernação com **Visualização Tátil ao vivo** (live preview), paletas para cor da capa, cor do título e textura da folha, metadados da ficha catalográfica e campo para escrever o primeiro capítulo.
-4. **Importar Conteúdo (`CreateBookScreen` - Aba Importar):** Seleção de um arquivo real do aparelho (`expo-document-picker`) nos formatos PDF com texto, EPUB, Texto Puro (.txt / .md) e Estrutura JSON. O texto é extraído e dividido em capítulos automaticamente. PDFs digitalizados (imagem) geram um aviso e um livro para transcrição.
+2. **Minha Estante (`BookshelfScreen`):** Vitrine da coleção em grade de 2 colunas com capas táteis personalizadas, barra de busca com filtro em tempo real, banners de atalho rápido e menu de opções por livro. **Seleção múltipla:** segure um livro para selecioná-lo, toque nos outros para somar à seleção e use *Excluir* (ou *Todos*) na barra que aparece no topo. Livros que ainda estão baixando mostram uma barra de progresso na capa.
+3. **Criar Obra (`CreateBookScreen`):** Ateliê de encadernação com **Visualização Tátil ao vivo** (live preview), paletas para cor da capa, cor do título e textura da folha, metadados da ficha catalográfica, categorias editáveis (três padrão, com cadastro e exclusão), capa por foto (galeria ou câmera), cor da folha e **tipo de letra** (serifada, sem serifa ou máquina de escrever), e campo para escrever o primeiro capítulo. A busca do Google Books lista **apenas obras com texto completo** (domínio público, via Project Gutenberg): ao tocar em uma, o livro vai para a estante na hora, o app volta para a Estante e o texto é baixado em segundo plano com barra de progresso. Obras repetidas são avisadas antes de adicionar.
+4. **Importar Conteúdo (`CreateBookScreen` - Aba Importar):** Seleção de um arquivo real do aparelho (`expo-document-picker`) nos formatos PDF com texto, EPUB, Texto Puro (.txt / .md) e Estrutura JSON. O texto é extraído e dividido em capítulos automaticamente. PDFs digitalizados (imagem) geram um aviso e um livro para transcrição. Cada formato tem seu quadro, onde também dá para arrastar o arquivo (web). **Fontes:** em EPUBs com fonte embutida (`.ttf`/`.otf`, inclusive ofuscada) a letra original é guardada no aparelho e usada na leitura (opção *Original do livro* em *Editar Livro*); em PDFs o app identifica a família (Times, Arial, Courier) e usa a letra equivalente.
 5. **Baú Literário (`ChestScreen`):** Repositório de volumes em descanso, permitindo restauração individual, restauração em massa (`Restaurar Todos`) ou exclusão definitiva.
 6. **Perfil do Leitor (`ProfileScreen`):** Estatísticas de leitura (livros ativos, livros no baú, páginas lidas), medidor de armazenamento, atalho para as Configurações e utilitários para auditoria de estados.
 7. **Configurações (`SettingsScreen`):** Tema do aplicativo (Automático, Claro ou Escuro, salvo no aparelho), dados da conta com **Sair da conta** e **Apagar todos os dados** (livros do aparelho e da nuvem).
-8. **Modo Leitor (`ReaderScreen`):** Experiência de leitura imersiva com paginação, ajuste de tamanho de fonte (A- / A+), alternância de tema no leitor e modal de **Sumário** para salto direto entre capítulos. Inclui:
-   - **Escrita:** editor em tela cheia para editar, criar e excluir capítulos.
+8. **Modo Leitor (`ReaderScreen`):** Experiência de leitura imersiva com páginas de cerca de 1.800 caracteres, ajuste de tamanho de fonte (A- / A+), alternância de tema no leitor e modal de **Sumário** para salto direto entre capítulos. Inclui:
+   - **Páginas:** o texto é dividido em páginas reais; passe de página **arrastando para o lado** (ou com *Anterior* e *Próxima*). O arrasto fica desligado enquanto você grifa.
+   - **Folha e letra:** o leitor usa a cor da folha e o tipo de letra definidos no livro (ou a fonte original do EPUB); em folha escura o texto clareia sozinho.
+   - **Modo foco:** botão que esconde os menus para ler sem distração.
+   - **Escrita:** editor em tela cheia para editar, criar e excluir capítulos (somente em livros de autoria própria).
+   - **Comentários:** em obras de terceiros (Google Books ou importadas) o texto não pode ser alterado; o botão de comentários registra anotações presas à página, mostradas abaixo do texto.
    - **Marcadores:** marcação da página com título e cor do pin, listados na aba *Marcadores* do sumário.
    - **Marca-texto:** grifos em 5 cores, negrito, itálico e sublinhado sobre trechos selecionados.
-   - **Histórico de alterações:** em livros importados (que não são de autoria do usuário), toda edição fica registrada com a versão anterior e a nova, visível no menu `⋮` do livro.
+   - **Histórico de alterações:** registro das edições feitas em livros que não são de autoria do usuário (versão anterior e nova), visível no menu `⋮` do livro.
 
 ---
 
@@ -74,19 +78,17 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 | **Apagar dados** | Em **Perfil > Configurações > Dados**, *Apagar todos os dados* remove os livros do aparelho e da nuvem. Se a nuvem não responder, nada é apagado e o app avisa. |
 | **CRUD com persistência local e remota** | Crie, edite (menu `⋮` > *Editar Livro*), arquive (*Mover para o Baú*) e exclua livros e capítulos. Os dados ficam no AsyncStorage e no Firestore; o selo do cabeçalho mostra *Sincronizado*. Apague os dados do app, entre de novo e os livros voltam da nuvem. |
 | **Uso offline** | Desligue a internet: o app continua funcionando e o selo muda para *Offline*; ao religar, sincroniza sozinho. |
-| **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. |
+| **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. Cada resultado é conferido no catálogo do Project Gutenberg (API aberta) e só aparece se houver texto completo. |
 | **Recurso nativo com permissão negada** | No editor de capítulo, toque em **Fotografar**. Se negar a câmera, o app explica e permite continuar; se o sistema bloquear, oferece abrir os ajustes. A biometria (*Proteger com biometria*, menu `⋮`) também explica quando não há biometria cadastrada. |
-| **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor), *Transcrever* (foto) e *Sugerir categoria e etiquetas com IA* (Novo Livro e Editar Livro). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
+| **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor) e *Transcrever* (foto). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
 | **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) que entrou com o Google e nega todo o resto. Teste feito com duas contas: o dono lê e grava; outra conta, dados inválidos e coleções não previstas recebem `403` (tabela em [Docs/EstruturaDados.md](Docs/EstruturaDados.md)). |
 | **Estrutura dos dados** | [Docs/EstruturaDados.md](Docs/EstruturaDados.md) e o arquivo de exemplo [Docs/exemplo-dados.json](Docs/exemplo-dados.json). |
 
 ### Estados de listagem (carregamento, vazio e erro)
 
-Na aba **Perfil**, a seção de avaliação ajuda a validar:
-
-- **Carregamento:** puxe a lista para baixo (pull-to-refresh) na Estante ou no Baú.
-- **Vazio:** use *Testar Estado Vazio* no Perfil ou busque um termo inexistente.
-- **Erro:** ative *Simular Erro nas Listagens*; Estante e Baú mostram o erro tratado com **Tentar Novamente**. *Restaurar Padrões* devolve o acervo original.
+- **Carregamento:** puxe a lista para baixo (pull-to-refresh) na Estante ou no Baú; na busca, o Google Books mostra o indicador de carregamento.
+- **Vazio:** busque um termo inexistente na Estante ou use uma conta sem livros.
+- **Erro:** sem internet, a busca do Google Books mostra o erro tratado com **Tentar novamente**.
 
 ---
 
@@ -136,7 +138,6 @@ entrePaginas-mobile/
 │   ├── context/
 │   │   └── AuthContext.js     # Usuário autenticado e sessão persistente
 │   ├── components/            # Componentes reutilizáveis
-│   │   ├── AiSuggest.js       # Sugestão de categoria e etiquetas por IA
 │   │   ├── AiSummary.js       # Resumo do capítulo por IA
 │   │   ├── Avatar.js          # Iniciais do usuário
 │   │   ├── AnnotatedText.js   # Texto do leitor com grifos e seleção de trechos
@@ -145,12 +146,16 @@ entrePaginas-mobile/
 │   │   ├── BookCover.js       # Capa de livro artesanal tátil
 │   │   ├── ChangeHistoryModal.js # Histórico de alterações (antes/depois)
 │   │   ├── ChapterEditor.js   # Editor de capítulos em tela cheia
+│   │   ├── CommentsModal.js   # Comentários em obras de terceiros
 │   │   ├── CustomTabBar.js    # Barra de navegação inferior customizada
 │   │   ├── EmptyView.js       # Tratamento de estado vazio
 │   │   ├── ErrorView.js       # Tratamento de estado de erro com retry
-│   │   ├── GoogleBooksSearch.js # Busca de dados no Google Books
+│   │   ├── FormatCard.js      # Quadro de importação por formato (toque ou arraste)
+│   │   ├── FormBlocks.js      # Campos, seções, botões e seletores padronizados do formulário
+│   │   ├── GoogleBooksSearch.js # Busca no Google Books limitada a obras com texto completo
 │   │   ├── Header.js          # Barra superior institucional
-│   │   └── LoadingView.js     # Tratamento de estado de carregamento
+│   │   ├── LoadingView.js     # Tratamento de estado de carregamento
+│   │   └── Touchable.js       # Botão base com cor ao passar o mouse e ao tocar
 │   ├── navigation/
 │   │   └── AppNavigator.js    # Configuração de rotas (Stack e Bottom Tabs)
 │   ├── screens/               # Telas do fluxo da aplicação
@@ -163,23 +168,30 @@ entrePaginas-mobile/
 │   │   └── SettingsScreen.js  # Tema, conta (sair) e apagar dados
 │   ├── services/
 │   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
+│   │   ├── bookFonts.js       # Guarda e carrega a fonte original de livros importados
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
 │   │   ├── ai.js              # Resumo, transcrição e sugestão por IA (Gemini via Firebase AI Logic)
 │   │   ├── auth.js            # Cadastro, login e logout (Firebase Authentication)
+│   │   ├── categories.js      # Categorias editáveis do usuário
 │   │   ├── cloud.js           # Sincronização dos livros com o Firestore
 │   │   ├── dialog.js          # Alertas e confirmações (nativo e web)
-│   │   ├── epubParser.js      # Extração de texto de EPUBs
+│   │   ├── epubParser.js      # Extração de texto e fonte embutida de EPUBs
 │   │   ├── exporter.js        # Exportação de livro em TXT e JSON
 │   │   ├── firebase.js        # Inicialização do Firebase (variáveis do .env)
+│   │   ├── fontHints.js       # Classifica fontes (serifada, sem serifa, monoespaçada)
 │   │   ├── googleBooks.js     # Consulta à API do Google Books
+│   │   ├── googleImport.js    # Baixa o texto completo de um livro em segundo plano
+│   │   ├── importProgress.js  # Progresso dos livros em download
 │   │   ├── importer.js        # Seleção e importação de arquivos
 │   │   ├── marks.js           # Grifos, marcadores e comparação antes/depois
 │   │   ├── mockData.js        # Dados seminais de livros e usuário
-│   │   ├── pdfParser.js       # Extração de texto e páginas de PDFs
+│   │   ├── pagination.js      # Divide os capítulos em páginas de leitura
+│   │   ├── pdfParser.js       # Extração de texto, páginas e fonte de PDFs
+│   │   ├── publicDomain.js    # Busca e baixa textos do Project Gutenberg
 │   │   ├── storage.js         # Camada de persistência local (AsyncStorage)
 │   │   └── suggestion.js      # Validação da resposta estruturada da IA
 │   └── theme/
-│       ├── bookOptions.js     # Cores de capa e categorias
+│       ├── bookOptions.js     # Cores de capa, folha, categorias e tipos de letra
 │       ├── palettes.js        # Paletas Claro e Escuro
 │       └── ThemeContext.js    # Tema do app (provedor, hooks e escopo do leitor)
 ├── App.js                     # Ponto de entrada do aplicativo
