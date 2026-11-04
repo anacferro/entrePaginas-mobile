@@ -16,6 +16,8 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding, height: barHeight }]}>
       {state.routes.map((route, index) => {
+        if (route.name === 'Perfil') return null;
+
         const isFocused = state.index === index;
 
         const onPress = () => {
@@ -57,9 +59,6 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         } else if (route.name === 'Bau') {
           iconName = isFocused ? 'archive' : 'archive-outline';
           label = 'Baú';
-        } else if (route.name === 'Perfil') {
-          iconName = isFocused ? 'person' : 'person-outline';
-          label = 'Perfil';
         }
 
         return (
