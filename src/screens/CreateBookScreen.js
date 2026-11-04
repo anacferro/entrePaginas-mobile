@@ -465,7 +465,8 @@ const createStyles = (colors) => StyleSheet.create({
   backRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    minHeight: 40,
+    marginBottom: 4,
   },
   backText: {
     fontSize: 13,

@@ -233,7 +233,11 @@ export default function BookshelfScreen({ navigation }) {
             onChangeText={setSearchQuery}
           />
           {searchQuery.length > 0 && (
-            <Touchable onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Touchable
+              onPress={() => setSearchQuery('')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Limpar busca"
+            >
               <Ionicons name="close-circle" size={18} color={colors.textMuted} />
             </Touchable>
           )}

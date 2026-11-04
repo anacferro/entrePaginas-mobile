@@ -15,7 +15,6 @@ import {
   PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Header from '../components/Header';
 import ChapterEditor from '../components/ChapterEditor';
 import AnnotatedText from '../components/AnnotatedText';
 import AiSummary from '../components/AiSummary';
@@ -272,16 +271,13 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
       
       {!focusMode && (
         <>
-        <Header
-          subtitle="Leitura"
-          onProfilePress={() => navigation.navigate('MainTabs', { screen: 'Perfil' })}
-        />
-
         <View style={[styles.readerNavHeader, { backgroundColor: colors.surfaceWarm }]}>
+          <View style={styles.navTitleRow}>
           <Touchable
             style={styles.backBtn}
             onPress={() => navigation.goBack()}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel="Voltar"
           >
             <Ionicons name="arrow-back" size={20} color={readerTextColor} />
           </Touchable>
@@ -293,6 +289,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Text style={[styles.chapterHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
               {currentChapter.title}
             </Text>
+          </View>
           </View>
 
           <View style={styles.navIconsRow}>
@@ -377,6 +374,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Touchable
               style={styles.fontBtn}
               onPress={() => setFontSize(Math.max(14, fontSize - 2))}
+              accessibilityLabel="Diminuir texto"
             >
               <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A-</Text>
             </Touchable>
@@ -386,6 +384,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Touchable
               style={styles.fontBtn}
               onPress={() => setFontSize(Math.min(26, fontSize + 2))}
+              accessibilityLabel="Aumentar texto"
             >
               <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A+</Text>
             </Touchable>
@@ -394,6 +393,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
           <Touchable
             style={[styles.themePill, { backgroundColor: colors.card }]}
             onPress={() => setReaderDark(!isDark)}
+            accessibilityLabel={isDark ? 'Usar leitor claro' : 'Usar leitor escuro'}
           >
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={15} color={readerTextColor} />
             <Text style={[styles.themePillText, { color: readerTextColor }]}>
@@ -536,16 +536,16 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
               <View style={styles.toolDivider} />
 
-              <Touchable style={styles.toolBtn} onPress={() => applyFormat('bold')} disabled={!selection}>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('bold')} disabled={!selection} accessibilityLabel="Negrito">
                 <Text style={[styles.toolText, { color: readerTextColor, fontWeight: '800' }]}>B</Text>
               </Touchable>
-              <Touchable style={styles.toolBtn} onPress={() => applyFormat('italic')} disabled={!selection}>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('italic')} disabled={!selection} accessibilityLabel="Itálico">
                 <Text style={[styles.toolText, { color: readerTextColor, fontStyle: 'italic' }]}>I</Text>
               </Touchable>
-              <Touchable style={styles.toolBtn} onPress={() => applyFormat('underline')} disabled={!selection}>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('underline')} disabled={!selection} accessibilityLabel="Sublinhado">
                 <Text style={[styles.toolText, { color: readerTextColor, textDecorationLine: 'underline' }]}>U</Text>
               </Touchable>
-              <Touchable style={styles.toolBtn} onPress={() => applyFormat('clear')} disabled={!selection}>
+              <Touchable style={styles.toolBtn} onPress={() => applyFormat('clear')} disabled={!selection} accessibilityLabel="Remover formatação">
                 <Ionicons name="backspace-outline" size={19} color={readerTextColor} />
               </Touchable>
             </View>
@@ -566,7 +566,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 <Ionicons name="list" size={20} color={colors.primary} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>Sumário da Obra</Text>
               </View>
-              <Touchable onPress={() => setShowSummary(false)}>
+              <Touchable
+                onPress={() => setShowSummary(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Fechar sumário"
+              >
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </Touchable>
             </View>
@@ -709,7 +713,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 <Ionicons name="bookmark" size={20} color={bookmarkColor} style={{ marginRight: 8 }} />
                 <Text style={styles.modalTitle}>{currentBookmark ? 'Página Marcada' : 'Marcar Página'}</Text>
               </View>
-              <Touchable onPress={() => setShowBookmarkSheet(false)}>
+              <Touchable
+                onPress={() => setShowBookmarkSheet(false)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityLabel="Fechar marcador"
+              >
                 <Ionicons name="close" size={24} color={colors.textSecondary} />
               </Touchable>
             </View>
@@ -726,9 +734,10 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
             <Text style={styles.sheetLabel}>Cor do pin</Text>
             <View style={styles.pinColorsRow}>
-              {PIN_COLORS.map(color => (
+              {PIN_COLORS.map((color, index) => (
                 <Touchable
                   key={color}
+                  accessibilityLabel={`Cor do marcador ${index + 1}`}
                   onPress={() => setBookmarkColor(color)}
                   style={[styles.pinOption, bookmarkColor === color && { borderColor: color }]}
                 >
@@ -820,12 +829,15 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
   },
   readerNavHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingTop: 6,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
+  },
+  navTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backBtn: {
     padding: 4,
@@ -846,11 +858,13 @@ const createStyles = (colors) => StyleSheet.create({
   navIconsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    marginTop: 4,
   },
   iconBtn: {
-    padding: 4,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
   iconBtnActive: {
     backgroundColor: colors.secondary,

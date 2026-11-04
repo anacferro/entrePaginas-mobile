@@ -57,7 +57,11 @@ export default function GoogleBooksSearch({ onSelect }) {
           <Ionicons name="search-outline" size={18} color={colors.primary} />
           <Text style={styles.cardHeaderTitle}>Buscar no Google Books</Text>
         </View>
-        <Touchable onPress={() => setCatalog({ letter: null })} accessibilityLabel="Abrir catálogo de A a Z">
+        <Touchable
+          onPress={() => setCatalog({ letter: null })}
+          hitSlop={{ top: 14, bottom: 14, left: 10, right: 10 }}
+          accessibilityLabel="Abrir catálogo de A a Z"
+        >
           <Text style={styles.catalogLink}>Catálogo A-Z</Text>
         </Touchable>
       </View>
