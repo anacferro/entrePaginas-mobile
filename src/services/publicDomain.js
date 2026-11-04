@@ -1,5 +1,7 @@
-const SEARCH_ENDPOINT = 'https://gutendex.com/books';
-const TIMEOUT_MS = 20000;
+const SEARCH_ENDPOINT = 'https://www.gutenberg.org/ebooks/search.opds/';
+const TEXT_ENDPOINT = 'https://www.gutenberg.org/cache/epub';
+const TIMEOUT_MS = 30000;
+const MAX_CHARS = 1200000;
 
 function normalize(text) {
   return (text || '')
@@ -21,18 +23,33 @@ async function request(url) {
   }
 }
 
-function textUrlOf(formats) {
-  const key = Object.keys(formats || {}).find(k => k.startsWith('text/plain'));
-  return key ? formats[key] : null;
+function decode(text) {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'");
 }
 
-function surnameMatches(book, authors) {
+function parseEntries(xml) {
+  const entries = [];
+  const pattern = /<entry>([\s\S]*?)<\/entry>/g;
+  let match;
+  while ((match = pattern.exec(xml))) {
+    const id = match[1].match(/\/ebooks\/(\d+)\.opds/)?.[1];
+    const title = match[1].match(/<title>([\s\S]*?)<\/title>/)?.[1];
+    const author = match[1].match(/<content[^>]*>([\s\S]*?)<\/content>/)?.[1] || '';
+    if (id && title) entries.push({ id, title: decode(title), author: decode(author) });
+  }
+  return entries;
+}
+
+function authorMatches(entryAuthor, authors) {
   const wanted = normalize(authors);
   if (!wanted) return true;
-  return (book.authors || []).some(author => {
-    const surname = normalize(author.name.split(',')[0]);
-    return surname && wanted.includes(surname);
-  });
+  const words = normalize(entryAuthor).split(' ').filter(word => word.length > 3);
+  return words.some(word => wanted.includes(word));
 }
 
 function stripGutenberg(raw) {
@@ -44,26 +61,37 @@ function stripGutenberg(raw) {
   return text.trim();
 }
 
+async function downloadText(id) {
+  for (const url of [`${TEXT_ENDPOINT}/${id}/pg${id}.txt`, `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`]) {
+    try {
+      const response = await request(url);
+      if (response.ok) return await response.text();
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 export const publicDomain = {
   async findFullText(title, authors) {
     try {
-      const response = await request(`${SEARCH_ENDPOINT}?search=${encodeURIComponent(title)}`);
+      const query = `${title} ${authors || ''}`.trim();
+      const response = await request(`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query).replace(/%20/g, '+')}`);
       if (!response.ok) return null;
-      const data = await response.json();
-      const wantedTitle = normalize(title);
 
-      const match = (data.results || []).find(
-        book =>
-          textUrlOf(book.formats) &&
-          normalize(book.title).startsWith(wantedTitle) &&
-          surnameMatches(book, authors)
+      const wantedTitle = normalize(title.split(':')[0]);
+      const match = parseEntries(await response.text()).find(
+        entry =>
+          normalize(entry.title.replace(/\([^)]*\)\s*$/, '')).startsWith(wantedTitle) &&
+          authorMatches(entry.author, authors)
       );
       if (!match) return null;
 
-      const textResponse = await request(textUrlOf(match.formats));
-      if (!textResponse.ok) return null;
-      const text = stripGutenberg(await textResponse.text());
-      return text.length > 2000 ? text : null;
+      const raw = await downloadText(match.id);
+      if (!raw) return null;
+      const text = stripGutenberg(raw);
+      return text.length > 2000 && text.length <= MAX_CHARS ? text : null;
     } catch {
       return null;
     }

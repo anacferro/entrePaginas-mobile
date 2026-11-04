@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,8 @@ import Header from '../components/Header';
 import ChapterEditor from '../components/ChapterEditor';
 import AnnotatedText from '../components/AnnotatedText';
 import AiSummary from '../components/AiSummary';
+import CommentsModal from '../components/CommentsModal';
+import { paginate } from '../services/pagination';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -53,6 +55,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [showTypography, setShowTypography] = useState(false);
   const [editorMode, setEditorMode] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -92,11 +95,15 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   ];
 
   const chapters = book?.chapters && book.chapters.length > 0 ? book.chapters : defaultChapters;
-  const currentChapter = chapters[currentPageIndex] || chapters[0];
-  const totalPages = book?.totalPages || Math.max(1, chapters.length);
-  const pageForIndex = (idx) => Math.floor((idx / chapters.length) * totalPages) + 1;
-  const currentPageNumber = pageForIndex(currentPageIndex);
-  const isLastChapter = currentPageIndex >= chapters.length - 1;
+  const pages = useMemo(() => paginate(chapters), [chapters]);
+  const pageIndex = Math.min(currentPageIndex, pages.length - 1);
+  const page = pages[pageIndex];
+  const currentChapter = chapters[page.chapterIndex];
+  const totalPages = pages.length;
+  const currentPageNumber = pageIndex + 1;
+  const isLastPage = pageIndex >= pages.length - 1;
+  const firstPageOf = (chapterId, list = pages) => Math.max(0, list.findIndex(p => p.chapterId === chapterId));
+  const pageForIndex = (idx) => firstPageOf(chapters[idx].id) + 1;
 
   const openNewChapter = () => {
     setShowSummary(false);
@@ -116,7 +123,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
       const updated = await storage.addChapter(book.id, { title, content, photo });
       if (updated) {
         setBook(updated);
-        setCurrentPageIndex(updated.chapters.length - 1);
+        setCurrentPageIndex(firstPageOf(updated.chapters[updated.chapters.length - 1].id, paginate(updated.chapters)));
       }
     } else {
       const updated = await storage.updateChapter(book.id, currentChapter.id, { title, content, photo });
@@ -130,12 +137,24 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     if (!updated) return;
     const keepId = currentChapter.id;
     setBook(updated);
-    setCurrentPageIndex(Math.max(0, updated.chapters.findIndex(c => c.id === keepId)));
+    setCurrentPageIndex(firstPageOf(keepId, paginate(updated.chapters)));
   };
 
   const isOwnBook = book?.isOwn !== false;
   const bookmarks = book?.bookmarks || [];
   const currentBookmark = bookmarks.find(bm => bm.chapterId === currentChapter.id);
+
+  const pageComments = (book?.comments || []).filter(cm => cm.page === currentPageNumber);
+
+  const handleAddComment = async (text) => {
+    const updated = await storage.addComment(book.id, { chapterId: currentChapter.id, page: currentPageNumber, text });
+    if (updated) setBook({ ...updated });
+  };
+
+  const handleRemoveComment = async (commentId) => {
+    const updated = await storage.removeComment(book.id, commentId);
+    if (updated) setBook({ ...updated });
+  };
 
   const toggleAnnotating = () => {
     setAnnotating(!annotating);
@@ -146,9 +165,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const applyFormat = async (type, color) => {
     if (!book || !selection) return;
     const content = currentChapter.content;
+    const start = selection.start + page.start;
+    const end = selection.end + page.start;
     const marks = type === 'clear'
-      ? clearMarks(currentChapter.marks, content, selection.start, selection.end)
-      : applyMark(currentChapter.marks, content, selection.start, selection.end, type, color);
+      ? clearMarks(currentChapter.marks, content, start, end)
+      : applyMark(currentChapter.marks, content, start, end, type, color);
 
     setBook(prev => ({
       ...prev,
@@ -183,8 +204,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   };
 
   const goToBookmark = (bm) => {
-    const idx = chapters.findIndex(c => c.id === bm.chapterId);
-    if (idx !== -1) setCurrentPageIndex(idx);
+    setCurrentPageIndex(firstPageOf(bm.chapterId));
     setShowSummary(false);
   };
 
@@ -206,7 +226,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             setEditorMode(null);
             if (updated) {
               setBook(updated);
-              setCurrentPageIndex(Math.max(0, currentPageIndex - 1));
+              setCurrentPageIndex(Math.max(0, firstPageOf(currentChapter.id) - 1));
             }
           },
         },
@@ -250,11 +270,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             {book && (
               <Touchable
                 style={styles.iconBtn}
-                onPress={() => setEditorMode('edit')}
-                accessibilityLabel="Editar capítulo"
+                onPress={() => (isOwnBook ? setEditorMode('edit') : setShowComments(true))}
+                accessibilityLabel={isOwnBook ? 'Editar capítulo' : 'Meus comentários'}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name="create-outline" size={20} color={readerTextColor} />
+                <Ionicons name={isOwnBook ? 'create-outline' : 'chatbubble-ellipses-outline'} size={20} color={readerTextColor} />
               </Touchable>
             )}
 
@@ -371,9 +391,9 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
           <AiSummary chapter={currentChapter} />
 
-          {currentChapter.photo && (
+          {page.photo && (
             <Image
-              source={{ uri: currentChapter.photo }}
+              source={{ uri: page.photo }}
               style={styles.pagePhoto}
               resizeMode="contain"
               accessibilityLabel="Foto da página"
@@ -381,8 +401,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
           )}
 
           <AnnotatedText
-            content={currentChapter.content}
-            marks={currentChapter.marks}
+            content={page.content}
+            marks={page.marks}
             annotating={annotating}
             onSelect={handleSelect}
             style={[
@@ -395,7 +415,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             ]}
           />
 
-          {book && isLastChapter && (
+          {pageComments.length > 0 && (
+            <View style={[styles.pageComments, { borderColor: colors.border }]}>
+              {pageComments.map(cm => (
+                <Touchable key={cm.id} onPress={() => setShowComments(true)} style={styles.pageComment}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.primary} />
+                  <Text style={[styles.pageCommentText, { color: readerTextColor }]}>{cm.text}</Text>
+                </Touchable>
+              ))}
+            </View>
+          )}
+
+          {book && isOwnBook && isLastPage && (
             <Touchable
               style={[styles.addChapterBtn, { borderColor: colors.border }]}
               onPress={openNewChapter}
@@ -410,9 +441,9 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
           <View style={styles.pageFooter}>
             <Touchable
-              style={[styles.pageNavBtn, currentPageIndex === 0 && { opacity: 0.3 }]}
-              disabled={currentPageIndex === 0}
-              onPress={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))}
+              style={[styles.pageNavBtn, pageIndex === 0 && { opacity: 0.3 }]}
+              disabled={pageIndex === 0}
+              onPress={() => setCurrentPageIndex(Math.max(0, pageIndex - 1))}
             >
               <Ionicons name="chevron-back" size={20} color={readerTextColor} />
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Anterior</Text>
@@ -423,14 +454,14 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 Página {currentPageNumber}
               </Text>
               <Text style={[styles.pageTotalText, { color: colors.textSecondary }]}>
-                de {totalPages} folhas
+                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'}
               </Text>
             </View>
 
             <Touchable
-              style={[styles.pageNavBtn, isLastChapter && { opacity: 0.3 }]}
-              disabled={isLastChapter}
-              onPress={() => setCurrentPageIndex(Math.min(chapters.length - 1, currentPageIndex + 1))}
+              style={[styles.pageNavBtn, isLastPage && { opacity: 0.3 }]}
+              disabled={isLastPage}
+              onPress={() => setCurrentPageIndex(Math.min(pages.length - 1, pageIndex + 1))}
             >
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Próxima</Text>
               <Ionicons name="chevron-forward" size={20} color={readerTextColor} />
@@ -559,21 +590,21 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                   key={chap.id || idx}
                   style={[
                     styles.tocItem,
-                    currentPageIndex === idx && styles.tocItemActive,
+                    page.chapterIndex === idx && styles.tocItemActive,
                   ]}
                   onPress={() => {
-                    setCurrentPageIndex(idx);
+                    setCurrentPageIndex(firstPageOf(chap.id));
                     setShowSummary(false);
                   }}
                 >
-                  <Text style={[styles.tocItemNumber, currentPageIndex === idx && styles.tocItemNumberActive]}>
+                  <Text style={[styles.tocItemNumber, page.chapterIndex === idx && styles.tocItemNumberActive]}>
                     {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                   </Text>
                   <View style={{ flex: 1 }}>
                     <Text
                       style={[
                         styles.tocItemTitle,
-                        currentPageIndex === idx && styles.tocItemTitleActive,
+                        page.chapterIndex === idx && styles.tocItemTitleActive,
                       ]}
                       numberOfLines={1}
                     >
@@ -589,10 +620,10 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                       style={{ marginRight: 6 }}
                     />
                   )}
-                  {currentPageIndex === idx && (
+                  {page.chapterIndex === idx && (
                     <Ionicons name="book" size={16} color={colors.primary} />
                   )}
-                  {book && chapters.length > 1 && (
+                  {book && isOwnBook && chapters.length > 1 && (
                     <View style={styles.tocMove}>
                       <Touchable
                         onPress={() => handleMoveChapter(chap.id, -1)}
@@ -617,7 +648,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             </ScrollView>
             )}
 
-            {book && summaryTab === 'chapters' && (
+            {book && isOwnBook && summaryTab === 'chapters' && (
               <Touchable style={styles.tocAddBtn} onPress={openNewChapter} activeOpacity={0.85}>
                 <Ionicons name="add" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
                 <Text style={styles.tocAddText}>Novo Capítulo</Text>
@@ -692,11 +723,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
       <ChapterEditor
         visible={editorMode !== null}
         chapter={editorMode === 'edit' ? currentChapter : null}
-        chapterNumber={editorMode === 'edit' ? currentPageIndex + 1 : chapters.length + 1}
-        notice={!isOwnBook ? 'Esta obra não é sua: as alterações ficarão registradas no histórico do livro.' : null}
+        chapterNumber={editorMode === 'edit' ? page.chapterIndex + 1 : chapters.length + 1}
         onCancel={() => setEditorMode(null)}
         onSave={handleSaveChapter}
         onDelete={handleDeleteChapter}
+      />
+      <CommentsModal
+        visible={showComments}
+        book={book}
+        pageNumber={currentPageNumber}
+        onAdd={handleAddComment}
+        onRemove={handleRemoveComment}
+        onClose={() => setShowComments(false)}
       />
       {focusMode && (
         <Touchable
@@ -712,6 +750,23 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 }
 
 const createStyles = (colors) => StyleSheet.create({
+  pageComments: {
+    marginTop: 18,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  pageComment: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  pageCommentText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    fontStyle: 'italic',
+  },
   focusExit: {
     position: 'absolute',
     top: 12,

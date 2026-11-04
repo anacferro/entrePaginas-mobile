@@ -145,7 +145,7 @@ export default function CreateBookScreen({ navigation, route }) {
               {
                 id: `chap-${Date.now()}-1`,
                 title: book.description ? 'Sinopse' : 'Capítulo 1',
-                content: book.description || 'Livro adicionado pela busca. Use o botão de editar capítulo para escrever ou colar o texto.',
+                content: book.description || 'Livro adicionado pela busca. Esta obra não traz o texto; use o botão de comentários no leitor para fazer suas anotações.',
               },
             ],
       });
@@ -156,7 +156,7 @@ export default function CreateBookScreen({ navigation, route }) {
         'Livro adicionado!',
         full
           ? `"${newBook.title}" já está na sua estante com o texto completo (domínio público).`
-          : `"${newBook.title}" já está na estante com a sinopse. A busca não traz o texto de livros com direitos autorais; para ler, escreva ou cole o conteúdo pelo leitor.`,
+          : `"${newBook.title}" já está na estante com a sinopse. A busca não traz o texto de livros com direitos autorais; no leitor você pode registrar seus comentários, sem alterar a obra.`,
         [{ text: 'Ver na Estante', onPress: () => navigation.navigate('Estante') }]
       );
     } catch {

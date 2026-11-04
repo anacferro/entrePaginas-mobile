@@ -298,6 +298,37 @@ export const storage = {
     return book;
   },
 
+  async addComment(bookId, { chapterId, page, text }) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.comments = [
+      ...(book.comments || []),
+      {
+        id: `comment-${Date.now()}`,
+        chapterId,
+        page,
+        text: String(text).slice(0, 2000),
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    await saveBooks(list);
+    return book;
+  },
+
+  async removeComment(bookId, commentId) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.comments = (book.comments || []).filter(cm => cm.id !== commentId);
+    await saveBooks(list);
+    return book;
+  },
+
   async removeBookmark(bookId, bookmarkId) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
