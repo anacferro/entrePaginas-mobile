@@ -1,8 +1,19 @@
-import { publicDomain } from './publicDomain';
+import { publicDomain, normalize } from './publicDomain';
 
 const GOOGLE_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 const OPEN_LIBRARY_ENDPOINT = 'https://openlibrary.org/search.json';
 const TIMEOUT_MS = 10000;
+const MAX_RESULTS = 15;
+
+const LANGUAGES = {
+  Portuguese: 'Português',
+  English: 'Inglês',
+  Spanish: 'Espanhol',
+  French: 'Francês',
+  German: 'Alemão',
+  Italian: 'Italiano',
+  Latin: 'Latim',
+};
 
 function secureUrl(url) {
   return url ? url.replace(/^http:/, 'https:') : null;
@@ -79,11 +90,81 @@ async function searchPublicDomain(term) {
     pageCount: null,
     thumbnail: `https://www.gutenberg.org/cache/epub/${entry.id}/pg${entry.id}.cover.medium.jpg`,
     gutenbergId: entry.id,
+    language: LANGUAGES[entry.language] || entry.language,
   }));
 }
 
+async function searchCatalogs(term) {
+  const errors = [];
+  for (const source of [searchGoogle, searchOpenLibrary]) {
+    try {
+      const books = await source(term);
+      const matched = await Promise.all(
+        books.map(async (book) => {
+          const entry = await publicDomain.findEntry(book.title, book.authors);
+          return entry ? { ...book, gutenbergId: entry.id } : null;
+        })
+      );
+      return matched.filter(Boolean);
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+  const failure = new Error('catalogs-unavailable');
+  failure.errors = errors;
+  throw failure;
+}
+
+function relevance(book, term) {
+  const wanted = normalize(term);
+  const title = normalize(book.title);
+  const authors = normalize(book.authors);
+  const words = wanted.split(' ').filter(word => word.length > 2);
+  let score = 0;
+  if (title === authors) return score;
+  if (title === wanted) score += 100;
+  else if (title.startsWith(wanted)) score += 60;
+  else if (words.length && words.every(word => title.includes(word))) score += 40;
+  else if (words.length && words.every(word => `${title} ${authors}`.includes(word))) score += 15;
+  if (book.language === 'Português') score += 5;
+  return score;
+}
+
+function merge(direct, catalog, term) {
+  const byId = new Map();
+  direct.forEach(book => byId.set(book.gutenbergId, book));
+
+  catalog.forEach((book) => {
+    const existing = byId.get(book.gutenbergId);
+    if (!existing) {
+      byId.set(book.gutenbergId, book);
+      return;
+    }
+    byId.set(book.gutenbergId, {
+      ...existing,
+      thumbnail: book.thumbnail || existing.thumbnail,
+      description: book.description || existing.description,
+      category: book.category || existing.category,
+      pageCount: book.pageCount || existing.pageCount,
+    });
+  });
+
+  const seen = new Set();
+  return [...byId.values()]
+    .map((book, index) => ({ book, index, score: relevance(book, term) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map(item => item.book)
+    .filter((book) => {
+      const key = `${normalize(book.title)}|${normalize(book.authors)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_RESULTS);
+}
+
 function failureMessage(errors) {
-  if (errors.some(e => e.name === 'AbortError')) {
+  if (errors.some(e => e?.name === 'AbortError')) {
     return 'A consulta demorou demais. Verifique a conexão e tente novamente.';
   }
   if (errors.some(e => e instanceof TypeError)) {
@@ -93,20 +174,20 @@ function failureMessage(errors) {
 }
 
 export const googleBooks = {
-  searchPublicDomain,
-
   async search(query) {
     const term = query.trim();
     if (!term) return [];
 
-    const errors = [];
-    for (const source of [searchGoogle, searchOpenLibrary, searchPublicDomain]) {
-      try {
-        return await source(term);
-      } catch (error) {
-        errors.push(error);
-      }
+    const [direct, catalog] = await Promise.allSettled([searchPublicDomain(term), searchCatalogs(term)]);
+
+    if (direct.status === 'rejected' && catalog.status === 'rejected') {
+      throw new Error(failureMessage([direct.reason, ...(catalog.reason?.errors || [])]));
     }
-    throw new Error(failureMessage(errors));
+
+    return merge(
+      direct.status === 'fulfilled' ? direct.value : [],
+      catalog.status === 'fulfilled' ? catalog.value : [],
+      term
+    );
   },
 };

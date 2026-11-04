@@ -9,10 +9,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { googleBooks } from '../services/googleBooks';
-import { publicDomain } from '../services/publicDomain';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 import { fieldStyles } from './FormBlocks';
+
+function Thumb({ uri, styles, color }) {
+  const [failed, setFailed] = useState(false);
+  if (!uri || failed) {
+    return (
+      <View style={[styles.thumb, styles.thumbEmpty]}>
+        <Ionicons name="book-outline" size={18} color={color} />
+      </View>
+    );
+  }
+  return <Image source={{ uri }} style={styles.thumb} onError={() => setFailed(true)} />;
+}
 
 export default function GoogleBooksSearch({ onSelect }) {
   const { colors } = useTheme();
@@ -27,22 +38,7 @@ export default function GoogleBooksSearch({ onSelect }) {
     setLoading(true);
     setError(null);
     try {
-      const found = await googleBooks.search(query);
-      const checked = await Promise.all(
-        found.slice(0, 15).map(async (book) => {
-          if (book.gutenbergId) return book;
-          const entry = await publicDomain.findEntry(book.title, book.authors);
-          return entry ? { ...book, gutenbergId: entry.id } : null;
-        })
-      );
-      const seen = new Set();
-      let available = checked.filter((book) => {
-        if (!book || seen.has(book.gutenbergId)) return false;
-        seen.add(book.gutenbergId);
-        return true;
-      });
-      if (available.length === 0) available = await googleBooks.searchPublicDomain(query).catch(() => []);
-      setResults(available);
+      setResults(await googleBooks.search(query));
     } catch (e) {
       setResults(null);
       setError(e.message || 'Não foi possível consultar o Google Books.');
@@ -107,7 +103,7 @@ export default function GoogleBooksSearch({ onSelect }) {
 
       {results && results.length === 0 && !loading && (
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>Nenhuma obra com texto completo para essa busca. Só livros de domínio público podem ser adicionados por aqui.</Text>
+          <Text style={styles.stateText}>Nenhuma obra com texto completo para essa busca. Só livros de domínio público podem ser adicionados por aqui. Tente o nome do autor ou o título no idioma original.</Text>
         </View>
       )}
 
@@ -119,17 +115,11 @@ export default function GoogleBooksSearch({ onSelect }) {
           activeOpacity={0.7}
           accessibilityLabel={`Adicionar ${book.title}`}
         >
-          {book.thumbnail ? (
-            <Image source={{ uri: book.thumbnail }} style={styles.thumb} />
-          ) : (
-            <View style={[styles.thumb, styles.thumbEmpty]}>
-              <Ionicons name="book-outline" size={18} color={colors.textMuted} />
-            </View>
-          )}
+          <Thumb uri={book.thumbnail} styles={styles} color={colors.textMuted} />
           <View style={styles.resultInfo}>
             <Text style={styles.resultTitle} numberOfLines={2}>{book.title}</Text>
             <Text style={styles.resultMeta} numberOfLines={1}>
-              {[book.authors, book.pageCount && `${book.pageCount}p`].filter(Boolean).join(' • ') || 'Autor não informado'}
+              {[book.authors, book.language, book.pageCount && `${book.pageCount}p`].filter(Boolean).join(' • ') || 'Autor não informado'}
             </Text>
           </View>
           <Ionicons name="add-circle" size={26} color={colors.primary} />

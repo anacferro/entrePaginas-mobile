@@ -4,7 +4,7 @@ const TIMEOUT_MS = 30000;
 const MAX_CHARS = 1200000;
 const MAX_HTML = 3500000;
 
-function normalize(text) {
+export function normalize(text) {
   return (text || '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
@@ -98,6 +98,7 @@ export const publicDomain = {
       .map(entry => ({
         id: entry.id,
         title: entry.title.replace(/\s*\([^)]*\)\s*$/, '').trim(),
+        language: entry.title.match(/\(([^)]*)\)\s*$/)?.[1]?.trim() || 'English',
         author: /downloads?$/i.test(entry.author.trim()) ? '' : entry.author.trim(),
       }))
       .filter(entry => {
