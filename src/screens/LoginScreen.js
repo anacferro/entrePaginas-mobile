@@ -147,23 +147,6 @@ export default function LoginScreen() {
             <Text style={styles.trustText}>Não guardamos sua senha. O acesso é feito pelo Google.</Text>
           </View>
 
-          <View style={styles.features}>
-            <View style={styles.feature}>
-              <Ionicons name="cloud-done-outline" size={18} color={colors.primary} />
-              <Text style={styles.featureText}>Nuvem</Text>
-            </View>
-            <View style={styles.featureDivider} />
-            <View style={styles.feature}>
-              <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
-              <Text style={styles.featureText}>Resumos com IA</Text>
-            </View>
-            <View style={styles.featureDivider} />
-            <View style={styles.feature}>
-              <Ionicons name="moon-outline" size={18} color={colors.primary} />
-              <Text style={styles.featureText}>Modo escuro</Text>
-            </View>
-          </View>
-
           <Text style={styles.copyrightText}>Entre Páginas © 2025 • Edição de Colecionador</Text>
         </Animated.View>
       </ScrollView>
@@ -328,32 +311,6 @@ const createStyles = (colors) => StyleSheet.create({
   trustText: {
     fontSize: 12,
     color: colors.textMuted,
-  },
-  features: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 16,
-    paddingVertical: 14,
-    marginTop: 28,
-  },
-  feature: {
-    alignItems: 'center',
-    gap: 6,
-    flex: 1,
-  },
-  featureText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  featureDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: colors.borderLight,
   },
   copyrightText: {
     fontSize: 11,

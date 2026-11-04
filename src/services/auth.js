@@ -19,6 +19,8 @@ const ERROR_MESSAGES = {
   'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente de novo.',
   'auth/network-request-failed': 'Sem conexão com a internet. Verifique a rede e tente de novo.',
   'auth/operation-not-allowed': 'O login com Google ainda não foi ativado no Firebase.',
+  'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase. Adicione-o em Authentication > Configurações > Domínios autorizados.',
+  'auth/internal-error': 'O Firebase recusou o login. Confira se o login com Google está ativado no console.',
   'auth/user-disabled': 'Esta conta foi desativada.',
   'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
   'auth/account-exists-with-different-credential': 'Já existe uma conta com esse e-mail usando outro método de login.',
@@ -26,7 +28,7 @@ const ERROR_MESSAGES = {
 
 function friendly(error) {
   const key = error?.code || error?.message;
-  const message = ERROR_MESSAGES[key] || 'Não foi possível entrar com o Google. Tente novamente.';
+  const message = ERROR_MESSAGES[key] || `Não foi possível entrar com o Google. Tente novamente.${error?.code ? ` (${error.code})` : ''}`;
   const wrapped = new Error(message);
   wrapped.code = error?.code;
   return wrapped;
