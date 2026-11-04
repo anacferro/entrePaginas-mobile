@@ -3,6 +3,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { parsePdf } from './pdfParser';
 import { parseEpub } from './epubParser';
+import { looksLikeHtml, htmlToText, extractSentinelMarks, stripSentinels } from './htmlText';
 
 const CHAPTER_SIZE = 1800;
 
@@ -243,11 +244,12 @@ async function importAsset(format, asset) {
 }
 
 export const importer = {
-  fromGutenberg(text) {
-    const flowed = reflow(text);
+  fromGutenberg(source) {
+    const isHtml = looksLikeHtml(source);
+    const flowed = reflow(isHtml ? htmlToText(source) : source);
     const chapters = splitByHeadings(flowed).map((chapter) => {
-      const { content, marks } = extractItalics(chapter.content);
-      return { ...chapter, content, marks };
+      const { content, marks } = isHtml ? extractSentinelMarks(chapter.content) : extractItalics(chapter.content);
+      return { ...chapter, title: stripSentinels(chapter.title), content, marks };
     });
     return { pages: estimatePages(chapters.map(c => c.content).join('')), chapters };
   },

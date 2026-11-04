@@ -2,6 +2,7 @@ const SEARCH_ENDPOINT = 'https://www.gutenberg.org/ebooks/search.opds/';
 const TEXT_ENDPOINT = 'https://www.gutenberg.org/cache/epub';
 const TIMEOUT_MS = 30000;
 const MAX_CHARS = 1200000;
+const MAX_HTML = 3500000;
 
 function normalize(text) {
   return (text || '')
@@ -61,6 +62,20 @@ function stripGutenberg(raw) {
   return text.trim();
 }
 
+async function downloadHtml(id) {
+  for (const url of [`${TEXT_ENDPOINT}/${id}/pg${id}-images.html`, `${TEXT_ENDPOINT}/${id}/pg${id}.html`]) {
+    try {
+      const response = await request(url);
+      if (!response.ok) continue;
+      const html = await response.text();
+      if (html.length <= MAX_HTML && /<(b|strong|i|em)[\s>]/i.test(html)) return html;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 async function downloadText(id) {
   for (const url of [`${TEXT_ENDPOINT}/${id}/pg${id}.txt`, `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`]) {
     try {
@@ -118,6 +133,8 @@ export const publicDomain = {
       if (!id) return null;
 
       onStage?.('download');
+      const html = await downloadHtml(id);
+      if (html) return html;
       const raw = await downloadText(id);
       if (!raw) return null;
       const text = stripGutenberg(raw);
