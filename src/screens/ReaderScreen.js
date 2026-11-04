@@ -598,63 +598,69 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                   </Text>
                 )}
                 {bookmarks.map(bm => (
-                  <Touchable key={bm.id} style={styles.tocItem} onPress={() => goToBookmark(bm)}>
-                    <Ionicons name="bookmark" size={18} color={bm.color} style={{ width: 32 }} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.tocItemTitle} numberOfLines={1}>{bm.title}</Text>
-                      <Text style={styles.tocItemMeta} numberOfLines={1}>
-                        {chapters.find(c => c.id === bm.chapterId)?.title} • Folha {bm.page}
-                      </Text>
-                    </View>
+                  <View key={bm.id} style={styles.tocItem}>
+                    <Touchable style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => goToBookmark(bm)}>
+                      <Ionicons name="bookmark" size={18} color={bm.color} style={{ width: 32 }} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.tocItemTitle} numberOfLines={1}>{bm.title}</Text>
+                        <Text style={styles.tocItemMeta} numberOfLines={1}>
+                          {chapters.find(c => c.id === bm.chapterId)?.title} • Folha {bm.page}
+                        </Text>
+                      </View>
+                    </Touchable>
                     <Touchable
                       onPress={() => handleRemoveBookmark(bm.id)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
                       <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
                     </Touchable>
-                  </Touchable>
+                  </View>
                 ))}
               </ScrollView>
             ) : (
             <ScrollView style={styles.tocList}>
               {chapters.map((chap, idx) => (
-                <Touchable
+                <View
                   key={chap.id || idx}
                   style={[
                     styles.tocItem,
                     page.chapterIndex === idx && styles.tocItemActive,
                   ]}
-                  onPress={() => {
-                    setCurrentPageIndex(firstPageOf(chap.id));
-                    setShowSummary(false);
-                  }}
                 >
-                  <Text style={[styles.tocItemNumber, page.chapterIndex === idx && styles.tocItemNumberActive]}>
-                    {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
-                  </Text>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.tocItemTitle,
-                        page.chapterIndex === idx && styles.tocItemTitleActive,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {chap.title}
+                  <Touchable
+                    style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => {
+                      setCurrentPageIndex(firstPageOf(chap.id));
+                      setShowSummary(false);
+                    }}
+                  >
+                    <Text style={[styles.tocItemNumber, page.chapterIndex === idx && styles.tocItemNumberActive]}>
+                      {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                     </Text>
-                    <Text style={styles.tocItemMeta}>Folha {pageForIndex(idx)}</Text>
-                  </View>
-                  {bookmarks.some(bm => bm.chapterId === chap.id) && (
-                    <Ionicons
-                      name="bookmark"
-                      size={14}
-                      color={bookmarks.find(bm => bm.chapterId === chap.id).color}
-                      style={{ marginRight: 6 }}
-                    />
-                  )}
-                  {page.chapterIndex === idx && (
-                    <Ionicons name="book" size={16} color={colors.primary} />
-                  )}
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.tocItemTitle,
+                          page.chapterIndex === idx && styles.tocItemTitleActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {chap.title}
+                      </Text>
+                      <Text style={styles.tocItemMeta}>Folha {pageForIndex(idx)}</Text>
+                    </View>
+                    {bookmarks.some(bm => bm.chapterId === chap.id) && (
+                      <Ionicons
+                        name="bookmark"
+                        size={14}
+                        color={bookmarks.find(bm => bm.chapterId === chap.id).color}
+                        style={{ marginRight: 6 }}
+                      />
+                    )}
+                    {page.chapterIndex === idx && (
+                      <Ionicons name="book" size={16} color={colors.primary} />
+                    )}
+                  </Touchable>
                   {book && isOwnBook && chapters.length > 1 && (
                     <View style={styles.tocMove}>
                       <Touchable
@@ -675,7 +681,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                       </Touchable>
                     </View>
                   )}
-                </Touchable>
+                </View>
               ))}
             </ScrollView>
             )}
