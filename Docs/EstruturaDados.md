@@ -60,7 +60,7 @@ users/{uid}
 
 | Campo | Tipo | Observação |
 | :--- | :--- | :--- |
-| `tags` | lista de até 5 textos curtos, em minúsculas; podem vir da sugestão por IA |
+| `tags` | lista de até 5 textos curtos, em minúsculas |
 | `status` | `"estante"` ou `"bau"` | `"bau"` é o livro arquivado |
 | `locked` | boolean | `true` quando o livro exige biometria para abrir (o campo sincroniza, mas a verificação é feita no aparelho) |
 | `isOwn` | boolean | `false` para livros importados; só eles têm `changeLog` |

@@ -172,7 +172,7 @@ entrePaginas-mobile/
 │   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
 │   │   ├── bookFonts.js       # Guarda e carrega a fonte original de livros importados
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
-│   │   ├── ai.js              # Resumo, transcrição e sugestão por IA (Gemini via Firebase AI Logic)
+│   │   ├── ai.js              # Resumo de capítulo e transcrição de fotos por IA (Gemini via Firebase AI Logic)
 │   │   ├── auth.js            # Cadastro, login e logout (Firebase Authentication)
 │   │   ├── categories.js      # Categorias editáveis do usuário
 │   │   ├── cloud.js           # Sincronização dos livros com o Firestore

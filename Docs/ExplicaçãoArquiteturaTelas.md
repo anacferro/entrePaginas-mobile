@@ -104,6 +104,8 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### DA14 (Nova Decisão) — IA com Saída Estruturada e Validação no App
 
+> **Revisada:** a sugestão de categoria foi retirada da interface porque não agregava ao fluxo. O serviço e a validação seguem no código (`ai.suggestMetadata`, `suggestion.js`), mas sem botão que os use; a IA em uso é o resumo de capítulo e a transcrição de fotos.
+
 * **Decisão:** pedir ao Gemini categoria, etiquetas e resumo curto em JSON (`responseMimeType` e `responseSchema`) e validar a resposta no app (`src/services/suggestion.js`) antes de mostrar. A categoria só vale se for uma das listadas; etiquetas são limpas (minúsculas, sem repetição, até 5); respostas que não são JSON, ou sem nenhum campo válido, são recusadas.
 * **Alternativas consideradas:** confiar no schema do modelo sem validar (descartado: o modelo pode devolver texto fora do formato); pedir texto livre e extrair com expressões regulares (descartado: frágil).
 * **Consequências assumidas:** a sugestão nunca altera o livro sozinha: aparece em uma prévia com **Aplicar** e **Descartar**. Se a IA falhar ou responder fora do formato, o app mostra a mensagem e o formulário segue funcionando para preenchimento manual.
