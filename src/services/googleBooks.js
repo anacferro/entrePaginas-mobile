@@ -173,10 +173,14 @@ function failureMessage(errors) {
   return 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
 }
 
+export function isSearchable(query) {
+  return normalize(query).split(' ').some(word => word.length > 2);
+}
+
 export const googleBooks = {
   async search(query) {
     const term = query.trim();
-    if (!term) return [];
+    if (!isSearchable(term)) return [];
 
     const [direct, catalog] = await Promise.allSettled([searchPublicDomain(term), searchCatalogs(term)]);
 

@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { googleBooks } from '../services/googleBooks';
+import { googleBooks, isSearchable } from '../services/googleBooks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 import { fieldStyles } from './FormBlocks';
@@ -32,9 +32,10 @@ export default function GoogleBooksSearch({ onSelect }) {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const searchable = isSearchable(query);
 
   const handleSearch = async () => {
-    if (!query.trim() || loading) return;
+    if (!searchable || loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -74,15 +75,19 @@ export default function GoogleBooksSearch({ onSelect }) {
           accessibilityLabel="Buscar no Google Books"
         />
         <Touchable
-          style={[styles.searchButton, (!query.trim() || loading) && styles.searchButtonDisabled]}
+          style={[styles.searchButton, (!searchable || loading) && styles.searchButtonDisabled]}
           onPress={handleSearch}
-          disabled={!query.trim() || loading}
+          disabled={!searchable || loading}
           activeOpacity={0.8}
           accessibilityLabel="Buscar"
         >
           <Ionicons name="search" size={18} color={colors.onPrimary} />
         </Touchable>
       </View>
+
+      {query.trim().length > 0 && !searchable && !loading && (
+        <Text style={styles.hint}>Digite pelo menos uma palavra com 3 letras, como parte do título ou o nome do autor.</Text>
+      )}
 
       {loading && (
         <View style={styles.stateBox}>
@@ -188,6 +193,11 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: 8,
+  },
+  hint: {
+    fontSize: 12,
+    color: colors.textSecondary,
     marginTop: 8,
   },
   retryButton: {
