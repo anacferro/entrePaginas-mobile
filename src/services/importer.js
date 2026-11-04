@@ -6,6 +6,7 @@ import { parseEpub } from './epubParser';
 import { looksLikeHtml, htmlToText, extractSentinelMarks, stripSentinels } from './htmlText';
 
 const CHAPTER_SIZE = 1800;
+const MAX_CHAPTER = 150000;
 
 const PICKER_TYPES = {
   pdf: 'application/pdf',
@@ -58,6 +59,33 @@ function chunkIntoChapters(text, prefix = 'Parte') {
   }));
 }
 
+function capChapters(chapters) {
+  const stamp = Date.now();
+  const out = [];
+
+  chapters.forEach((chapter) => {
+    if (chapter.content.length <= MAX_CHAPTER) {
+      out.push(chapter);
+      return;
+    }
+    const parts = [];
+    let buffer = '';
+    chapter.content.split(/\n{2,}/).forEach((paragraph) => {
+      if (buffer && buffer.length + paragraph.length > MAX_CHAPTER) {
+        parts.push(buffer);
+        buffer = '';
+      }
+      buffer = buffer ? `${buffer}\n\n${paragraph}` : paragraph;
+    });
+    if (buffer) parts.push(buffer);
+    parts.forEach((content, idx) => {
+      out.push({ ...chapter, title: `${chapter.title} (${idx + 1}/${parts.length})`, content });
+    });
+  });
+
+  return out.map((chapter, idx) => ({ ...chapter, id: `chap-${stamp}-${idx + 1}` }));
+}
+
 function splitByHeadings(text) {
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   const sections = [];
@@ -85,11 +113,11 @@ function splitByHeadings(text) {
     return chunkIntoChapters(text.replace(/\r\n?/g, '\n'));
   }
 
-  return filled.map((s, idx) => ({
+  return capChapters(filled.map((s, idx) => ({
     id: `chap-${Date.now()}-${idx + 1}`,
     title: s.title || 'Introdução',
     content: s.content,
-  }));
+  })));
 }
 
 function reflow(text) {
@@ -172,7 +200,7 @@ async function importEpub(asset) {
     pages: estimatePages(fullText),
     font,
     fontHint,
-    chapters: chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` })),
+    chapters: capChapters(chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` }))),
   };
 }
 
@@ -214,7 +242,7 @@ async function importJson(asset) {
     title: book.title || titleFromFileName(asset.name),
     subtitle: book.subtitle || 'Importado de estrutura JSON',
     pages: book.totalPages || estimatePages(fullText),
-    chapters,
+    chapters: capChapters(chapters),
   };
 }
 

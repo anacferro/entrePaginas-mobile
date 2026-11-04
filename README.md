@@ -26,6 +26,7 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
    - **Marca-texto:** grifos em 5 cores, negrito, itálico e sublinhado sobre trechos selecionados.
    - **Histórico de alterações:** registro das edições feitas em livros que não são de autoria do usuário (versão anterior e nova), visível no menu `⋮` do livro.
    - **Buscas e downloads:** a busca da Estante e do Baú ignora acentos e maiúsculas; downloads de texto completo interrompidos (Project Gutenberg) são retomados uma vez por sessão; as gravações locais são serializadas e os IDs são únicos para não perder dados em operações rápidas.
+   - **Capítulos longos:** capítulos importados com mais de 150 mil caracteres são divididos em partes, para que nada seja cortado ao sincronizar com a nuvem; posições de leitura de livros apagados também são removidas.
 
 ---
 

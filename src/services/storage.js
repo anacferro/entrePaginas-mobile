@@ -29,6 +29,17 @@ async function saveBooks(list) {
   cloud.schedule(list);
 }
 
+async function dropPositions(ids) {
+  const json = await AsyncStorage.getItem(KEYS.POSITIONS);
+  if (!json) return;
+  const positions = JSON.parse(json);
+  const before = Object.keys(positions).length;
+  ids.forEach(id => delete positions[id]);
+  if (Object.keys(positions).length !== before) {
+    await AsyncStorage.setItem(KEYS.POSITIONS, JSON.stringify(positions));
+  }
+}
+
 const PAGE_SIZE = 1800;
 
 function pagesOf(chapters) {
@@ -72,9 +83,11 @@ export const storage = {
   },
 
   async syncFromCloud() {
+    const owner = userId;
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const local = json ? JSON.parse(json) : [];
     const merged = await cloud.pullAndMerge(local);
+    if (owner !== userId) return;
     await saveBooks(merged);
   },
 
@@ -415,7 +428,9 @@ export const storage = {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const remaining = list.filter(b => b.status !== 'bau');
-    bookFonts.remove(list.filter(b => b.status === 'bau').map(b => b.id));
+    const dropped = list.filter(b => b.status === 'bau').map(b => b.id);
+    bookFonts.remove(dropped);
+    await dropPositions(dropped);
     await saveBooks(remaining);
     return remaining;
   },
@@ -425,6 +440,7 @@ export const storage = {
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const filtered = list.filter(b => b.id !== id);
     bookFonts.remove([id]);
+    await dropPositions([id]);
     await saveBooks(filtered);
     return filtered;
   },
@@ -435,6 +451,7 @@ export const storage = {
     const drop = new Set(ids);
     const filtered = list.filter(b => !drop.has(b.id));
     bookFonts.remove(ids);
+    await dropPositions(ids);
     await saveBooks(filtered);
     return filtered;
   },
@@ -496,7 +513,7 @@ export const storage = {
   'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
   'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
-  'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData', 'clearAllBooks', 'resetToDefaults',
+  'setReadingPosition', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData', 'clearAllBooks', 'resetToDefaults',
 ].forEach((name) => {
   const original = storage[name];
   storage[name] = (...args) => exclusive(() => original.apply(storage, args));

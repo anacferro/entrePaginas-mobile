@@ -10,15 +10,20 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     return authService.onChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        storage.setUser(firebaseUser.uid);
-        await storage.init(firebaseUser);
-        await storage.syncFromCloud();
-      } else {
-        storage.setUser(null);
+      try {
+        if (firebaseUser) {
+          storage.setUser(firebaseUser.uid);
+          await storage.init(firebaseUser);
+          await storage.syncFromCloud();
+        } else {
+          storage.setUser(null);
+        }
+      } catch (e) {
+        console.error('Erro ao preparar a sessão:', e);
+      } finally {
+        setUser(firebaseUser);
+        setInitializing(false);
       }
-      setUser(firebaseUser);
-      setInitializing(false);
     });
   }, []);
 

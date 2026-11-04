@@ -12,6 +12,7 @@ let status = 'idle';
 let pending = null;
 let timer = null;
 let running = false;
+let epoch = 0;
 
 function setStatus(next) {
   status = next;
@@ -92,6 +93,7 @@ async function flush() {
   if (!db || !uid || !pending || running) return;
 
   running = true;
+  const mine = epoch;
   const list = pending;
   pending = null;
   setStatus('syncing');
@@ -102,24 +104,27 @@ async function flush() {
       const signature = signatureOf(book);
       if (synced.get(book.id) !== signature) {
         await pushBook(uid, book);
+        if (mine !== epoch) return;
         synced.set(book.id, signature);
       }
     }
     for (const id of [...synced.keys()]) {
       if (!ids.has(id)) {
         await removeBook(uid, id);
+        if (mine !== epoch) return;
         synced.delete(id);
       }
     }
     setStatus('synced');
   } catch (e) {
+    if (mine !== epoch) return;
     pending = pending || list;
     setStatus(e.code === 'unavailable' || e.code === 'timeout' ? 'offline' : 'error');
     clearTimeout(timer);
     timer = setTimeout(flush, RETRY_MS);
   } finally {
-    running = false;
-    if (pending && status === 'synced') {
+    if (mine === epoch) running = false;
+    if (mine === epoch && pending && status === 'synced') {
       clearTimeout(timer);
       timer = setTimeout(flush, DEBOUNCE_MS);
     }
@@ -212,6 +217,7 @@ export const cloud = {
   },
 
   reset() {
+    epoch += 1;
     clearTimeout(timer);
     synced.clear();
     pending = null;
