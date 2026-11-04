@@ -1,349 +1,365 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   StatusBar,
   ScrollView,
-  KeyboardAvoidingView,
   ActivityIndicator,
-  Platform,
+  Animated,
+  Easing,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
-import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+
+const SPINES = [
+  { height: 92, width: 22 },
+  { height: 120, width: 26 },
+  { height: 104, width: 20 },
+  { height: 134, width: 28 },
+  { height: 98, width: 24 },
+];
+
+function useEntrance(delay) {
+  const [value] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    Animated.timing(value, {
+      toValue: 1,
+      duration: 650,
+      delay,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [value, delay]);
+  return {
+    opacity: value,
+    transform: [{ translateY: value.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+  };
+}
 
 export default function LoginScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const [mode, setMode] = useState('signin');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const isSignUp = mode === 'signup';
+  const heroAnim = useEntrance(0);
+  const cardAnim = useEntrance(220);
 
-  const switchMode = () => {
-    setMode(isSignUp ? 'signin' : 'signup');
-    setError(null);
-  };
-
-  const handleSubmit = async () => {
+  const handleGoogle = async () => {
     if (loading) return;
     setError(null);
     setLoading(true);
     try {
-      if (isSignUp) await authService.signUp(name, email, password);
-      else await authService.signIn(email, password);
+      await authService.signInWithGoogle();
     } catch (e) {
       setError(e.message);
       setLoading(false);
     }
   };
 
-  const handleReset = async () => {
-    if (!email.trim()) {
-      setError('Informe o e-mail para receber o link de redefinição.');
-      return;
-    }
-    try {
-      await authService.resetPassword(email);
-      dialog.alert('Verifique seu e-mail', 'Enviamos um link para redefinir a senha, se o e-mail estiver cadastrado.');
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.background} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    <View style={styles.root}>
+      <StatusBar barStyle="light-content" backgroundColor={colors.hero[0]} />
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.container}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.brandSection}>
-            <View style={styles.iconEmblem}>
-              <Ionicons name="book" size={38} color={colors.primary} />
-              <View style={styles.sparkleBadge}>
-                <Ionicons name="sparkles" size={14} color={colors.accentGold} />
+        <LinearGradient colors={colors.hero} style={styles.hero}>
+          <SafeAreaView edges={['top']} style={styles.heroSafe}>
+            <Animated.View style={[styles.heroContent, heroAnim]}>
+              <View style={styles.spines}>
+                {SPINES.map((spine, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.spine,
+                      {
+                        height: spine.height,
+                        width: spine.width,
+                        backgroundColor: colors.heroSpines[index],
+                      },
+                    ]}
+                  >
+                    <View style={styles.spineBand} />
+                  </View>
+                ))}
               </View>
-            </View>
+              <View style={styles.shelf} />
 
-            <Text style={styles.brandTitle}>Entre Páginas</Text>
-            <Text style={styles.brandTagline}>
-              Sua estante particular, criada e personalizada página por página.
-            </Text>
-          </View>
-
-          <View style={styles.formSection}>
-            <Text style={styles.formTitle}>{isSignUp ? 'Criar sua conta' : 'Entrar na sua estante'}</Text>
-
-            {!authService.isConfigured && (
-              <View style={styles.warningBox}>
-                <Ionicons name="warning-outline" size={16} color={colors.warningText} />
-                <Text style={styles.warningText}>
-                  O Firebase não está configurado. Preencha o arquivo .env conforme o README.
-                </Text>
-              </View>
-            )}
-
-            {isSignUp && (
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={18} color={colors.textSecondary} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Seu nome"
-                  placeholderTextColor={colors.textMuted}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  accessibilityLabel="Nome"
-                />
-              </View>
-            )}
-
-            <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={18} color={colors.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="E-mail"
-                placeholderTextColor={colors.textMuted}
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                accessibilityLabel="E-mail"
-              />
-            </View>
-
-            <View style={styles.inputWrapper}>
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="Senha"
-                placeholderTextColor={colors.textMuted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                onSubmitEditing={handleSubmit}
-                accessibilityLabel="Senha"
-              />
-            </View>
-
-            {error && (
-              <View style={styles.errorBox}>
-                <Ionicons name="alert-circle-outline" size={16} color={colors.danger} />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={loading}
-              activeOpacity={0.85}
-              accessibilityLabel={isSignUp ? 'Criar conta' : 'Entrar'}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.onPrimary} />
-              ) : (
-                <Text style={styles.submitText}>{isSignUp ? 'Criar conta' : 'Entrar'}</Text>
-              )}
-            </TouchableOpacity>
-
-            {!isSignUp && (
-              <TouchableOpacity onPress={handleReset} style={styles.linkButton}>
-                <Text style={styles.linkText}>Esqueci minha senha</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity onPress={switchMode} style={styles.linkButton}>
-              <Text style={styles.switchText}>
-                {isSignUp ? 'Já tem conta? ' : 'Ainda não tem conta? '}
-                <Text style={styles.linkText}>{isSignUp ? 'Entrar' : 'Criar conta'}</Text>
+              <Text style={styles.brandTitle}>Entre Páginas</Text>
+              <Text style={styles.brandTagline}>
+                Sua estante particular, criada e personalizada página por página.
               </Text>
-            </TouchableOpacity>
+            </Animated.View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        <Animated.View style={[styles.sheet, cardAnim]}>
+          <Text style={styles.formTitle}>Bem-vindo de volta</Text>
+          <Text style={styles.formHint}>
+            Entre com a sua conta Google. Seus livros ficam salvos na sua conta e acompanham você em qualquer aparelho.
+          </Text>
+
+          {!authService.isConfigured && (
+            <View style={styles.warningBox}>
+              <Ionicons name="warning-outline" size={16} color={colors.warningText} />
+              <Text style={styles.warningText}>
+                O Firebase não está configurado. Preencha o arquivo .env conforme o README.
+              </Text>
+            </View>
+          )}
+
+          {error && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={16} color={colors.danger} />
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.googleButton, loading && styles.googleButtonDisabled]}
+            onPress={handleGoogle}
+            disabled={loading}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Continuar com o Google"
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.onPrimary} />
+            ) : (
+              <>
+                <View style={styles.googleBadge}>
+                  <Ionicons name="logo-google" size={16} color={colors.primary} />
+                </View>
+                <Text style={styles.googleText}>Continuar com o Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.trustRow}>
+            <Ionicons name="shield-checkmark-outline" size={15} color={colors.textMuted} />
+            <Text style={styles.trustText}>Não guardamos sua senha. O acesso é feito pelo Google.</Text>
           </View>
 
-          <View style={styles.footerSection}>
-            <Text style={styles.legalLinks}>Termos de Uso  •  Política de Privacidade</Text>
-            <Text style={styles.copyrightText}>Entre Páginas © 2025 • Edição de Colecionador</Text>
+          <View style={styles.features}>
+            <View style={styles.feature}>
+              <Ionicons name="cloud-done-outline" size={18} color={colors.primary} />
+              <Text style={styles.featureText}>Nuvem</Text>
+            </View>
+            <View style={styles.featureDivider} />
+            <View style={styles.feature}>
+              <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+              <Text style={styles.featureText}>Resumos com IA</Text>
+            </View>
+            <View style={styles.featureDivider} />
+            <View style={styles.feature}>
+              <Ionicons name="moon-outline" size={18} color={colors.primary} />
+              <Text style={styles.featureText}>Modo escuro</Text>
+            </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+          <Text style={styles.copyrightText}>Entre Páginas © 2025 • Edição de Colecionador</Text>
+        </Animated.View>
+      </ScrollView>
+    </View>
   );
 }
 
 const createStyles = (colors) => StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  flex: {
-    flex: 1,
-  },
   container: {
     flexGrow: 1,
+  },
+  hero: {
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
+    overflow: 'hidden',
+  },
+  heroSafe: {
     paddingHorizontal: 28,
-    justifyContent: 'space-between',
-    paddingTop: 24,
-    paddingBottom: 24,
+    paddingBottom: 40,
   },
-  brandSection: {
+  heroContent: {
     alignItems: 'center',
-    marginTop: 16,
+    paddingTop: 36,
   },
-  iconEmblem: {
-    width: 90,
-    height: 90,
-    borderRadius: 22,
-    backgroundColor: colors.surfaceWarm,
-    alignItems: 'center',
+  spines: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    marginBottom: 22,
-    position: 'relative',
+    gap: 6,
   },
-  sparkleBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
+  spine: {
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    justifyContent: 'flex-start',
+    paddingTop: 14,
+  },
+  spineBand: {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  shelf: {
+    width: 190,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.35)',
+    marginBottom: 26,
   },
   brandTitle: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: colors.primary,
     fontFamily: 'serif',
-    marginBottom: 12,
-    letterSpacing: -0.5,
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.heroText,
     textAlign: 'center',
+    letterSpacing: 0.4,
   },
   brandTagline: {
-    fontSize: 16,
-    color: colors.textSecondary,
     fontFamily: 'serif',
     fontStyle: 'italic',
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.heroTextMuted,
     textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 290,
+    marginTop: 10,
+    maxWidth: 300,
   },
-  formSection: {
-    width: '100%',
-    marginVertical: 24,
+  sheet: {
+    flex: 1,
+    paddingHorizontal: 28,
+    paddingTop: 32,
+    paddingBottom: 28,
   },
   formTitle: {
-    fontSize: 18,
+    fontFamily: 'serif',
+    fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'serif',
-    marginBottom: 14,
+    textAlign: 'center',
+  },
+  formHint: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 24,
   },
   warningBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: colors.warningLight,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 12,
+    borderColor: colors.warningBorder,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
   },
   warningText: {
     flex: 1,
     fontSize: 12,
+    lineHeight: 17,
     color: colors.warningText,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 50,
-    marginBottom: 10,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 10,
+    backgroundColor: colors.dangerLight,
+    borderColor: colors.dangerBorder,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
   },
   errorText: {
     flex: 1,
     fontSize: 13,
+    lineHeight: 18,
     color: colors.danger,
   },
-  submitButton: {
+  googleButton: {
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.primary,
-    height: 52,
-    borderRadius: 26,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    gap: 12,
+    shadowColor: colors.primaryDark,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  submitButtonDisabled: {
+  googleButtonDisabled: {
     opacity: 0.7,
   },
-  submitText: {
+  googleBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleText: {
     fontSize: 16,
     fontWeight: '700',
     color: colors.onPrimary,
   },
-  linkButton: {
+  trustRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 14,
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 16,
   },
-  linkText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.primary,
-  },
-  switchText: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  footerSection: {
-    alignItems: 'center',
-    paddingBottom: 8,
-  },
-  legalLinks: {
+  trustText: {
     fontSize: 12,
     color: colors.textMuted,
-    fontWeight: '500',
-    marginBottom: 6,
+  },
+  features: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginTop: 28,
+  },
+  feature: {
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  featureText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  featureDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.borderLight,
   },
   copyrightText: {
     fontSize: 11,
     color: colors.textMuted,
-    opacity: 0.8,
+    textAlign: 'center',
+    marginTop: 'auto',
+    paddingTop: 28,
   },
 });

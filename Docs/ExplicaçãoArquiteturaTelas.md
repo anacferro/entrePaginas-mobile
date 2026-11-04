@@ -77,11 +77,11 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Decisão:** Todas as telas usam `dialog.alert` (`src/services/dialog.js`) em vez de `Alert.alert` diretamente.
 * **Motivação:** o `Alert.alert` do React Native não faz nada quando o app roda no navegador, o que deixava confirmações de exclusão, restauração e saída sem resposta. O serviço usa o alerta nativo no celular e as caixas de diálogo do navegador na web.
 
-### DA10 (Nova Decisão) — Autenticação com E-mail e Senha
+### DA10 (Nova Decisão) — Autenticação Somente com Google, por Página Hospedada
 
-* **Decisão:** usar Firebase Authentication com e-mail e senha, em vez do login com Google previsto no PRD (RF01).
-* **Motivação:** o login com Google exige configurar OAuth, SHA-1 do app e telas de consentimento, e não funciona no Expo Go nem no navegador sem configuração por plataforma. E-mail e senha funciona igual em celular e navegador e é reproduzível por quem clonar o projeto.
-* **Consequências assumidas:** o usuário precisa criar uma senha; a redefinição por e-mail está disponível na tela de login.
+* **Decisão:** a única forma de entrar é a conta Google (RF01), via Firebase Authentication. No navegador usa a janela do Firebase (`signInWithPopup`). No celular, como o botão nativo do Google não existe no Expo Go e o Google não aceita o endereço `exp://` de retorno, o app abre uma página no Firebase Hosting (`hosting/index.html`), que faz o login com Google e devolve o resultado ao app por um endereço de retorno validado (só `entrepaginas://` e `exp://` de rede local ou túnel); o app então entra com `signInWithCredential`.
+* **Alternativas consideradas:** biblioteca nativa de login do Google (descartado: exige build de desenvolvimento e não roda no Expo Go); `expo-auth-session` com cliente OAuth próprio (descartado: o Expo Go não oferece endereço de retorno aceito pelo Google); manter também e-mail e senha (descartado: o requisito é entrar só com Google).
+* **Consequências assumidas:** o login depende de internet e da página hospedada. O servidor reforça a regra: o `firestore.rules` só libera dados para quem entrou com o provedor `google.com`, então contas criadas por e-mail e senha não leem nem gravam nada, mesmo que o provedor esteja ativo no console.
 
 ### DA11 (Nova Decisão) — Livros no Firestore em Subcoleções, com Local Primeiro
 
@@ -154,7 +154,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### Requisitos da etapa 3 atendidos
 
-* **RF01 / RF02 (Autenticação e sessão):** cadastro, login e logout com e-mail e senha (Firebase Authentication). A sessão permanece salva e as telas internas só são registradas para usuário autenticado.
+* **RF01 / RF02 (Autenticação e sessão):** login e logout somente com a conta Google (Firebase Authentication). A sessão permanece salva e as telas internas só são registradas para usuário autenticado.
 * **RF23 (Nuvem):** livros, capítulos, marcadores e grifos são sincronizados com o Firestore, por usuário, com uso offline. Estrutura e regras em [EstruturaDados.md](EstruturaDados.md).
 * **RF14 (Câmera e OCR):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
 * **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.

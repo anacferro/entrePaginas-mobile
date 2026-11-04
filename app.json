@@ -35,7 +35,9 @@
         {
           "cameraPermission": "Permita que o Entre Páginas use a câmera para fotografar páginas de livros."
         }
-      ]
-    ]
+      ],
+      "expo-web-browser"
+    ],
+    "scheme": "entrepaginas"
   }
 }

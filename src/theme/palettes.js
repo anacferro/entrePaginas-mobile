@@ -55,6 +55,11 @@ export const lightColors = {
     json: { bg: '#EDE7F6', fg: '#512DA8' },
   },
 
+  hero: ['#2B6B5D', '#17433A'],
+  heroText: '#FFFFFF',
+  heroTextMuted: 'rgba(255,255,255,0.82)',
+  heroSpines: ['#AE472F', '#E0AE5C', '#F4EAE0', '#7A2E26', '#4C6044'],
+
   statusBar: 'dark-content',
   overlay: 'rgba(0,0,0,0.5)',
   covers,
@@ -110,6 +115,11 @@ export const darkColors = {
     txt: { bg: '#1E2F3F', fg: '#7DB8EE' },
     json: { bg: '#2E2640', fg: '#B8A0F0' },
   },
+
+  hero: ['#2A4A42', '#1F1E1C'],
+  heroText: '#FFFFFF',
+  heroTextMuted: 'rgba(255,255,255,0.82)',
+  heroSpines: ['#E58F79', '#E0AE5C', '#EFE9E2', '#B5574B', '#6E8A63'],
 
   statusBar: 'light-content',
   overlay: 'rgba(0,0,0,0.65)',

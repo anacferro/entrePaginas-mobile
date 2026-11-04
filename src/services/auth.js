@@ -1,29 +1,32 @@
+import { Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithCredential,
   signOut as firebaseSignOut,
-  sendPasswordResetEmail,
-  updateProfile,
   onAuthStateChanged,
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './firebase';
 
+const LOGIN_PAGE = `https://${process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN}/`;
+
 const ERROR_MESSAGES = {
-  'auth/invalid-email': 'O e-mail informado não é válido.',
-  'auth/missing-email': 'Informe o e-mail da conta.',
-  'auth/missing-password': 'Informe a senha.',
-  'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
-  'auth/email-already-in-use': 'Já existe uma conta com esse e-mail. Tente entrar.',
-  'auth/invalid-credential': 'E-mail ou senha incorretos.',
-  'auth/user-not-found': 'E-mail ou senha incorretos.',
-  'auth/wrong-password': 'E-mail ou senha incorretos.',
-  'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+  cancelled: 'Login cancelado. Toque em "Continuar com o Google" para tentar de novo.',
+  'auth/popup-closed-by-user': 'Login cancelado. Toque em "Continuar com o Google" para tentar de novo.',
+  'auth/cancelled-popup-request': 'Login cancelado. Toque em "Continuar com o Google" para tentar de novo.',
+  'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Permita pop-ups para este site e tente de novo.',
   'auth/network-request-failed': 'Sem conexão com a internet. Verifique a rede e tente de novo.',
-  'auth/operation-not-allowed': 'O login por e-mail e senha ainda não foi ativado no Firebase.',
+  'auth/operation-not-allowed': 'O login com Google ainda não foi ativado no Firebase.',
+  'auth/user-disabled': 'Esta conta foi desativada.',
+  'auth/too-many-requests': 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+  'auth/account-exists-with-different-credential': 'Já existe uma conta com esse e-mail usando outro método de login.',
 };
 
 function friendly(error) {
-  const message = ERROR_MESSAGES[error?.code] || 'Não foi possível concluir a operação. Tente novamente.';
+  const key = error?.code || error?.message;
+  const message = ERROR_MESSAGES[key] || 'Não foi possível entrar com o Google. Tente novamente.';
   const wrapped = new Error(message);
   wrapped.code = error?.code;
   return wrapped;
@@ -33,6 +36,40 @@ function assertConfigured() {
   if (!isFirebaseConfigured || !auth) {
     throw new Error('O Firebase não está configurado. Preencha o arquivo .env conforme o README.');
   }
+}
+
+function parseFragment(url) {
+  const fragment = url.split('#')[1] || '';
+  const params = {};
+  fragment.split('&').forEach((pair) => {
+    const [key, value = ''] = pair.split('=');
+    if (key) params[decodeURIComponent(key)] = decodeURIComponent(value.replace(/\+/g, ' '));
+  });
+  return params;
+}
+
+async function signInOnWeb() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
+  const credential = await signInWithPopup(auth, provider);
+  return credential.user;
+}
+
+async function signInOnDevice() {
+  const returnUrl = Linking.createURL('auth');
+  const result = await WebBrowser.openAuthSessionAsync(
+    `${LOGIN_PAGE}?return=${encodeURIComponent(returnUrl)}`,
+    returnUrl
+  );
+
+  if (result.type !== 'success') throw Object.assign(new Error('cancelled'), { code: 'cancelled' });
+
+  const params = parseFragment(result.url);
+  if (params.error || !params.idToken) throw Object.assign(new Error('cancelled'), { code: 'cancelled' });
+
+  const credential = GoogleAuthProvider.credential(params.idToken, params.accessToken || undefined);
+  const signed = await signInWithCredential(auth, credential);
+  return signed.user;
 }
 
 export const authService = {
@@ -46,31 +83,10 @@ export const authService = {
     return onAuthStateChanged(auth, callback);
   },
 
-  async signUp(name, email, password) {
+  async signInWithGoogle() {
     assertConfigured();
     try {
-      const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-      if (name.trim()) await updateProfile(credential.user, { displayName: name.trim() });
-      return credential.user;
-    } catch (e) {
-      throw friendly(e);
-    }
-  },
-
-  async signIn(email, password) {
-    assertConfigured();
-    try {
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      return credential.user;
-    } catch (e) {
-      throw friendly(e);
-    }
-  },
-
-  async resetPassword(email) {
-    assertConfigured();
-    try {
-      await sendPasswordResetEmail(auth, email.trim());
+      return Platform.OS === 'web' ? await signInOnWeb() : await signInOnDevice();
     } catch (e) {
       throw friendly(e);
     }

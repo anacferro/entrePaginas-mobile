@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Entrar | Entre Páginas</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Georgia, serif; background: #F4EAE0; color: #2A2523; }
+  main { max-width: 340px; padding: 24px; text-align: center; }
+  h1 { margin: 0 0 12px; font-size: 28px; color: #215C50; }
+  p { margin: 0 0 16px; font: 15px/1.5 system-ui, sans-serif; }
+  a { color: #215C50; font: 600 15px system-ui, sans-serif; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1A1918; color: #EFE9E2; }
+    h1, a { color: #6DBFAB; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Entre Páginas</h1>
+  <p id="msg">Abrindo o login do Google...</p>
+  <a id="back" hidden>Voltar ao aplicativo</a>
+</main>
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+
+  const RETURN_KEY = 'ep_return';
+  const STARTED_KEY = 'ep_started';
+  const msg = document.getElementById('msg');
+  const backLink = document.getElementById('back');
+
+  function allowed(value) {
+    try {
+      const url = new URL(value);
+      if (url.protocol === 'entrepaginas:') return true;
+      if (url.protocol !== 'exp:') return false;
+      const host = url.hostname;
+      return /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) || host.endsWith('.exp.direct');
+    } catch {
+      return false;
+    }
+  }
+
+  function fail(text, back) {
+    msg.textContent = text;
+    sessionStorage.removeItem(STARTED_KEY);
+    if (back) {
+      backLink.href = back + '#error=cancelled';
+      backLink.hidden = false;
+    }
+  }
+
+  async function run() {
+    const fromQuery = new URLSearchParams(location.search).get('return');
+    if (fromQuery) sessionStorage.setItem(RETURN_KEY, fromQuery);
+    const back = fromQuery || sessionStorage.getItem(RETURN_KEY);
+
+    if (!back || !allowed(back)) {
+      fail('Endereço de retorno inválido. Abra o login pelo aplicativo.');
+      return;
+    }
+
+    const config = await (await fetch('/__/firebase/init.json')).json();
+    const auth = getAuth(initializeApp(config));
+    const result = await getRedirectResult(auth);
+
+    if (result) {
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      sessionStorage.removeItem(RETURN_KEY);
+      sessionStorage.removeItem(STARTED_KEY);
+      const params = new URLSearchParams({ idToken: credential?.idToken || '', accessToken: credential?.accessToken || '' });
+      msg.textContent = 'Pronto! Voltando ao aplicativo...';
+      location.replace(back + '#' + params.toString());
+      return;
+    }
+
+    if (sessionStorage.getItem(STARTED_KEY)) {
+      fail('O login foi cancelado.', back);
+      return;
+    }
+
+    sessionStorage.setItem(STARTED_KEY, '1');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    await signInWithRedirect(auth, provider);
+  }
+
+  run().catch(() => fail('Não foi possível entrar. Feche esta janela e tente de novo.', sessionStorage.getItem(RETURN_KEY)));
+</script>
+</body>
+</html>

@@ -4,9 +4,9 @@ Passo a passo para usar o aplicativo e para apresentá-lo ao vivo, na ordem suge
 
 ## 1. Criar a conta e entrar
 
-1. Abra o app. Na tela inicial, toque em **Criar conta**.
-2. Informe nome, e-mail e uma senha de pelo menos 6 caracteres e toque em **Criar conta**.
-3. Para entrar depois, use **Entrar**. Se esquecer a senha, toque em **Esqueci minha senha** e confira o e-mail.
+1. Abra o app e toque em **Continuar com o Google**.
+2. Escolha a conta Google. No celular a escolha abre no navegador e volta sozinha para o app; no computador abre uma janela do Google. O primeiro acesso cria sua estante vazia.
+3. Se você fechar a janela do Google, o app avisa que o login foi cancelado e você pode tentar de novo.
 4. Feche e abra o app: a sessão continua ativa. Para sair, vá em **Perfil > Configurações > Sair da conta**.
 
 O selo no topo mostra o estado da sincronização: **Sincronizado**, **Sincronizando**, **Offline** ou **Falha ao sincronizar**.
@@ -64,7 +64,7 @@ Abra **Perfil** e toque em **Configurações**.
 
 ## 9. Roteiro sugerido para a apresentação (5 a 7 minutos)
 
-1. Mostrar o login e criar uma conta nova; reabrir o app e mostrar a sessão preservada.
+1. Mostrar o login com o Google; reabrir o app e mostrar a sessão preservada.
 2. Criar um livro usando a busca do Google Books.
 3. Importar um PDF ou EPUB e abrir o Histórico de Alterações depois de editar um capítulo.
 4. No leitor: grifar, marcar a página e reordenar capítulos.

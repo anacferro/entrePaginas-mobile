@@ -8,7 +8,7 @@ Aplicativo mobile desenvolvido em **React Native com Expo (JavaScript)** onde ca
 
 O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (disponível em `Telas/` e `Docs/TelasMockup.md`):
 
-1. **Tela de Autenticação (`LoginScreen`):** Identidade visual editorial vintage, login e cadastro com e-mail e senha (Firebase Authentication), sessão que permanece salva e rodapé institucional.
+1. **Tela de Autenticação (`LoginScreen`):** Identidade visual editorial vintage, login somente com a conta Google (Firebase Authentication), sessão que permanece salva e rodapé institucional.
 2. **Minha Estante (`BookshelfScreen`):** Vitrine da coleção em grade de 2 colunas com capas táteis personalizadas, barra de busca com filtro em tempo real, banners de atalho rápido e menu de opções por livro.
 3. **Criar Obra (`CreateBookScreen`):** Ateliê de encadernação com **Visualização Tátil ao vivo** (live preview), paletas para cor da capa, cor do título e textura da folha, metadados da ficha catalográfica e campo para escrever o primeiro capítulo.
 4. **Importar Conteúdo (`CreateBookScreen` - Aba Importar):** Seleção de um arquivo real do aparelho (`expo-document-picker`) nos formatos PDF com texto, EPUB, Texto Puro (.txt / .md) e Estrutura JSON. O texto é extraído e dividido em capítulos automaticamente. PDFs digitalizados (imagem) geram um aviso e um livro para transcrição.
@@ -68,7 +68,7 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 
 | Requisito | Como verificar |
 | :--- | :--- |
-| **Autenticação e sessão persistente** | Em **Criar conta**, informe nome, e-mail e senha. Feche e abra o app: a sessão continua. Em **Perfil > Configurações > Sair da conta** a tela de login volta. Sem login, nenhuma tela interna é acessível. |
+| **Autenticação e sessão persistente** | Toque em **Continuar com o Google** e escolha sua conta (não há e-mail e senha). Feche e abra o app: a sessão continua. Em **Perfil > Configurações > Sair da conta** a tela de login volta. Sem login, nenhuma tela interna é acessível. |
 | **Telas privadas** | As telas (Estante, Novo Livro, Baú, Perfil, Leitor) só são registradas no navegador de rotas para usuário autenticado (`src/navigation/AppNavigator.js`). |
 | **Tema claro e escuro** | Em **Perfil > Configurações > Aparência**, escolha *Claro*, *Escuro* ou *Automático* (segue o aparelho). Todas as telas mudam na hora e a escolha continua ao reabrir. |
 | **Apagar dados** | Em **Perfil > Configurações > Dados**, *Apagar todos os dados* remove os livros do aparelho e da nuvem. Se a nuvem não responder, nada é apagado e o app avisa. |
@@ -77,7 +77,7 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 | **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. |
 | **Recurso nativo com permissão negada** | No editor de capítulo, toque em **Fotografar**. Se negar a câmera, o app explica e permite continuar; se o sistema bloquear, oferece abrir os ajustes. A biometria (*Proteger com biometria*, menu `⋮`) também explica quando não há biometria cadastrada. |
 | **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor), *Transcrever* (foto) e *Sugerir categoria e etiquetas com IA* (Novo Livro e Editar Livro). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
-| **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) e nega todo o resto. Teste feito com duas contas: o dono lê e grava; outra conta, dados inválidos e coleções não previstas recebem `403` (tabela em [Docs/EstruturaDados.md](Docs/EstruturaDados.md)). |
+| **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) que entrou com o Google e nega todo o resto. Teste feito com duas contas: o dono lê e grava; outra conta, dados inválidos e coleções não previstas recebem `403` (tabela em [Docs/EstruturaDados.md](Docs/EstruturaDados.md)). |
 | **Estrutura dos dados** | [Docs/EstruturaDados.md](Docs/EstruturaDados.md) e o arquivo de exemplo [Docs/exemplo-dados.json](Docs/exemplo-dados.json). |
 
 ### Estados de listagem (carregamento, vazio e erro)
@@ -95,10 +95,11 @@ Na aba **Perfil**, a seção de avaliação ajuda a validar:
 O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio projeto Firebase, sem chaves no repositório. Sem o `.env`, a tela de login avisa que o Firebase não está configurado.
 
 1. No [console do Firebase](https://console.firebase.google.com), crie um projeto e registre um app **Web** (ícone `</>`).
-2. Em **Authentication**, ative o provedor **E-mail/senha**.
+2. Em **Authentication > Sign-in method**, ative o provedor **Google** e informe um e-mail de suporte. Se existir o provedor **E-mail/senha**, desative.
 3. Em **Firestore Database**, crie o banco em modo produção e publique as regras do arquivo `firestore.rules` (`firebase deploy --only firestore`).
-4. Em **AI Logic**, ative o provedor **Gemini Developer API** (usado no resumo por IA e na transcrição de fotos).
-5. Copie `.env.example` para `.env` e preencha com os valores do app Web:
+4. Publique a página de login (`hosting/index.html`), usada pelo celular para abrir o login do Google: `firebase deploy --only hosting`. No navegador o login abre direto, sem essa página.
+5. Em **AI Logic**, ative o provedor **Gemini Developer API** (usado no resumo por IA e na transcrição de fotos).
+6. Copie `.env.example` para `.env` e preencha com os valores do app Web:
 
 | Variável | Onde encontrar |
 | :--- | :--- |
@@ -109,8 +110,8 @@ O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio pr
 | `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `messagingSenderId` |
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | `appId` |
 
-6. Opcional: `EXPO_PUBLIC_GEMINI_MODEL` troca o modelo de IA (padrão `gemini-3.5-flash`).
-7. Reinicie o Metro com cache limpo: `npx expo start -c`.
+7. Opcional: `EXPO_PUBLIC_GEMINI_MODEL` troca o modelo de IA (padrão `gemini-3.5-flash`).
+8. Reinicie o Metro com cache limpo: `npx expo start -c`.
 
 **Para quem vai avaliar o projeto:** o `.env` não está no repositório. Há duas opções: usar o `.env` enviado junto com a entrega (por exemplo, anexado no Moodle), copiando-o para a raiz do projeto, ou criar o próprio projeto Firebase seguindo os passos acima (leva alguns minutos). Depois, `npm install` e `npx expo start -c`.
 
@@ -182,7 +183,8 @@ entrePaginas-mobile/
 │       └── ThemeContext.js    # Tema do app (provedor, hooks e escopo do leitor)
 ├── App.js                     # Ponto de entrada do aplicativo
 ├── .env.example               # Variáveis do Firebase (copiar para .env)
-├── firestore.rules            # Regras de segurança do Firestore
+├── firestore.rules            # Regras de segurança do Firestore (só dono, só conta Google)
+├── hosting/index.html         # Página de login com Google usada pelo celular (Firebase Hosting)
 ├── app.json                   # Metadados e configuração do Expo
 ├── package.json               # Dependências e scripts
 └── README.md                  # Este documento

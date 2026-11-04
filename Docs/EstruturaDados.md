@@ -92,7 +92,7 @@ Os capítulos ficam em subcoleção para que um livro grande não ultrapasse o l
 
 Arquivo: [`firestore.rules`](../firestore.rules), publicado com `firebase deploy --only firestore`.
 
-- **Isolamento por dono:** só quem está autenticado e tem o mesmo `uid` do caminho lê ou grava `users/{uid}/...`. Sem login, nada é acessível.
+- **Isolamento por dono:** só quem está autenticado **com o Google** (`sign_in_provider == 'google.com'`) e tem o mesmo `uid` do caminho lê ou grava `users/{uid}/...`. Sem login, ou com outro método de login, nada é acessível.
 - **Validação na escrita:**
   - livro: `title` texto com 1 a 200 caracteres e `status` igual a `estante` ou `bau`;
   - capítulo: `title` texto com até 200 caracteres e `content` texto com até 200.000 caracteres.
@@ -109,6 +109,7 @@ Arquivo: [`firestore.rules`](../firestore.rules), publicado com `firebase deploy
 | Dono grava livro com título vazio | 403 |
 | Dono grava em coleção não prevista | 403 |
 | Requisição sem login válido | 401 (sem token, 403) |
+| Conta criada por e-mail e senha (não Google) tenta gravar ou ler | 403 |
 
 As contas de teste foram removidas ao final.
 
