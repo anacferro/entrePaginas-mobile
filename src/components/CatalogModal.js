@@ -23,15 +23,16 @@ export default function CatalogModal({ initialLetter, onSelect, onClose }) {
   const styles = useThemedStyles(createStyles);
   const [letter, setLetter] = useState(initialLetter || null);
   const [language, setLanguage] = useState('pt');
+  const [mode, setMode] = useState('alphabetical');
   const [state, setState] = useState({ books: [], cursor: undefined, hasMore: true, loading: true, error: null });
   const requestId = useRef(0);
 
-  const load = useCallback(async (lang, wanted, cursor) => {
+  const load = useCallback(async (lang, wanted, cursor, popular) => {
     const id = ++requestId.current;
     const reset = cursor === undefined;
     setState(s => ({ ...(reset ? { books: [], cursor: undefined, hasMore: true } : s), loading: true, error: null }));
     try {
-      const page = await googleBooks.browse(lang, wanted, cursor);
+      const page = await googleBooks.browse(lang, wanted, cursor, popular);
       if (id !== requestId.current) return;
       setState(s => ({
         books: reset ? page.books : [...s.books, ...page.books.filter(b => !s.books.some(o => o.id === b.id))],
@@ -46,20 +47,32 @@ export default function CatalogModal({ initialLetter, onSelect, onClose }) {
     }
   }, []);
 
+  const popular = mode === 'popular';
+
   useEffect(() => {
-    load(language, letter);
-  }, [language, letter, load]);
+    load(language, popular ? null : letter, undefined, popular);
+  }, [language, letter, popular, load]);
 
   const loadMore = () => {
     if (state.loading || !state.hasMore || state.error) return;
-    load(language, letter, state.cursor);
+    load(language, popular ? null : letter, state.cursor, popular);
+  };
+
+  const changeLanguage = async (code) => {
+    if (code === language) return;
+    requestId.current += 1;
+    setState({ books: [], cursor: undefined, hasMore: true, loading: true, error: null });
+    const next = await googleBooks.catalogMode(code);
+    setMode(next);
+    if (next === 'popular') setLetter(null);
+    setLanguage(code);
   };
 
   const { books, loading, error, hasMore } = state;
 
   const renderItem = ({ item, index }) => {
     const current = letterKey(item.title);
-    const showLetter = !letter && (index === 0 || letterKey(books[index - 1].title) !== current);
+    const showLetter = !popular && !letter && (index === 0 || letterKey(books[index - 1].title) !== current);
     return (
       <View>
         {showLetter && <Text style={styles.letterHeader}>{current}</Text>}
@@ -85,15 +98,21 @@ export default function CatalogModal({ initialLetter, onSelect, onClose }) {
           <View style={styles.filters}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
               {BROWSE_LANGUAGES.map(item => (
-                <Chip key={item.code} label={item.label} active={language === item.code} onPress={() => setLanguage(item.code)} styles={styles} />
+                <Chip key={item.code} label={item.label} active={language === item.code} onPress={() => changeLanguage(item.code)} styles={styles} />
               ))}
             </ScrollView>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              <Chip label="Todas" active={letter === null} onPress={() => setLetter(null)} styles={styles} />
-              {LETTERS.map(item => (
-                <Chip key={item} label={item} active={letter === item} onPress={() => setLetter(item)} styles={styles} />
-              ))}
-            </ScrollView>
+            {popular ? (
+              <Text style={styles.note}>
+                Este idioma tem obras demais para listar de A a Z. Mostrando as mais baixadas; para outras, use a busca por título ou autor.
+              </Text>
+            ) : (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                <Chip label="Todas" active={letter === null} onPress={() => setLetter(null)} styles={styles} />
+                {LETTERS.map(item => (
+                  <Chip key={item} label={item} active={letter === item} onPress={() => setLetter(item)} styles={styles} />
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           <FlatList
@@ -115,13 +134,13 @@ export default function CatalogModal({ initialLetter, onSelect, onClose }) {
                 {error && !loading && (
                   <>
                     <Text style={styles.stateText}>{error}</Text>
-                    <Touchable style={styles.retry} onPress={() => load(language, letter, books.length ? state.cursor : undefined)}>
+                    <Touchable style={styles.retry} onPress={() => load(language, popular ? null : letter, books.length ? state.cursor : undefined, popular)}>
                       <Text style={styles.retryText}>Tentar novamente</Text>
                     </Touchable>
                   </>
                 )}
                 {!loading && !error && !hasMore && books.length > 0 && (
-                  <Text style={styles.stateText}>{letter ? `Fim da letra ${letter}.` : 'Fim do catálogo.'}</Text>
+                  <Text style={styles.stateText}>{popular ? 'Fim da lista.' : letter ? `Fim da letra ${letter}.` : 'Fim do catálogo.'}</Text>
                 )}
               </View>
             }
@@ -146,6 +165,7 @@ const createStyles = (colors) => StyleSheet.create({
   subtitle: { fontSize: 12, color: colors.textSecondary, marginTop: 1 },
   filters: { paddingTop: 10, gap: 8 },
   chipRow: { paddingHorizontal: 16, gap: 8 },
+  note: { paddingHorizontal: 16, fontSize: 12, color: colors.textSecondary, lineHeight: 17 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 7,

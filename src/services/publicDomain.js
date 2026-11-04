@@ -66,8 +66,10 @@ const GRID = [1, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536]
 const probes = new Map();
 const starts = new Map();
 
-async function fetchPage(language, index) {
-  const response = await request(`${SEARCH_ENDPOINT}?sort_order=title&query=l.${language}&start_index=${index}`);
+const LIST_CAP = 4976;
+
+async function fetchPage(language, index, order = 'title') {
+  const response = await request(`${SEARCH_ENDPOINT}?sort_order=${order}&query=l.${language}&start_index=${index}`);
   if (response.status === 400) return [];
   if (!response.ok) throw new Error('gutenberg-unavailable');
   return parseEntries(await response.text()).map(toEntry);
@@ -175,17 +177,23 @@ export const publicDomain = {
         return words.every(word => haystack.includes(word));
       })
       .filter((entry, index, all) => all.findIndex(other => other.title === entry.title && other.author === entry.author) === index)
-      .slice(0, 12);
+      .slice(0, 25);
   },
 
-  async browse(language, letter, cursor) {
+  async isCapped(language) {
+    return (await probe(language, LIST_CAP)) !== null;
+  },
+
+  async browse(language, requestedLetter, cursor, popular = false) {
+    const letter = popular ? null : requestedLetter;
+    const order = popular ? 'downloads' : 'title';
     let position = cursor || (letter ? await letterStart(language, letter) : 1);
     const books = [];
     let done = false;
     let filled = false;
 
     while (!filled && !done) {
-      const pages = await Promise.all([position, position + API_PAGE].map(index => fetchPage(language, index)));
+      const pages = await Promise.all([position, position + API_PAGE].map(index => fetchPage(language, index, order)));
       const entries = pages.flat();
       if (entries.length === 0) {
         done = true;

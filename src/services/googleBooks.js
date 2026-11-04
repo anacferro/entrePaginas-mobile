@@ -3,17 +3,45 @@ import { publicDomain, normalize } from './publicDomain';
 const GOOGLE_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 const OPEN_LIBRARY_ENDPOINT = 'https://openlibrary.org/search.json';
 const TIMEOUT_MS = 10000;
-const MAX_RESULTS = 15;
+const MAX_RESULTS = 25;
 
-const LANGUAGES = {
-  Portuguese: 'Português',
-  English: 'Inglês',
-  Spanish: 'Espanhol',
-  French: 'Francês',
-  German: 'Alemão',
-  Italian: 'Italiano',
-  Latin: 'Latim',
-};
+const LANGUAGE_TABLE = [
+  ['af', 'Afrikaans', 'Africâner'], ['ale', 'Aleut', 'Aleúte'], ['ang', 'Old English', 'Inglês antigo'],
+  ['ar', 'Arabic', 'Árabe'], ['arp', 'Arapaho', 'Arapaho'], ['bg', 'Bulgarian', 'Búlgaro'],
+  ['bgs', 'Tagabawa', 'Tagabawa'], ['bo', 'Tibetan', 'Tibetano'], ['br', 'Breton', 'Bretão'],
+  ['brx', 'Bodo', 'Bodo'], ['ca', 'Catalan', 'Catalão'], ['ceb', 'Cebuano', 'Cebuano'],
+  ['cs', 'Czech', 'Tcheco'], ['csb', 'Kashubian', 'Cashúbio'], ['cy', 'Welsh', 'Galês'],
+  ['da', 'Danish', 'Dinamarquês'], ['de', 'German', 'Alemão'], ['el', 'Greek', 'Grego'],
+  ['en', 'English', 'Inglês'], ['enm', 'Middle English', 'Inglês médio'], ['eo', 'Esperanto', 'Esperanto'],
+  ['es', 'Spanish', 'Espanhol'], ['et', 'Estonian', 'Estoniano'], ['fa', 'Farsi', 'Persa'],
+  ['fi', 'Finnish', 'Finlandês'], ['fr', 'French', 'Francês'], ['fur', 'Friulian', 'Friulano'],
+  ['fy', 'Frisian', 'Frísio'], ['ga', 'Irish', 'Irlandês'], ['gl', 'Galician', 'Galego'],
+  ['gla', 'Gaelic, Scottish', 'Gaélico escocês'], ['grc', 'Greek, Ancient', 'Grego antigo'],
+  ['hai', 'Haida', 'Haida'], ['he', 'Hebrew', 'Hebraico'], ['hu', 'Hungarian', 'Húngaro'],
+  ['ia', 'Interlingua', 'Interlíngua'], ['ilo', 'Iloko', 'Ilocano'], ['is', 'Icelandic', 'Islandês'],
+  ['it', 'Italian', 'Italiano'], ['iu', 'Inuktitut', 'Inuktitut'], ['ja', 'Japanese', 'Japonês'],
+  ['kha', 'Khasi', 'Khasi'], ['kld', 'Gamilaraay', 'Gamilaraay'], ['ko', 'Korean', 'Coreano'],
+  ['la', 'Latin', 'Latim'], ['lt', 'Lithuanian', 'Lituano'], ['mi', 'Maori', 'Maori'],
+  ['myn', 'Mayan Languages', 'Línguas maias'], ['nah', 'Nahuatl', 'Náuatle'],
+  ['nai', 'North American Indian', 'Indígenas norte-americanos'], ['nap', 'Napoletano-Calabrese', 'Napolitano-calabrês'],
+  ['nav', 'Navajo', 'Navajo'], ['nl', 'Dutch', 'Holandês'], ['no', 'Norwegian', 'Norueguês'],
+  ['oc', 'Occitan', 'Occitano'], ['oji', 'Ojibwa', 'Ojibwa'], ['pl', 'Polish', 'Polonês'],
+  ['pt', 'Portuguese', 'Português'], ['rmq', 'Caló', 'Caló'], ['ro', 'Romanian', 'Romeno'],
+  ['ru', 'Russian', 'Russo'], ['sa', 'Sanskrit', 'Sânscrito'], ['sco', 'Scots', 'Escocês'],
+  ['sl', 'Slovenian', 'Esloveno'], ['sr', 'Serbian', 'Sérvio'], ['sv', 'Swedish', 'Sueco'],
+  ['te', 'Telugu', 'Telugo'], ['tl', 'Tagalog', 'Tagalo'], ['yi', 'Yiddish', 'Iídiche'], ['zh', 'Chinese', 'Chinês'],
+];
+
+const LANGUAGES = Object.fromEntries(LANGUAGE_TABLE.map(([, english, label]) => [english, label]));
+
+const FIRST_LANGUAGES = ['pt', 'en', 'es', 'fr', 'de', 'it'];
+
+export const BROWSE_LANGUAGES = [
+  ...FIRST_LANGUAGES.map(code => LANGUAGE_TABLE.find(row => row[0] === code)),
+  ...LANGUAGE_TABLE
+    .filter(row => !FIRST_LANGUAGES.includes(row[0]))
+    .sort((a, b) => a[2].localeCompare(b[2], 'pt')),
+].map(([code, , label]) => ({ code, label }));
 
 function secureUrl(url) {
   return url ? url.replace(/^http:/, 'https:') : null;
@@ -176,14 +204,6 @@ function failureMessage(errors) {
   return 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
 }
 
-export const BROWSE_LANGUAGES = [
-  { code: 'pt', label: 'Português' },
-  { code: 'es', label: 'Espanhol' },
-  { code: 'fr', label: 'Francês' },
-  { code: 'de', label: 'Alemão' },
-  { code: 'it', label: 'Italiano' },
-];
-
 export function singleLetter(query) {
   const value = normalize(query);
   return /^[a-z]$/.test(value) ? value.toUpperCase() : null;
@@ -195,8 +215,16 @@ export function isSearchable(query) {
 }
 
 export const googleBooks = {
-  async browse(language, letter, cursor) {
-    const page = await publicDomain.browse(language, letter, cursor);
+  async catalogMode(language) {
+    try {
+      return (await publicDomain.isCapped(language)) ? 'popular' : 'alphabetical';
+    } catch {
+      return 'alphabetical';
+    }
+  },
+
+  async browse(language, letter, cursor, popular) {
+    const page = await publicDomain.browse(language, letter, cursor, popular);
     return { books: page.entries.map(fromPublicDomain), cursor: page.cursor, hasMore: page.hasMore };
   },
 
