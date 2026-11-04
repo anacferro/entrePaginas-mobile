@@ -22,6 +22,18 @@ export const bookFonts = {
     return { customFont: family, fontPath: `fonts/${bookId}/font.${font.ext}`, fontLabel: font.family };
   },
 
+  remove(bookIds) {
+    if (Platform.OS === 'web') return;
+    bookIds.forEach((id) => {
+      try {
+        const dir = new Directory(Paths.document, 'fonts', id);
+        if (dir.exists) dir.delete();
+      } catch {
+        return;
+      }
+    });
+  },
+
   async load(book) {
     const family = book?.customFont;
     if (!family) return false;

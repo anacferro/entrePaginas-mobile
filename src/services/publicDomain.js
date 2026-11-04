@@ -74,6 +74,25 @@ async function downloadText(id) {
 }
 
 export const publicDomain = {
+  async search(term) {
+    const response = await request(`${SEARCH_ENDPOINT}?query=${encodeURIComponent(term).replace(/%20/g, '+')}`);
+    if (!response.ok) throw new Error('gutenberg-unavailable');
+
+    const words = normalize(term).split(' ').filter(word => word.length > 2);
+    return parseEntries(await response.text())
+      .map(entry => ({
+        id: entry.id,
+        title: entry.title.replace(/\s*\([^)]*\)\s*$/, '').trim(),
+        author: /downloads?$/i.test(entry.author.trim()) ? '' : entry.author.trim(),
+      }))
+      .filter(entry => {
+        const haystack = normalize(`${entry.title} ${entry.author}`);
+        return words.every(word => haystack.includes(word));
+      })
+      .filter((entry, index, all) => all.findIndex(other => other.title === entry.title && other.author === entry.author) === index)
+      .slice(0, 12);
+  },
+
   async findEntry(title, authors) {
     try {
       const query = `${title} ${authors || ''}`.trim();

@@ -30,18 +30,19 @@ export default function GoogleBooksSearch({ onSelect }) {
       const found = await googleBooks.search(query);
       const checked = await Promise.all(
         found.slice(0, 15).map(async (book) => {
+          if (book.gutenbergId) return book;
           const entry = await publicDomain.findEntry(book.title, book.authors);
           return entry ? { ...book, gutenbergId: entry.id } : null;
         })
       );
       const seen = new Set();
-      setResults(
-        checked.filter((book) => {
-          if (!book || seen.has(book.gutenbergId)) return false;
-          seen.add(book.gutenbergId);
-          return true;
-        })
-      );
+      let available = checked.filter((book) => {
+        if (!book || seen.has(book.gutenbergId)) return false;
+        seen.add(book.gutenbergId);
+        return true;
+      });
+      if (available.length === 0) available = await googleBooks.searchPublicDomain(query).catch(() => []);
+      setResults(available);
     } catch (e) {
       setResults(null);
       setError(e.message || 'Não foi possível consultar o Google Books.');

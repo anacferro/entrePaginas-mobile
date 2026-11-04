@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
 import { relocateMarks } from './marks';
 import { cloud } from './cloud';
+import { bookFonts } from './bookFonts';
 
 let userId = null;
 
@@ -305,7 +306,7 @@ export const storage = {
     if (!book) return null;
 
     book.bookmarks = [
-      ...(book.bookmarks || []).filter(bm => bm.chapterId !== bookmarkData.chapterId),
+      ...(book.bookmarks || []).filter(bm => !(bm.chapterId === bookmarkData.chapterId && bm.page === bookmarkData.page)),
       {
         id: `pin-${Date.now()}`,
         chapterId: bookmarkData.chapterId,
@@ -402,6 +403,7 @@ export const storage = {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const remaining = list.filter(b => b.status !== 'bau');
+    bookFonts.remove(list.filter(b => b.status === 'bau').map(b => b.id));
     await saveBooks(remaining);
     return remaining;
   },
@@ -410,6 +412,7 @@ export const storage = {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const filtered = list.filter(b => b.id !== id);
+    bookFonts.remove([id]);
     await saveBooks(filtered);
     return filtered;
   },
@@ -419,6 +422,7 @@ export const storage = {
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const drop = new Set(ids);
     const filtered = list.filter(b => !drop.has(b.id));
+    bookFonts.remove(ids);
     await saveBooks(filtered);
     return filtered;
   },

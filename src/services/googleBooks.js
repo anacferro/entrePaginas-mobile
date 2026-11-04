@@ -1,3 +1,5 @@
+import { publicDomain } from './publicDomain';
+
 const GOOGLE_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 const OPEN_LIBRARY_ENDPOINT = 'https://openlibrary.org/search.json';
 const TIMEOUT_MS = 10000;
@@ -66,24 +68,45 @@ async function searchOpenLibrary(term) {
   return (data.docs || []).map(fromOpenLibrary);
 }
 
+async function searchPublicDomain(term) {
+  const entries = await publicDomain.search(term);
+  return entries.map(entry => ({
+    id: `pg-${entry.id}`,
+    title: entry.title,
+    authors: entry.author,
+    description: '',
+    category: null,
+    pageCount: null,
+    thumbnail: `https://www.gutenberg.org/cache/epub/${entry.id}/pg${entry.id}.cover.medium.jpg`,
+    gutenbergId: entry.id,
+  }));
+}
+
+function failureMessage(errors) {
+  if (errors.some(e => e.name === 'AbortError')) {
+    return 'A consulta demorou demais. Verifique a conexão e tente novamente.';
+  }
+  if (errors.some(e => e instanceof TypeError)) {
+    return 'Não foi possível conectar. Verifique a conexão com a internet.';
+  }
+  return 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
+}
+
 export const googleBooks = {
+  searchPublicDomain,
+
   async search(query) {
     const term = query.trim();
     if (!term) return [];
 
-    try {
-      return await searchGoogle(term);
-    } catch (googleError) {
+    const errors = [];
+    for (const source of [searchGoogle, searchOpenLibrary, searchPublicDomain]) {
       try {
-        return await searchOpenLibrary(term);
-      } catch (fallbackError) {
-        const failure = googleError.name === 'AbortError' || fallbackError.name === 'AbortError'
-          ? 'A consulta demorou demais. Verifique a conexão e tente novamente.'
-          : googleError instanceof TypeError || fallbackError instanceof TypeError
-            ? 'Não foi possível conectar. Verifique a conexão com a internet.'
-            : 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
-        throw new Error(failure);
+        return await source(term);
+      } catch (error) {
+        errors.push(error);
       }
     }
+    throw new Error(failureMessage(errors));
   },
 };

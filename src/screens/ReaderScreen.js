@@ -167,7 +167,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
   const isOwnBook = book?.isOwn !== false;
   const bookmarks = book?.bookmarks || [];
-  const currentBookmark = bookmarks.find(bm => bm.chapterId === currentChapter.id);
+  const currentBookmark = bookmarks.find(bm => bm.chapterId === currentChapter.id && bm.page === currentPageNumber);
 
   const pageComments = (book?.comments || []).filter(cm => cm.page === currentPageNumber);
 
@@ -229,7 +229,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   };
 
   const goToBookmark = (bm) => {
-    setCurrentPageIndex(firstPageOf(bm.chapterId));
+    setCurrentPageIndex(Math.max(0, Math.min(pages.length - 1, bm.page - 1)));
     setShowSummary(false);
   };
 
