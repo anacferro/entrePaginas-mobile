@@ -14,9 +14,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BookCover from './BookCover';
 import AiSuggest from './AiSuggest';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 function ColorRow({ label, options, value, onChange, outlined }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.group}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -46,6 +48,8 @@ function ColorRow({ label, options, value, onChange, outlined }) {
 }
 
 export default function BookEditModal({ visible, book, onCancel, onSave }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [category, setCategory] = useState('Literatura');
@@ -188,7 +192,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -229,7 +233,7 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   body: {
     paddingHorizontal: 22,
@@ -251,7 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   input: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderRadius: 10,
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderLight,
     marginRight: 8,

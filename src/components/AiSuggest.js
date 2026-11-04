@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ai } from '../services/ai';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function AiSuggest({ title, text, onApply }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [suggestion, setSuggestion] = useState(null);
@@ -89,7 +91,7 @@ export default function AiSuggest({ title, text, onApply }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   box: {
     marginTop: 14,
   },
@@ -115,7 +117,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 12,
     borderRadius: 12,
-    backgroundColor: '#F3EBDD',
+    backgroundColor: colors.surfaceMuted,
   },
   line: {
     fontSize: 13,
@@ -144,7 +146,7 @@ const styles = StyleSheet.create({
   applyText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   discardText: {
     fontSize: 12,

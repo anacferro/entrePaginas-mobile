@@ -22,9 +22,22 @@ import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles, ThemeScope } from '../theme/ThemeContext';
 
-export default function ReaderScreen({ route, navigation }) {
+export default function ReaderScreen(props) {
+  const { isDark: appDark } = useTheme();
+  const [readerDark, setReaderDark] = useState(appDark);
+
+  return (
+    <ThemeScope dark={readerDark}>
+      <ReaderContent {...props} isDark={readerDark} setReaderDark={setReaderDark} />
+    </ThemeScope>
+  );
+}
+
+function ReaderContent({ route, navigation, isDark, setReaderDark }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { bookId, bookTitle } = route.params || {};
 
   const [book, setBook] = useState(null);
@@ -38,7 +51,6 @@ export default function ReaderScreen({ route, navigation }) {
   const [annotating, setAnnotating] = useState(false);
   const [selection, setSelection] = useState(null);
   const [showTypography, setShowTypography] = useState(false);
-  const [themeMode, setThemeMode] = useState('light');
   const [editorMode, setEditorMode] = useState(null);
   const scrollRef = useRef(null);
 
@@ -49,10 +61,6 @@ export default function ReaderScreen({ route, navigation }) {
         if (found) {
           setBook(found);
         }
-      }
-      const user = await storage.getUserProfile();
-      if (user?.readerTheme) {
-        setThemeMode(user.readerTheme);
       }
     }
     loadBook();
@@ -205,9 +213,8 @@ export default function ReaderScreen({ route, navigation }) {
     );
   };
 
-  const isDark = themeMode === 'dark';
-  const readerBg = isDark ? colors.reader.dark.background : colors.reader.light.background;
-  const readerTextColor = isDark ? colors.reader.dark.text : colors.reader.light.text;
+  const readerBg = colors.reader.background;
+  const readerTextColor = colors.reader.text;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
@@ -218,7 +225,7 @@ export default function ReaderScreen({ route, navigation }) {
         onProfilePress={() => navigation.navigate('MainTabs', { screen: 'Perfil' })}
       />
 
-      <View style={[styles.readerNavHeader, { backgroundColor: isDark ? '#242220' : colors.surfaceWarm }]}>
+      <View style={[styles.readerNavHeader, { backgroundColor: colors.surfaceWarm }]}>
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() => navigation.goBack()}
@@ -231,7 +238,7 @@ export default function ReaderScreen({ route, navigation }) {
           <Text style={[styles.bookHeaderTitle, { color: readerTextColor }]} numberOfLines={1}>
             {book?.title || bookTitle || 'Crônicas do Silêncio'}
           </Text>
-          <Text style={[styles.chapterHeaderSubtitle, { color: isDark ? '#A8A099' : colors.textSecondary }]} numberOfLines={1}>
+          <Text style={[styles.chapterHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
             {currentChapter.title}
           </Text>
         </View>
@@ -255,7 +262,7 @@ export default function ReaderScreen({ route, navigation }) {
               accessibilityLabel="Marca-texto"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="brush-outline" size={20} color={annotating ? '#FFFFFF' : readerTextColor} />
+              <Ionicons name="brush-outline" size={20} color={annotating ? colors.onPrimary : readerTextColor} />
             </TouchableOpacity>
           )}
 
@@ -298,7 +305,7 @@ export default function ReaderScreen({ route, navigation }) {
       </View>
 
       {showTypography && (
-        <View style={[styles.typoBar, { backgroundColor: isDark ? '#2B2826' : '#EFE7DC' }]}>
+        <View style={[styles.typoBar, { backgroundColor: colors.surfaceMuted }]}>
           <Text style={[styles.typoLabel, { color: readerTextColor }]}>Tamanho do Texto:</Text>
           <View style={styles.fontControlsRow}>
             <TouchableOpacity
@@ -319,8 +326,8 @@ export default function ReaderScreen({ route, navigation }) {
           </View>
 
           <TouchableOpacity
-            style={[styles.themePill, { backgroundColor: isDark ? '#3D3835' : '#FFFFFF' }]}
-            onPress={() => setThemeMode(isDark ? 'light' : 'dark')}
+            style={[styles.themePill, { backgroundColor: colors.card }]}
+            onPress={() => setReaderDark(!isDark)}
           >
             <Ionicons name={isDark ? 'sunny' : 'moon'} size={15} color={readerTextColor} />
             <Text style={[styles.themePillText, { color: readerTextColor }]}>
@@ -345,7 +352,7 @@ export default function ReaderScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
-          <AiSummary chapter={currentChapter} isDark={isDark} />
+          <AiSummary chapter={currentChapter} />
 
           {currentChapter.photo && (
             <Image
@@ -373,7 +380,7 @@ export default function ReaderScreen({ route, navigation }) {
 
           {book && isLastChapter && (
             <TouchableOpacity
-              style={[styles.addChapterBtn, { borderColor: isDark ? '#3D3835' : colors.border }]}
+              style={[styles.addChapterBtn, { borderColor: colors.border }]}
               onPress={openNewChapter}
               activeOpacity={0.8}
             >
@@ -398,7 +405,7 @@ export default function ReaderScreen({ route, navigation }) {
               <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
                 Página {currentPageNumber}
               </Text>
-              <Text style={[styles.pageTotalText, { color: isDark ? '#9A928A' : colors.textSecondary }]}>
+              <Text style={[styles.pageTotalText, { color: colors.textSecondary }]}>
                 de {totalPages} folhas
               </Text>
             </View>
@@ -422,9 +429,9 @@ export default function ReaderScreen({ route, navigation }) {
         )}
 
         {annotating && (
-          <View style={[styles.annotateBar, { backgroundColor: isDark ? '#2B2826' : colors.surface }]}>
+          <View style={[styles.annotateBar, { backgroundColor: colors.surface }]}>
             <View style={styles.annotateHeader}>
-              <Text style={[styles.annotateHint, { color: isDark ? '#A8A099' : colors.textSecondary }]}>
+              <Text style={[styles.annotateHint, { color: colors.textSecondary }]}>
                 {selection
                   ? `${selection.end - selection.start} caracteres selecionados`
                   : Platform.OS === 'web'
@@ -473,7 +480,7 @@ export default function ReaderScreen({ route, navigation }) {
         onRequestClose={() => setShowSummary(false)}
       >
         <View style={styles.modalBackdrop}>
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#242220' : colors.surfaceWarm }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceWarm }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="list" size={20} color={colors.primary} style={{ marginRight: 8 }} />
@@ -595,7 +602,7 @@ export default function ReaderScreen({ route, navigation }) {
 
             {book && summaryTab === 'chapters' && (
               <TouchableOpacity style={styles.tocAddBtn} onPress={openNewChapter} activeOpacity={0.85}>
-                <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                <Ionicons name="add" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
                 <Text style={styles.tocAddText}>Novo Capítulo</Text>
               </TouchableOpacity>
             )}
@@ -610,7 +617,7 @@ export default function ReaderScreen({ route, navigation }) {
         onRequestClose={() => setShowBookmarkSheet(false)}
       >
         <KeyboardAvoidingView style={styles.modalBackdrop} behavior="padding">
-          <View style={[styles.modalContent, { backgroundColor: isDark ? '#242220' : colors.surfaceWarm }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surfaceWarm }]}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Ionicons name="bookmark" size={20} color={bookmarkColor} style={{ marginRight: 8 }} />
@@ -649,7 +656,7 @@ export default function ReaderScreen({ route, navigation }) {
             </Text>
 
             <TouchableOpacity style={styles.tocAddBtn} onPress={handleSaveBookmark} activeOpacity={0.85}>
-              <Ionicons name="bookmark" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Ionicons name="bookmark" size={16} color={colors.onPrimary} style={{ marginRight: 6 }} />
               <Text style={styles.tocAddText}>{currentBookmark ? 'Atualizar Marcador' : 'Marcar Página'}</Text>
             </TouchableOpacity>
 
@@ -669,7 +676,6 @@ export default function ReaderScreen({ route, navigation }) {
         visible={editorMode !== null}
         chapter={editorMode === 'edit' ? currentChapter : null}
         chapterNumber={editorMode === 'edit' ? currentPageIndex + 1 : chapters.length + 1}
-        isDark={isDark}
         notice={!isOwnBook ? 'Esta obra não é sua: as alterações ficarão registradas no histórico do livro.' : null}
         onCancel={() => setEditorMode(null)}
         onSave={handleSaveChapter}
@@ -679,7 +685,7 @@ export default function ReaderScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -792,7 +798,7 @@ const styles = StyleSheet.create({
   annotateDoneText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   annotateTools: {
     flexDirection: 'row',
@@ -823,7 +829,7 @@ const styles = StyleSheet.create({
   },
   summaryTabs: {
     flexDirection: 'row',
-    backgroundColor: '#EBE1D5',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 20,
     padding: 3,
     marginBottom: 6,
@@ -843,7 +849,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   summaryTabTextActive: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontWeight: '700',
   },
   emptyBookmarks: {
@@ -862,7 +868,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   sheetInput: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: colors.borderLight,
@@ -884,7 +890,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
   },
   sheetMeta: {
     fontSize: 12,
@@ -1090,6 +1096,6 @@ const styles = StyleSheet.create({
   tocAddText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

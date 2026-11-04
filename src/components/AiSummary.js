@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ai } from '../services/ai';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
-export default function AiSummary({ chapter, isDark }) {
+export default function AiSummary({ chapter }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -31,9 +33,9 @@ export default function AiSummary({ chapter, isDark }) {
     }
   };
 
-  const cardColor = isDark ? '#2B2826' : '#F3EBDD';
-  const textColor = isDark ? '#E6DFD6' : colors.text;
-  const mutedColor = isDark ? '#9A928A' : colors.textSecondary;
+  const cardColor = colors.surfaceMuted;
+  const textColor = colors.text;
+  const mutedColor = colors.textSecondary;
 
   if (!summary && !loading && !error) {
     return (
@@ -96,7 +98,7 @@ export default function AiSummary({ chapter, isDark }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

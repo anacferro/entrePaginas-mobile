@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { googleBooks } from '../services/googleBooks';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function GoogleBooksSearch({ onSelect }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +68,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           activeOpacity={0.8}
           accessibilityLabel="Buscar"
         >
-          <Ionicons name="search" size={18} color="#FFFFFF" />
+          <Ionicons name="search" size={18} color={colors.onPrimary} />
         </TouchableOpacity>
       </View>
 
@@ -120,7 +122,7 @@ export default function GoogleBooksSearch({ onSelect }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   formCard: {
     backgroundColor: colors.surface,
     borderRadius: 16,
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderRadius: 10,

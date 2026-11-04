@@ -21,9 +21,11 @@ import { exporter } from '../services/exporter';
 import { biometrics } from '../services/biometrics';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function BookshelfScreen({ navigation }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [books, setBooks] = useState([]);
   const [chestCount, setChestCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -156,7 +158,7 @@ export default function BookshelfScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.surfaceSoft} />
       <Header
         subtitle="Estante"
         onProfilePress={() => navigation.navigate('Perfil')}
@@ -231,12 +233,12 @@ export default function BookshelfScreen({ navigation }) {
           >
             <View style={styles.bannerTopRow}>
               <View style={styles.newBookIconSquare}>
-                <Ionicons name="book" size={16} color="#FFFFFF" />
+                <Ionicons name="book" size={16} color={colors.onDark} />
               </View>
-              <Ionicons name="add" size={20} color="#FFFFFF" opacity={0.8} />
+              <Ionicons name="add" size={20} color={colors.onDark} opacity={0.8} />
             </View>
-            <Text style={[styles.bannerTitle, { color: '#FFFFFF' }]}>Novo Livro</Text>
-            <Text style={[styles.bannerSubtitle, { color: 'rgba(255,255,255,0.8)' }]}>
+            <Text style={[styles.bannerTitle, { color: colors.onDark }]}>Novo Livro</Text>
+            <Text style={[styles.bannerSubtitle, { color: colors.onDark }]}>
               Criar encadernação
             </Text>
           </TouchableOpacity>
@@ -305,7 +307,7 @@ export default function BookshelfScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -349,7 +351,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 46,
@@ -380,7 +382,7 @@ const styles = StyleSheet.create({
   },
   chestBanner: {
     flex: 1,
-    backgroundColor: '#FAF5EE',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
@@ -412,7 +414,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -427,7 +429,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   counterPill: {
-    backgroundColor: '#EFE7DC',
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,

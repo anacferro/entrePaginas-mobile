@@ -186,6 +186,29 @@ export const cloud = {
     }
   },
 
+  async wipe() {
+    const uid = auth?.currentUser?.uid;
+    if (!db || !uid) return true;
+
+    while (running) await new Promise(resolve => setTimeout(resolve, 100));
+    clearTimeout(timer);
+    pending = null;
+    setStatus('syncing');
+
+    try {
+      const snapshot = await withTimeout(getDocs(booksRef(uid)));
+      for (const bookDoc of snapshot.docs) {
+        await removeBook(uid, bookDoc.id);
+      }
+      synced.clear();
+      setStatus('synced');
+      return true;
+    } catch (e) {
+      setStatus(e.code === 'unavailable' || e.code === 'timeout' ? 'offline' : 'error');
+      return false;
+    }
+  },
+
   reset() {
     clearTimeout(timer);
     synced.clear();

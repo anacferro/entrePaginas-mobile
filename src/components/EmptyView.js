@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function EmptyView({
   icon = 'book-outline',
@@ -10,6 +10,8 @@ export default function EmptyView({
   actionLabel = 'Criar Novo Livro',
   onActionPress,
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
@@ -24,7 +26,7 @@ export default function EmptyView({
           activeOpacity={0.8}
           onPress={onActionPress}
         >
-          <Ionicons name="add" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+          <Ionicons name="add" size={18} color={colors.onPrimary} style={{ marginRight: 6 }} />
           <Text style={styles.actionButtonText}>{actionLabel}</Text>
         </TouchableOpacity>
       )}
@@ -32,7 +34,7 @@ export default function EmptyView({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     paddingVertical: 44,
     paddingHorizontal: 24,
@@ -89,6 +91,6 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

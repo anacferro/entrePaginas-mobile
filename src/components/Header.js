@@ -3,22 +3,25 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Avatar from './Avatar';
 import { cloud } from '../services/cloud';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
-const SYNC_INFO = {
+const syncInfo = (colors) => ({
   idle: { label: 'Salvo', color: colors.success },
   synced: { label: 'Sincronizado', color: colors.success },
   syncing: { label: 'Sincronizando', color: colors.accentGold },
   offline: { label: 'Offline', color: colors.textMuted },
   error: { label: 'Falha ao sincronizar', color: colors.danger },
-};
+});
 
 export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPress }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [syncStatus, setSyncStatus] = useState(cloud.getStatus());
 
   useEffect(() => cloud.subscribe(setSyncStatus), []);
 
-  const sync = SYNC_INFO[syncStatus] || SYNC_INFO.idle;
+  const infos = syncInfo(colors);
+  const sync = infos[syncStatus] || infos.idle;
 
   return (
     <View style={styles.container}>
@@ -54,7 +57,7 @@ export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPre
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -73,7 +76,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -108,7 +111,7 @@ const styles = StyleSheet.create({
   syncBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 12,

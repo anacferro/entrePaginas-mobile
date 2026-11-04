@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import BookCover from './BookCover';
 import ChangeHistoryModal from './ChangeHistoryModal';
 import BookEditModal from './BookEditModal';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function BookCard({
   book,
@@ -17,6 +17,8 @@ export default function BookCard({
   onDelete,
   isChest = false,
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [menuVisible, setMenuVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
@@ -233,7 +235,7 @@ export default function BookCard({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   cardContainer: {
     width: '48%',
     marginBottom: 20,

@@ -13,8 +13,9 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
 3. **Criar Obra (`CreateBookScreen`):** Ateliê de encadernação com **Visualização Tátil ao vivo** (live preview), paletas para cor da capa, cor do título e textura da folha, metadados da ficha catalográfica e campo para escrever o primeiro capítulo.
 4. **Importar Conteúdo (`CreateBookScreen` - Aba Importar):** Seleção de um arquivo real do aparelho (`expo-document-picker`) nos formatos PDF com texto, EPUB, Texto Puro (.txt / .md) e Estrutura JSON. O texto é extraído e dividido em capítulos automaticamente. PDFs digitalizados (imagem) geram um aviso e um livro para transcrição.
 5. **Baú Literário (`ChestScreen`):** Repositório de volumes em descanso, permitindo restauração individual, restauração em massa (`Restaurar Todos`) ou exclusão definitiva.
-6. **Perfil do Leitor (`ProfileScreen`):** Estatísticas de leitura (livros ativos, livros no baú, páginas lidas), medidor de armazenamento, preferências de tema (Claro / Escuro) e utilitários para auditoria de estados.
-7. **Modo Leitor (`ReaderScreen`):** Experiência de leitura imersiva com paginação, ajuste de tamanho de fonte (A- / A+), alternância de tema no leitor e modal de **Sumário** para salto direto entre capítulos. Inclui:
+6. **Perfil do Leitor (`ProfileScreen`):** Estatísticas de leitura (livros ativos, livros no baú, páginas lidas), medidor de armazenamento, atalho para as Configurações e utilitários para auditoria de estados.
+7. **Configurações (`SettingsScreen`):** Tema do aplicativo (Automático, Claro ou Escuro, salvo no aparelho), dados da conta com **Sair da conta** e **Apagar todos os dados** (livros do aparelho e da nuvem).
+8. **Modo Leitor (`ReaderScreen`):** Experiência de leitura imersiva com paginação, ajuste de tamanho de fonte (A- / A+), alternância de tema no leitor e modal de **Sumário** para salto direto entre capítulos. Inclui:
    - **Escrita:** editor em tela cheia para editar, criar e excluir capítulos.
    - **Marcadores:** marcação da página com título e cor do pin, listados na aba *Marcadores* do sumário.
    - **Marca-texto:** grifos em 5 cores, negrito, itálico e sublinhado sobre trechos selecionados.
@@ -67,8 +68,10 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 
 | Requisito | Como verificar |
 | :--- | :--- |
-| **Autenticação e sessão persistente** | Em **Criar conta**, informe nome, e-mail e senha. Feche e abra o app: a sessão continua. Em **Perfil > Desconectar da conta** a tela de login volta. Sem login, nenhuma tela interna é acessível. |
+| **Autenticação e sessão persistente** | Em **Criar conta**, informe nome, e-mail e senha. Feche e abra o app: a sessão continua. Em **Perfil > Configurações > Sair da conta** a tela de login volta. Sem login, nenhuma tela interna é acessível. |
 | **Telas privadas** | As telas (Estante, Novo Livro, Baú, Perfil, Leitor) só são registradas no navegador de rotas para usuário autenticado (`src/navigation/AppNavigator.js`). |
+| **Tema claro e escuro** | Em **Perfil > Configurações > Aparência**, escolha *Claro*, *Escuro* ou *Automático* (segue o aparelho). Todas as telas mudam na hora e a escolha continua ao reabrir. |
+| **Apagar dados** | Em **Perfil > Configurações > Dados**, *Apagar todos os dados* remove os livros do aparelho e da nuvem. Se a nuvem não responder, nada é apagado e o app avisa. |
 | **CRUD com persistência local e remota** | Crie, edite (menu `⋮` > *Editar Livro*), arquive (*Mover para o Baú*) e exclua livros e capítulos. Os dados ficam no AsyncStorage e no Firestore; o selo do cabeçalho mostra *Sincronizado*. Apague os dados do app, entre de novo e os livros voltam da nuvem. |
 | **Uso offline** | Desligue a internet: o app continua funcionando e o selo muda para *Offline*; ao religar, sincroniza sozinho. |
 | **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. |
@@ -153,8 +156,9 @@ entrePaginas-mobile/
 │   │   ├── ChestScreen.js     # Baú de livros arquivados
 │   │   ├── CreateBookScreen.js# Criação e importação de obras
 │   │   ├── LoginScreen.js     # Tela de login
-│   │   ├── ProfileScreen.js   # Perfil, preferências e testes de estados
-│   │   └── ReaderScreen.js    # Leitor de livros com sumário e tipografia
+│   │   ├── ProfileScreen.js   # Perfil, estatísticas e testes de estados
+│   │   ├── ReaderScreen.js    # Leitor de livros com sumário e tipografia
+│   │   └── SettingsScreen.js  # Tema, conta (sair) e apagar dados
 │   ├── services/
 │   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
@@ -174,7 +178,8 @@ entrePaginas-mobile/
 │   │   └── suggestion.js      # Validação da resposta estruturada da IA
 │   └── theme/
 │       ├── bookOptions.js     # Cores de capa e categorias
-│       └── colors.js          # Paleta de cores e temas (Claro / Escuro)
+│       ├── palettes.js        # Paletas Claro e Escuro
+│       └── ThemeContext.js    # Tema do app (provedor, hooks e escopo do leitor)
 ├── App.js                     # Ponto de entrada do aplicativo
 ├── .env.example               # Variáveis do Firebase (copiar para .env)
 ├── firestore.rules            # Regras de segurança do Firestore

@@ -215,6 +215,7 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 9. Documentou estrutura de dados, regras, decisões (DA10 a DA14) e escreveu o tutorial de uso.
 10. Criou a sugestão de categoria, etiquetas e resumo curto com IA em JSON estruturado, com validação própria (`suggestion.js`) que recusa respostas fora do formato; testou os casos válidos, com cerca de crases, categoria desconhecida, lista, `null`, vazio e texto solto.
 11. Gerou `Docs/exemplo-dados.json`, atualizou o PRD (login por e-mail e senha) e testou as regras do Firestore com duas contas temporárias (dono permitido; outra conta, dados inválidos e coleções não previstas negados), removendo as contas depois. Também retirou os comentários do código, a pedido do usuário, e achou e corrigiu uma função apagada por engano (`logChange`), que quebrava a edição de capítulos.
+12. Criou a tela de Configurações com tema Automático, Claro e Escuro em todo o app (paletas com contraste conferido, contexto de tema e migração de todas as telas), sair da conta e apagar todos os dados do aparelho e da nuvem; verificou três vezes (lint e bundles, auditoria automática de contraste nos dois temas em todas as telas, e teste funcional de sair, entrar e apagar com uma conta temporária, removida depois). Corrigiu de passagem o contraste do botão *Esvaziar Baú* no escuro e o fato de *Excluir dados da biblioteca* só apagar no aparelho.
 
 **Decisões que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
 

@@ -19,10 +19,12 @@ import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
 
 export default function CreateBookScreen({ navigation, route }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const initialTab = route?.params?.initialTab || 'create';
   const [activeTab, setActiveTab] = useState(initialTab === 'import' ? 'import' : 'create');
 
@@ -152,7 +154,7 @@ export default function CreateBookScreen({ navigation, route }) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.surfaceSoft} />
       <Header
         subtitle="Criar"
         onProfilePress={() => navigation.navigate('Perfil')}
@@ -192,7 +194,7 @@ export default function CreateBookScreen({ navigation, route }) {
               <Ionicons
                 name="create-outline"
                 size={16}
-                color={activeTab === 'create' ? '#FFFFFF' : colors.textSecondary}
+                color={activeTab === 'create' ? colors.onPrimary : colors.textSecondary}
                 style={{ marginRight: 6 }}
               />
               <Text style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}>
@@ -208,7 +210,7 @@ export default function CreateBookScreen({ navigation, route }) {
               <Ionicons
                 name="cloud-upload-outline"
                 size={16}
-                color={activeTab === 'import' ? '#FFFFFF' : colors.textSecondary}
+                color={activeTab === 'import' ? colors.onPrimary : colors.textSecondary}
                 style={{ marginRight: 6 }}
               />
               <Text style={[styles.tabButtonText, activeTab === 'import' && styles.tabButtonTextActive]}>
@@ -427,8 +429,8 @@ export default function CreateBookScreen({ navigation, route }) {
                   style={[styles.formatCard, selectedFormat === 'pdf' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('pdf')}
                 >
-                  <View style={[styles.formatIconBox, { backgroundColor: '#FDECEA' }]}>
-                    <Ionicons name="document-text" size={20} color="#D32F2F" />
+                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.pdf.bg }]}>
+                    <Ionicons name="document-text" size={20} color={colors.formats.pdf.fg} />
                   </View>
                   <Text style={styles.formatName}>PDF</Text>
                   <Text style={styles.formatDesc}>Livro diagramado</Text>
@@ -438,8 +440,8 @@ export default function CreateBookScreen({ navigation, route }) {
                   style={[styles.formatCard, selectedFormat === 'epub' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('epub')}
                 >
-                  <View style={[styles.formatIconBox, { backgroundColor: '#FFF3E0' }]}>
-                    <Ionicons name="tablet-portrait" size={20} color="#E65100" />
+                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.epub.bg }]}>
+                    <Ionicons name="tablet-portrait" size={20} color={colors.formats.epub.fg} />
                   </View>
                   <Text style={styles.formatName}>EPUB</Text>
                   <Text style={styles.formatDesc}>Livro digital</Text>
@@ -449,8 +451,8 @@ export default function CreateBookScreen({ navigation, route }) {
                   style={[styles.formatCard, selectedFormat === 'txt' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('txt')}
                 >
-                  <View style={[styles.formatIconBox, { backgroundColor: '#E3F2FD' }]}>
-                    <Ionicons name="code-working" size={20} color="#1976D2" />
+                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.txt.bg }]}>
+                    <Ionicons name="code-working" size={20} color={colors.formats.txt.fg} />
                   </View>
                   <Text style={styles.formatName}>Texto Puro</Text>
                   <Text style={styles.formatDesc}>.txt, .markdown</Text>
@@ -460,8 +462,8 @@ export default function CreateBookScreen({ navigation, route }) {
                   style={[styles.formatCard, selectedFormat === 'json' && styles.formatCardActive]}
                   onPress={() => handleSelectFormat('json')}
                 >
-                  <View style={[styles.formatIconBox, { backgroundColor: '#EDE7F6' }]}>
-                    <Ionicons name="code-slash" size={20} color="#512DA8" />
+                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.json.bg }]}>
+                    <Ionicons name="code-slash" size={20} color={colors.formats.json.fg} />
                   </View>
                   <Text style={styles.formatName}>Estrutura</Text>
                   <Text style={styles.formatDesc}>JSON serializado</Text>
@@ -539,7 +541,7 @@ export default function CreateBookScreen({ navigation, route }) {
               onPress={handleSaveBook}
               disabled={saving}
             >
-              <Ionicons name="library" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+              <Ionicons name="library" size={20} color={colors.onPrimary} style={{ marginRight: 8 }} />
               <Text style={styles.saveButtonText}>
                 {saving ? 'Gravando Volume...' : 'Salvar Livro na Estante'}
               </Text>
@@ -551,7 +553,7 @@ export default function CreateBookScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -604,7 +606,7 @@ const styles = StyleSheet.create({
   },
   tabsSwitcher: {
     flexDirection: 'row',
-    backgroundColor: '#EBE1D5',
+    backgroundColor: colors.surfaceMuted,
     borderRadius: 24,
     padding: 4,
     marginBottom: 20,
@@ -631,7 +633,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   tabButtonTextActive: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontWeight: '700',
   },
   previewSection: {
@@ -708,7 +710,7 @@ const styles = StyleSheet.create({
   },
   colorCircleSelected: {
     borderWidth: 3,
-    borderColor: '#FFFFFF',
+    borderColor: colors.card,
     transform: [{ scale: 1.15 }],
   },
   colorName: {
@@ -727,7 +729,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 10,
     paddingHorizontal: 12,
     height: 46,
@@ -776,7 +778,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderLight,
     marginRight: 8,
@@ -827,7 +829,7 @@ const styles = StyleSheet.create({
   },
   formatCardActive: {
     borderColor: colors.primary,
-    backgroundColor: '#F2EDE4',
+    backgroundColor: colors.surfaceMuted,
   },
   formatIconBox: {
     width: 36,
@@ -848,7 +850,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dropZone: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1.5,
     borderStyle: 'dashed',
@@ -902,12 +904,12 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#C8E6C9',
+    borderColor: colors.successBorder,
     marginBottom: 16,
   },
   importWarningBox: {
-    backgroundColor: '#FFF4E5',
-    borderColor: '#FFD8A8',
+    backgroundColor: colors.warningLight,
+    borderColor: colors.warningBorder,
   },
   importSuccessText: {
     fontSize: 12,
@@ -968,6 +970,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
 });

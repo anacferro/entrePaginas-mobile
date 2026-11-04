@@ -370,6 +370,13 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
   },
 
+  async deleteAllData() {
+    const removedFromCloud = await cloud.wipe();
+    if (!removedFromCloud) return false;
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
+    return true;
+  },
+
   async resetToDefaults() {
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(INITIAL_BOOKS));
     await AsyncStorage.setItem(KEYS.USER, JSON.stringify(INITIAL_USER));

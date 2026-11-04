@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -9,9 +9,11 @@ import CreateBookScreen from '../screens/CreateBookScreen';
 import ChestScreen from '../screens/ChestScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ReaderScreen from '../screens/ReaderScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import CustomTabBar from '../components/CustomTabBar';
 import LoadingView from '../components/LoadingView';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -35,11 +37,24 @@ function MainTabNavigator() {
 
 export default function AppNavigator() {
   const { user, initializing } = useAuth();
+  const { colors, isDark } = useTheme();
+
+  const navTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme : DefaultTheme).colors,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
+    },
+  };
 
   if (initializing) return <LoadingView message="Abrindo sua estante..." />;
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       <Stack.Navigator
         screenOptions={{
           headerShown: false,
@@ -49,6 +64,13 @@ export default function AppNavigator() {
         {user ? (
           <>
             <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
             <Stack.Screen
               name="Reader"
               component={ReaderScreen}

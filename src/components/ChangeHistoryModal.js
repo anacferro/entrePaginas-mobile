@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { diffSnippet } from '../services/marks';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
-const TYPE_INFO = {
+const typeInfo = (colors) => ({
   edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accentGold },
   add: { label: 'Capítulo adicionado', icon: 'add-circle-outline', color: colors.success },
   move: { label: 'Capítulo reordenado', icon: 'swap-vertical-outline', color: colors.secondary },
   delete: { label: 'Capítulo removido', icon: 'remove-circle-outline', color: colors.danger },
-};
+});
 
 function formatDate(iso) {
   const d = new Date(iso);
@@ -23,7 +23,10 @@ function preview(text = '', size = 160) {
 }
 
 function ChangeEntry({ entry }) {
-  const info = TYPE_INFO[entry.type] || TYPE_INFO.edit;
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const types = typeInfo(colors);
+  const info = types[entry.type] || types.edit;
   const titleChanged = entry.type === 'edit' && entry.before.title !== entry.after.title;
   const contentChanged = entry.type === 'edit' && entry.before.content !== entry.after.content;
   const diff = contentChanged ? diffSnippet(entry.before.content, entry.after.content) : null;
@@ -99,6 +102,8 @@ function ChangeEntry({ entry }) {
 }
 
 export default function ChangeHistoryModal({ visible, book, onClose }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const changes = book?.changeLog || [];
 
   return (
@@ -136,7 +141,7 @@ export default function ChangeHistoryModal({ visible, book, onClose }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -250,12 +255,12 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
   },
   removedText: {
-    backgroundColor: '#F8C9C4',
+    backgroundColor: colors.diffRemove,
     textDecorationLine: 'line-through',
     color: colors.danger,
   },
   addedText: {
-    backgroundColor: '#BFE5C1',
+    backgroundColor: colors.diffAdd,
     color: colors.success,
     fontWeight: '700',
   },

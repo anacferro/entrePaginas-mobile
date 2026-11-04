@@ -15,18 +15,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { camera } from '../services/camera';
 import { ai } from '../services/ai';
 import { dialog } from '../services/dialog';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function ChapterEditor({
   visible,
   chapter,
   chapterNumber,
-  isDark = false,
   notice,
   onCancel,
   onSave,
   onDelete,
 }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -42,8 +43,8 @@ export default function ChapterEditor({
     }
   }, [visible, chapter]);
 
-  const theme = isDark ? colors.reader.dark : colors.reader.light;
-  const mutedColor = isDark ? '#9A928A' : colors.textSecondary;
+  const theme = colors.reader;
+  const mutedColor = colors.textSecondary;
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
   const canSave = (content.trim().length > 0 || !!photo) && !saving;
 
@@ -86,7 +87,7 @@ export default function ChapterEditor({
           style={styles.flex}
           behavior="padding"
         >
-          <View style={[styles.topBar, { backgroundColor: isDark ? theme.card : colors.surfaceWarm }]}>
+          <View style={[styles.topBar, { backgroundColor: colors.surfaceWarm }]}>
             <TouchableOpacity onPress={onCancel} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.cancelText, { color: mutedColor }]}>Cancelar</Text>
             </TouchableOpacity>
@@ -117,7 +118,7 @@ export default function ChapterEditor({
               CAPÍTULO {chapterNumber < 10 ? `0${chapterNumber}` : chapterNumber}
             </Text>
             <TextInput
-              style={[styles.titleInput, { color: theme.text, borderBottomColor: isDark ? '#3D3835' : colors.border }]}
+              style={[styles.titleInput, { color: theme.text, borderBottomColor: colors.border }]}
               placeholder={`Capítulo ${chapterNumber}`}
               placeholderTextColor={colors.textMuted}
               value={title}
@@ -166,7 +167,7 @@ export default function ChapterEditor({
             />
           </View>
 
-          <View style={[styles.footer, { borderTopColor: isDark ? '#3D3835' : colors.borderLight }]}>
+          <View style={[styles.footer, { borderTopColor: colors.borderLight }]}>
             <Text style={[styles.wordCount, { color: mutedColor }]}>
               {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
             </Text>
@@ -198,7 +199,7 @@ export default function ChapterEditor({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
   },
@@ -235,20 +236,20 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   notice: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FBF1DF',
+    backgroundColor: colors.warningLight,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
   noticeText: {
     flex: 1,
     fontSize: 12,
-    color: '#8A6420',
+    color: colors.warningText,
   },
   body: {
     flex: 1,

@@ -19,9 +19,11 @@ import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function ChestScreen({ navigation }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [chestBooks, setChestBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -131,7 +133,7 @@ export default function ChestScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.surfaceSoft} />
       <Header
         subtitle="Baú Literário"
         onProfilePress={() => navigation.navigate('Perfil')}
@@ -229,7 +231,7 @@ export default function ChestScreen({ navigation }) {
                     activeOpacity={0.8}
                     onPress={() => handleRestoreOne(book.id)}
                   >
-                    <Ionicons name="arrow-up" size={13} color="#FFFFFF" style={{ marginRight: 4 }} />
+                    <Ionicons name="arrow-up" size={13} color={colors.onPrimary} style={{ marginRight: 4 }} />
                     <Text style={styles.restoreBookBtnText}>Restaurar</Text>
                   </TouchableOpacity>
 
@@ -250,7 +252,7 @@ export default function ChestScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -273,7 +275,7 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 46,
@@ -320,15 +322,15 @@ const styles = StyleSheet.create({
   restoreAllBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   emptyChestBtn: {
-    backgroundColor: colors.accentPeach,
+    backgroundColor: colors.secondary,
   },
   emptyChestBtnText: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.text,
+    color: colors.onPrimary,
   },
   booksGrid: {
     flexDirection: 'row',
@@ -361,15 +363,15 @@ const styles = StyleSheet.create({
   restoreBookBtnText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onDark,
   },
   deleteBookBtn: {
     width: 34,
     height: 34,
     borderRadius: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#F3D2C9',
+    borderColor: colors.dangerBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },

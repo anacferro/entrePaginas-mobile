@@ -108,6 +108,12 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Alternativas consideradas:** confiar no schema do modelo sem validar (descartado: o modelo pode devolver texto fora do formato); pedir texto livre e extrair com expressões regulares (descartado: frágil).
 * **Consequências assumidas:** a sugestão nunca altera o livro sozinha: aparece em uma prévia com **Aplicar** e **Descartar**. Se a IA falhar ou responder fora do formato, o app mostra a mensagem e o formulário segue funcionando para preenchimento manual.
 
+### DA15 (Nova Decisão) — Tema Claro e Escuro por Contexto
+
+* **Decisão:** duas paletas (`src/theme/palettes.js`) escolhidas por um `ThemeContext`. Cada tela monta os estilos a partir da paleta ativa (`useThemedStyles`) e nenhuma cor de interface fica fixa no código, só as cores dos livros (capas, folhas) e sobreposições sobre capas.
+* **Alternativas consideradas:** trocar só o fundo do leitor (descartado: o app ficava meio claro e meio escuro); biblioteca de temas (descartado: nova dependência sem necessidade).
+* **Consequências assumidas:** o modo *Automático* acompanha o aparelho; a escolha fica no AsyncStorage do aparelho e não vai para a nuvem. O leitor tem um botão próprio, aplicado só dentro dele (`ThemeScope`). O contraste das duas paletas foi conferido (texto comum acima de 4,5:1) e os textos de todas as telas passaram por uma checagem automática no navegador.
+
 ---
 
 ## 3. Mapeamento das Telas do Figma para a Implementação
@@ -120,6 +126,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 | **04. Importar** | [`CreateBookScreen.js`](../src/screens/CreateBookScreen.js) | `MainTabs` -> `CriarObra` | `{ initialTab: 'import' }` |
 | **05. Baú Literário** | [`ChestScreen.js`](../src/screens/ChestScreen.js) | `MainTabs` -> `Bau` | — |
 | **06. Perfil** | [`ProfileScreen.js`](../src/screens/ProfileScreen.js) | `MainTabs` -> `Perfil` | — |
+| **08. Configurações** | [`SettingsScreen.js`](../src/screens/SettingsScreen.js) | `Settings` (Stack) | — |
 | **07. Leitor** | [`ReaderScreen.js`](../src/screens/ReaderScreen.js) | `Reader` (Stack) | `{ bookId, bookTitle }` |
 
 ---
@@ -152,6 +159,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF14 (Câmera e OCR):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
 * **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
 
+* **Configurações e tema:** tela com tema Automático, Claro ou Escuro, saída da conta e exclusão de todos os dados do aparelho e da nuvem (só apaga o aparelho se a nuvem confirmar).
 * **IA com saída estruturada:** em Criar Livro e em Editar Livro, o botão *Sugerir categoria e etiquetas com IA* devolve categoria, etiquetas e resumo curto, validados antes da prévia. As etiquetas ficam no livro, sincronizam com a nuvem e entram na busca da estante.
 * **Recurso nativo adicional (biometria):** o usuário escolhe quais livros ficam protegidos. Abrir, exportar ou remover a proteção exige a biometria do aparelho (`expo-local-authentication`, com senha do aparelho como alternativa). O app também fecha o livro protegido ao ir para segundo plano.
 

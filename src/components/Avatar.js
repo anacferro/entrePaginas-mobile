@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { colors } from '../theme/colors';
+import { useThemedStyles } from '../theme/ThemeContext';
 
 function initialsOf(user) {
   const source = (user?.displayName || user?.email || '?').trim();
@@ -11,6 +11,7 @@ function initialsOf(user) {
 }
 
 export default function Avatar({ size = 38, style }) {
+  const styles = useThemedStyles(createStyles);
   const { user } = useAuth();
 
   return (
@@ -26,14 +27,14 @@ export default function Avatar({ size = 38, style }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   circle: {
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   text: {
-    color: '#FFFFFF',
+    color: colors.onPrimary,
     fontWeight: '700',
   },
 });

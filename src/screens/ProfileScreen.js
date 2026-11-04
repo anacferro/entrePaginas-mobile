@@ -13,16 +13,16 @@ import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
-import { authService } from '../services/auth';
 import Avatar from '../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function ProfileScreen({ navigation }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [user, setUser] = useState(null);
   const [activeBooksCount, setActiveBooksCount] = useState(0);
   const [chestBooksCount, setChestBooksCount] = useState(0);
-  const [readerTheme, setReaderTheme] = useState('light');
   const [simulateError, setSimulateError] = useState(false);
   const [libraryStats, setLibraryStats] = useState({ chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
 
@@ -47,7 +47,6 @@ export default function ProfileScreen({ navigation }) {
         ),
         sizeKb: Math.max(1, Math.round(JSON.stringify(allBooks).length / 1024)),
       });
-      setReaderTheme(u.readerTheme || 'light');
       setSimulateError(isErr);
     } catch {
     }
@@ -58,11 +57,6 @@ export default function ProfileScreen({ navigation }) {
       loadUserData();
     }, [])
   );
-
-  const handleThemeChange = async (theme) => {
-    setReaderTheme(theme);
-    await storage.updateUserProfile({ readerTheme: theme });
-  };
 
   const handleToggleSimulateError = async (val) => {
     setSimulateError(val);
@@ -112,41 +106,9 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
-  const handleDeleteLibrary = () => {
-    dialog.alert(
-      'Excluir Dados da Biblioteca',
-      'Deseja apagar definitivamente todos os livros da estante e do baú? Esta ação não pode ser desfeita.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            await storage.clearAllBooks();
-            loadUserData();
-          },
-        },
-      ]
-    );
-  };
-
-  const handleLogout = () => {
-    dialog.alert(
-      'Desconectar da Conta',
-      'Deseja encerrar a sessão neste aparelho? Seus livros continuam salvos na sua conta.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Desconectar',
-          onPress: () => authService.signOut(),
-        },
-      ]
-    );
-  };
-
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.surfaceSoft} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.surfaceSoft} />
       <Header subtitle="Perfil" />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -154,7 +116,7 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.avatarWrapper}>
             <Avatar size={60} style={styles.avatarImg} />
             <View style={styles.avatarBadge}>
-              <Ionicons name="book" size={12} color="#FFFFFF" />
+              <Ionicons name="book" size={12} color={colors.onPrimary} />
             </View>
           </View>
           <View style={styles.userInfo}>
@@ -228,47 +190,21 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </View>
 
-        <View style={styles.sectionCard}>
-          <View style={styles.sectionCardHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="color-palette-outline" size={18} color={colors.secondary} style={{ marginRight: 8 }} />
-              <Text style={styles.sectionCardTitle}>Preferências de Leitura</Text>
-            </View>
+        <TouchableOpacity
+          style={styles.settingsRow}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}
+          accessibilityLabel="Abrir configurações"
+        >
+          <View style={styles.settingsIcon}>
+            <Ionicons name="settings-outline" size={20} color={colors.primary} />
           </View>
-
-          <Text style={styles.subLabel}>TEMA PADRÃO DO LEITOR</Text>
-          <View style={styles.themeToggleRow}>
-            <TouchableOpacity
-              style={[styles.themeOptionBtn, readerTheme === 'light' && styles.themeOptionBtnActive]}
-              onPress={() => handleThemeChange('light')}
-            >
-              <Ionicons
-                name="sunny-outline"
-                size={18}
-                color={readerTheme === 'light' ? '#FFFFFF' : colors.textSecondary}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.themeOptionText, readerTheme === 'light' && styles.themeOptionTextActive]}>
-                Claro
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.themeOptionBtn, readerTheme === 'dark' && styles.themeOptionBtnActive]}
-              onPress={() => handleThemeChange('dark')}
-            >
-              <Ionicons
-                name="moon-outline"
-                size={18}
-                color={readerTheme === 'dark' ? '#FFFFFF' : colors.textSecondary}
-                style={{ marginRight: 6 }}
-              />
-              <Text style={[styles.themeOptionText, readerTheme === 'dark' && styles.themeOptionTextActive]}>
-                Escuro
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.settingsText}>
+            <Text style={styles.settingsTitle}>Configurações</Text>
+            <Text style={styles.settingsSub}>Tema, conta e dados</Text>
           </View>
-        </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
 
         <View style={[styles.sectionCard, { borderColor: colors.borderLight }]}>
           <Text style={styles.academicTitle}>Ferramentas de Avaliação (Estados de Listagem)</Text>
@@ -285,7 +221,7 @@ export default function ProfileScreen({ navigation }) {
               value={simulateError}
               onValueChange={handleToggleSimulateError}
               trackColor={{ false: colors.border, true: colors.secondary }}
-              thumbColor={simulateError ? '#FFFFFF' : '#F4F3F0'}
+              thumbColor={simulateError ? colors.onPrimary : colors.card}
             />
           </View>
 
@@ -299,24 +235,44 @@ export default function ProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-
-        <View style={styles.logoutSection}>
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
-            <Ionicons name="log-out-outline" size={18} color={colors.text} style={{ marginRight: 8 }} />
-            <Text style={styles.logoutBtnText}>Desconectar da conta</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.dangerBtn} onPress={handleDeleteLibrary} activeOpacity={0.8}>
-            <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: 8 }} />
-            <Text style={styles.dangerBtnText}>Excluir dados da biblioteca</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: 14,
+    marginBottom: 16,
+  },
+  settingsIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+    marginRight: 12,
+  },
+  settingsText: {
+    flex: 1,
+  },
+  settingsTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  settingsSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -361,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#FFFFFF',
+    borderColor: colors.card,
   },
   userInfo: {
     flex: 1,
@@ -395,7 +351,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
@@ -436,7 +392,7 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
   },
   storageTag: {
-    backgroundColor: '#EBE1D5',
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
@@ -450,7 +406,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
@@ -496,41 +452,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 10,
   },
-  subLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  themeToggleRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  themeOptionBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  themeOptionBtnActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  themeOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  themeOptionTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
   academicTitle: {
     fontSize: 13,
     fontWeight: '700',
@@ -564,7 +485,7 @@ const styles = StyleSheet.create({
   },
   testBtn: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
@@ -575,35 +496,5 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: colors.secondary,
-  },
-  logoutSection: {
-    gap: 10,
-    marginTop: 4,
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EBE1D5',
-    height: 48,
-    borderRadius: 12,
-  },
-  logoutBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  dangerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FDECEA',
-    height: 48,
-    borderRadius: 12,
-  },
-  dangerBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.danger,
   },
 });

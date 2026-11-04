@@ -15,9 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 import { dialog } from '../services/dialog';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function LoginScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const [mode, setMode] = useState('signin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -60,7 +62,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -89,7 +91,7 @@ export default function LoginScreen() {
 
             {!authService.isConfigured && (
               <View style={styles.warningBox}>
-                <Ionicons name="warning-outline" size={16} color="#8A6420" />
+                <Ionicons name="warning-outline" size={16} color={colors.warningText} />
                 <Text style={styles.warningText}>
                   O Firebase não está configurado. Preencha o arquivo .env conforme o README.
                 </Text>
@@ -156,7 +158,7 @@ export default function LoginScreen() {
               accessibilityLabel={isSignUp ? 'Criar conta' : 'Entrar'}
             >
               {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
                 <Text style={styles.submitText}>{isSignUp ? 'Criar conta' : 'Entrar'}</Text>
               )}
@@ -186,7 +188,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -260,7 +262,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#FBF1DF',
+    backgroundColor: colors.warningLight,
     borderRadius: 10,
     padding: 10,
     marginBottom: 12,
@@ -268,12 +270,12 @@ const styles = StyleSheet.create({
   warningText: {
     flex: 1,
     fontSize: 12,
-    color: '#8A6420',
+    color: colors.warningText,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.card,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderRadius: 14,
@@ -314,7 +316,7 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   linkButton: {
     alignItems: 'center',

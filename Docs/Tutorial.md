@@ -7,7 +7,7 @@ Passo a passo para usar o aplicativo e para apresentá-lo ao vivo, na ordem suge
 1. Abra o app. Na tela inicial, toque em **Criar conta**.
 2. Informe nome, e-mail e uma senha de pelo menos 6 caracteres e toque em **Criar conta**.
 3. Para entrar depois, use **Entrar**. Se esquecer a senha, toque em **Esqueci minha senha** e confira o e-mail.
-4. Feche e abra o app: a sessão continua ativa. Para sair, vá em **Perfil > Desconectar da conta**.
+4. Feche e abra o app: a sessão continua ativa. Para sair, vá em **Perfil > Configurações > Sair da conta**.
 
 O selo no topo mostra o estado da sincronização: **Sincronizado**, **Sincronizando**, **Offline** ou **Falha ao sincronizar**.
 
@@ -32,7 +32,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 2. **Editar capítulo** (lápis): altera título e texto. **Escrever novo capítulo** adiciona ao final.
 3. **Marca-texto** (pincel): selecione um trecho e escolha grifo em 5 cores, negrito, itálico ou sublinhado.
 4. **Marcar página** (fita): dê um título e escolha a cor do pin. Os marcadores ficam na aba *Marcadores* do sumário.
-5. **Tamanho do texto** ajusta a fonte; o tema claro ou escuro fica em **Perfil**.
+5. **Tamanho do texto** ajusta a fonte; o leitor tem o próprio botão **Claro/Escuro**, independente do tema do app.
 
 ## 5. Câmera e transcrição por IA
 
@@ -47,14 +47,22 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 - **Exportar como TXT** ou **JSON** (menu `⋮`): no celular abre o compartilhamento; no navegador baixa o arquivo.
 - **Mover para o Baú**: arquiva sem apagar. No **Baú** é possível restaurar um livro, restaurar todos ou excluir de vez.
 
-## 7. Proteger livros com biometria
+## 7. Configurações: tema, conta e dados
+
+Abra **Perfil** e toque em **Configurações**.
+
+1. **Aparência:** escolha **Automático** (segue o tema do aparelho), **Claro** ou **Escuro**. A mudança vale para todas as telas e fica salva.
+2. **Conta:** mostra o e-mail e tem o botão **Sair da conta**.
+3. **Dados:** **Apagar todos os dados** remove todos os livros, capítulos, marcadores e grifos do aparelho e da nuvem, depois de uma confirmação. Se a nuvem não responder, nada é apagado e o app avisa para tentar de novo com internet.
+
+## 8. Proteger livros com biometria
 
 1. No menu `⋮` de um livro da estante, toque em **Proteger com biometria** e confirme com a digital, o rosto ou a senha do aparelho.
 2. O livro ganha um cadeado na capa. Para abrir, exportar ou remover a proteção, o app pede a biometria de novo.
 3. Se o app for para segundo plano enquanto você lê um livro protegido, ele volta para a estante.
 4. Sem biometria cadastrada no aparelho, o app explica como cadastrar. Na versão para navegador a proteção não está disponível, e livros protegidos só abrem no celular.
 
-## 8. Roteiro sugerido para a apresentação (5 a 7 minutos)
+## 9. Roteiro sugerido para a apresentação (5 a 7 minutos)
 
 1. Mostrar o login e criar uma conta nova; reabrir o app e mostrar a sessão preservada.
 2. Criar um livro usando a busca do Google Books.

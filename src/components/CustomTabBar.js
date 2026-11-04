@@ -2,9 +2,11 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const insets = useSafeAreaInsets();
   const basePadding = Platform.OS === 'ios' ? 24 : 10;
   const bottomPadding = Math.max(basePadding, insets.bottom);
@@ -36,7 +38,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
               style={styles.centerButtonWrapper}
             >
               <View style={[styles.centerCircle, isFocused && styles.centerCircleActive]}>
-                <Ionicons name="add" size={28} color="#FFFFFF" />
+                <Ionicons name="add" size={28} color={colors.onPrimary} />
               </View>
               <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 Novo Livro
@@ -81,7 +83,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceWarm,
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: colors.card,
   },
   centerCircleActive: {
     backgroundColor: colors.primaryDark,

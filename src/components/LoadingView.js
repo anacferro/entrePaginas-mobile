@@ -1,8 +1,10 @@
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export default function LoadingView({ message = 'Folheando os tomos da estante...' }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       <View style={styles.loaderCircle}>
@@ -13,7 +15,7 @@ export default function LoadingView({ message = 'Folheando os tomos da estante..
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     paddingVertical: 48,
     alignItems: 'center',
