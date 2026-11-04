@@ -8,12 +8,13 @@ import {
   StatusBar,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GoogleBooksSearch from '../components/GoogleBooksSearch';
-import { Section, Field, CoverPicker, ColorRow, fieldStyles } from '../components/FormBlocks';
+import FormatCard from '../components/FormatCard';
+import { publicDomain } from '../services/publicDomain';
+import { Section, Field, CoverPicker, CategoryPicker, ColorRow, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
@@ -21,6 +22,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
 import Touchable from '../components/Touchable';
+
+const IMPORT_FORMATS = [
+  { format: 'pdf', icon: 'document-text', name: 'PDF', description: 'Livro diagramado' },
+  { format: 'epub', icon: 'tablet-portrait', name: 'EPUB', description: 'Livro digital' },
+  { format: 'txt', icon: 'code-working', name: 'Texto Puro', description: '.txt, .markdown' },
+  { format: 'json', icon: 'code-slash', name: 'Estrutura', description: 'JSON serializado' },
+];
 
 export default function CreateBookScreen({ navigation, route }) {
   const { colors } = useTheme();
@@ -68,36 +76,93 @@ export default function CreateBookScreen({ navigation, route }) {
     }
   }, [route?.params?.initialTab]);
 
-  const handleSelectFormat = (fmt) => {
-    setSelectedFormat(fmt);
-    if (importedFile) {
-      setImportedFile(null);
-      setTitle('');
-      setSubtitle('');
-    }
-  };
+  const applyImported = useCallback((format, file) => {
+    setSelectedFormat(format);
+    setImportedFile(file);
+    setTitle(file.title);
+    setSubtitle(file.subtitle);
+  }, []);
 
-  const handlePickFile = async () => {
+  const runImport = useCallback(async (format, task) => {
     try {
       setImporting(true);
-      const file = await importer.pickAndImport(selectedFormat);
-      if (!file) return;
-      setImportedFile(file);
-      setTitle(file.title);
-      setSubtitle(file.subtitle);
+      setSelectedFormat(format);
+      const file = await task();
+      if (file) applyImported(format, file);
     } catch (e) {
       dialog.alert('Falha na Importação', e.message || 'Não foi possível ler o arquivo selecionado.');
     } finally {
       setImporting(false);
     }
-  };
+  }, [applyImported]);
 
-  const handleSelectGoogleBook = (book) => {
-    setTitle(book.title);
-    setSubtitle(book.authors ? `Por ${book.authors}` : '');
-    if (book.category) {
-      const match = CATEGORIES.find(c => book.category.toLowerCase().includes(c.toLowerCase().split(' ')[0]));
-      setCategory(match || book.category);
+  const handlePickFile = (format) => runImport(format, () => importer.pickAndImport(format));
+
+  const handleDropFile = useCallback(
+    (format, file) => runImport(format, () => importer.importDroppedFile(format, file)),
+    [runImport]
+  );
+
+  const handleSelectGoogleBook = async (book) => {
+    const normalize = (text) =>
+      (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const [shelf, chest] = await Promise.all([
+      storage.getBooks(0).catch(() => []),
+      storage.getChestBooks(0).catch(() => []),
+    ]);
+    const existing = [...shelf, ...chest].find(b => normalize(b.title) === normalize(book.title));
+    if (existing) {
+      dialog.alert(
+        'Livro já cadastrado',
+        existing.status === 'bau'
+          ? `"${existing.title}" já está no seu Baú. Restaure-o de lá se quiser lê-lo.`
+          : `"${existing.title}" já está na sua estante.`
+      );
+      return;
+    }
+
+    const match = book.category
+      ? CATEGORIES.find(c => book.category.toLowerCase().includes(c.toLowerCase().split(' ')[0]))
+      : null;
+    const bookCategory = match || (book.category && book.category.length <= 30 ? book.category : 'Literatura');
+
+    try {
+      setSaving(true);
+      const fullText = await publicDomain.findFullText(book.title, book.authors);
+      const full = fullText ? importer.fromText(fullText) : null;
+
+      const newBook = await storage.addBook({
+        title: book.title,
+        subtitle: book.authors ? `Por ${book.authors}` : '',
+        category: bookCategory,
+        coverImage: book.thumbnail,
+        totalPages: full ? full.pages : book.pageCount || undefined,
+        isOwn: false,
+        chapters: full
+          ? full.chapters
+          : [
+              {
+                id: `chap-${Date.now()}-1`,
+                title: book.description ? 'Sinopse' : 'Capítulo 1',
+                content: book.description || 'Livro adicionado pela busca. Use o botão de editar capítulo para escrever ou colar o texto.',
+              },
+            ],
+      });
+
+      resetForm();
+
+      dialog.alert(
+        'Livro adicionado!',
+        full
+          ? `"${newBook.title}" já está na sua estante com o texto completo (domínio público).`
+          : `"${newBook.title}" já está na estante com a sinopse. A busca não traz o texto de livros com direitos autorais; para ler, escreva ou cole o conteúdo pelo leitor.`,
+        [{ text: 'Ver na Estante', onPress: () => navigation.navigate('Estante') }]
+      );
+    } catch {
+      dialog.alert('Erro ao Salvar', 'Não foi possível adicionar o livro à estante.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -255,19 +320,7 @@ export default function CreateBookScreen({ navigation, route }) {
                 </Field>
 
                 <Field label="Categoria">
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                    {(CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES]).map((cat) => (
-                      <Touchable
-                        key={cat}
-                        style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
-                        onPress={() => setCategory(cat)}
-                      >
-                        <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
-                          {cat}
-                        </Text>
-                      </Touchable>
-                    ))}
-                  </ScrollView>
+                  <CategoryPicker value={category} onChange={setCategory} />
                 </Field>
               </Section>
 
@@ -321,88 +374,24 @@ export default function CreateBookScreen({ navigation, route }) {
                   <Ionicons name="document-attach-outline" size={20} color={colors.secondary} style={{ marginRight: 8 }} />
                   <Text style={styles.importSectionTitle}>Importar Conteúdo Existente</Text>
                 </View>
-                <Text style={styles.extractBadge}>Extração Automática</Text>
               </View>
 
               <View style={styles.formatsGrid}>
-                <Touchable
-                  style={[styles.formatCard, selectedFormat === 'pdf' && styles.formatCardActive]}
-                  onPress={() => handleSelectFormat('pdf')}
-                >
-                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.pdf.bg }]}>
-                    <Ionicons name="document-text" size={20} color={colors.formats.pdf.fg} />
-                  </View>
-                  <Text style={styles.formatName}>PDF</Text>
-                  <Text style={styles.formatDesc}>Livro diagramado</Text>
-                </Touchable>
-
-                <Touchable
-                  style={[styles.formatCard, selectedFormat === 'epub' && styles.formatCardActive]}
-                  onPress={() => handleSelectFormat('epub')}
-                >
-                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.epub.bg }]}>
-                    <Ionicons name="tablet-portrait" size={20} color={colors.formats.epub.fg} />
-                  </View>
-                  <Text style={styles.formatName}>EPUB</Text>
-                  <Text style={styles.formatDesc}>Livro digital</Text>
-                </Touchable>
-
-                <Touchable
-                  style={[styles.formatCard, selectedFormat === 'txt' && styles.formatCardActive]}
-                  onPress={() => handleSelectFormat('txt')}
-                >
-                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.txt.bg }]}>
-                    <Ionicons name="code-working" size={20} color={colors.formats.txt.fg} />
-                  </View>
-                  <Text style={styles.formatName}>Texto Puro</Text>
-                  <Text style={styles.formatDesc}>.txt, .markdown</Text>
-                </Touchable>
-
-                <Touchable
-                  style={[styles.formatCard, selectedFormat === 'json' && styles.formatCardActive]}
-                  onPress={() => handleSelectFormat('json')}
-                >
-                  <View style={[styles.formatIconBox, { backgroundColor: colors.formats.json.bg }]}>
-                    <Ionicons name="code-slash" size={20} color={colors.formats.json.fg} />
-                  </View>
-                  <Text style={styles.formatName}>Estrutura</Text>
-                  <Text style={styles.formatDesc}>JSON serializado</Text>
-                </Touchable>
+                {IMPORT_FORMATS.map((item) => (
+                  <FormatCard
+                    key={item.format}
+                    format={item.format}
+                    icon={item.icon}
+                    name={item.name}
+                    description={item.description}
+                    tone={colors.formats[item.format]}
+                    loading={importing && selectedFormat === item.format}
+                    fileName={importedFile && selectedFormat === item.format ? importedFile.name : null}
+                    onPick={handlePickFile}
+                    onDropFile={handleDropFile}
+                  />
+                ))}
               </View>
-
-              <Touchable
-                style={styles.dropZone}
-                activeOpacity={0.8}
-                onPress={handlePickFile}
-                disabled={importing}
-              >
-                <View style={styles.cloudIconCircle}>
-                  {importing ? (
-                    <ActivityIndicator size="small" color={colors.secondary} />
-                  ) : (
-                    <Ionicons name="cloud-upload" size={32} color={colors.secondary} />
-                  )}
-                </View>
-                <Text style={styles.dropZoneTitle}>
-                  {importing
-                    ? 'Lendo o arquivo...'
-                    : importedFile
-                      ? `Arquivo Selecionado: ${importedFile.name}`
-                      : 'Toque para selecionar o arquivo'}
-                </Text>
-                <Text style={styles.dropZoneDesc}>
-                  {importedFile
-                    ? 'Toque novamente para escolher outro arquivo'
-                    : 'PDF com texto, TXT, Markdown ou JSON, com reconhecimento de capítulos'}
-                </Text>
-
-                <View style={styles.autoDetectPill}>
-                  <Ionicons name="bulb-outline" size={15} color={colors.accentGold} />
-                  <Text style={styles.autoDetectText}>
-                    Sumário e capítulos detectados automaticamente
-                  </Text>
-                </View>
-              </Touchable>
 
               {importedFile && !importedFile.warning && (
                 <View style={styles.importSuccessBox}>

@@ -59,10 +59,6 @@ async function prompt(message, state) {
     failures += 1;
   }
 
-  dialog.alert(
-    'Biometria não reconhecida',
-    'Depois de algumas tentativas, vamos pedir a senha do aparelho para confirmar que é você.'
-  );
   return promptPasscode(message);
 }
 

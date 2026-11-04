@@ -48,7 +48,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           <Ionicons name="search-outline" size={18} color={colors.primary} />
           <Text style={styles.cardHeaderTitle}>Buscar no Google Books</Text>
         </View>
-        <Text style={styles.metaLabel}>Opcional</Text>
+        <Text style={styles.metaLabel}>Adiciona direto à estante</Text>
       </View>
 
       <View style={styles.searchRow}>
@@ -102,7 +102,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           style={styles.resultRow}
           onPress={() => handleSelect(book)}
           activeOpacity={0.7}
-          accessibilityLabel={`Usar ${book.title}`}
+          accessibilityLabel={`Adicionar ${book.title}`}
         >
           {book.thumbnail ? (
             <Image source={{ uri: book.thumbnail }} style={styles.thumb} />
@@ -117,6 +117,7 @@ export default function GoogleBooksSearch({ onSelect }) {
               {[book.authors, book.pageCount && `${book.pageCount}p`].filter(Boolean).join(' • ') || 'Autor não informado'}
             </Text>
           </View>
+          <Ionicons name="add-circle" size={26} color={colors.primary} />
         </Touchable>
       ))}
     </View>

@@ -20,4 +20,6 @@ export const PAPER_COLORS = [
   { label: 'Mofo', color: '#DCD4C5' },
 ];
 
-export const CATEGORIES = ['Literatura', 'Memórias', 'Filosofia', 'Gastronomia', 'Arte & Design', 'Viagens'];
+export const DEFAULT_CATEGORIES = ['Literatura', 'Memórias', 'Filosofia'];
+
+export const CATEGORIES = DEFAULT_CATEGORIES;

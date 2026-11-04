@@ -179,7 +179,36 @@ async function importJson(asset) {
   };
 }
 
+async function importAsset(format, asset) {
+  const extension = asset.name.split('.').pop().toLowerCase();
+
+  if (format === 'epub' && extension !== 'epub') {
+    throw new Error('Esse quadro é para arquivos .epub.');
+  }
+  if (format === 'pdf' && extension !== 'pdf') {
+    throw new Error('Esse quadro é para arquivos .pdf.');
+  }
+  if (format === 'txt' && !['txt', 'md', 'markdown'].includes(extension)) {
+    throw new Error('Esse quadro é para arquivos .txt ou .md.');
+  }
+  if (format === 'json' && extension !== 'json') {
+    throw new Error('Esse quadro é para arquivos .json.');
+  }
+
+  const imported =
+    format === 'pdf' ? await importPdf(asset) :
+    format === 'epub' ? await importEpub(asset) :
+    format === 'json' ? await importJson(asset) :
+    await importText(asset);
+
+  return { ...imported, name: asset.name };
+}
+
 export const importer = {
+  fromText(text) {
+    return { pages: estimatePages(text), chapters: splitByHeadings(text) };
+  },
+
   async pickAndImport(format) {
     const result = await DocumentPicker.getDocumentAsync({
       type: PICKER_TYPES[format] || '*/*',
@@ -188,29 +217,10 @@ export const importer = {
     });
 
     if (result.canceled || !result.assets?.length) return null;
+    return importAsset(format, result.assets[0]);
+  },
 
-    const asset = result.assets[0];
-    const extension = asset.name.split('.').pop().toLowerCase();
-
-    if (format === 'epub' && extension !== 'epub') {
-      throw new Error('Selecione um arquivo com extensão .epub.');
-    }
-    if (format === 'pdf' && extension !== 'pdf') {
-      throw new Error('Selecione um arquivo com extensão .pdf.');
-    }
-    if (format === 'txt' && !['txt', 'md', 'markdown'].includes(extension)) {
-      throw new Error('Selecione um arquivo .txt ou .md.');
-    }
-    if (format === 'json' && extension !== 'json') {
-      throw new Error('Selecione um arquivo com extensão .json.');
-    }
-
-    const imported =
-      format === 'pdf' ? await importPdf(asset) :
-      format === 'epub' ? await importEpub(asset) :
-      format === 'json' ? await importJson(asset) :
-      await importText(asset);
-
-    return { ...imported, name: asset.name };
+  importDroppedFile(format, file) {
+    return importAsset(format, { file, name: file.name, uri: null });
   },
 };

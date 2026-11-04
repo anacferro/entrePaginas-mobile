@@ -30,7 +30,8 @@ function clean(value) {
 }
 
 function split(book) {
-  const { chapters = [], coverImage: _coverImage, ...meta } = book;
+  const { chapters = [], coverImage, ...rest } = book;
+  const meta = /^https?:/.test(coverImage || '') ? { ...rest, coverImage } : rest;
   return {
     meta: clean({ ...meta, title: String(book.title).slice(0, 200), chapterCount: chapters.length }),
     chapters: chapters.map((chapter, order) =>
@@ -173,7 +174,7 @@ export const cloud = {
           remote.chapters = remote.chapters.map(chapter =>
             photos.has(chapter.id) ? { ...chapter, photo: photos.get(chapter.id) } : chapter
           );
-          if (localBook?.coverImage) remote.coverImage = localBook.coverImage;
+          if (localBook?.coverImage && !remote.coverImage) remote.coverImage = localBook.coverImage;
           byId.set(remote.id, remote);
           synced.set(remote.id, signatureOf(remote));
         }

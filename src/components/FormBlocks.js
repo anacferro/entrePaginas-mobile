@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Touchable from './Touchable';
 import BookCover from './BookCover';
 import { camera } from '../services/camera';
+import { categories as categoryStore } from '../services/categories';
+import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 
 export const METRICS = {
@@ -108,6 +110,102 @@ export function ColorRow({ label, options, value, onChange, outlined }) {
           </Touchable>
         ))}
       </View>
+    </View>
+  );
+}
+
+export function CategoryPicker({ value, onChange }) {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const [list, setList] = useState([]);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    categoryStore.list().then(setList);
+  }, []);
+
+  const options = value && !list.includes(value) ? [value, ...list] : list;
+
+  const handleAdd = async () => {
+    const name = draft.trim();
+    if (!name) return;
+    setList(await categoryStore.add(name));
+    onChange(name);
+    setDraft('');
+    setAdding(false);
+  };
+
+  const handleRemove = (name) => {
+    dialog.alert('Excluir categoria', `Excluir a categoria "${name}"? Os livros que já usam esse nome não são alterados.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Excluir',
+        style: 'destructive',
+        onPress: async () => setList(await categoryStore.remove(name)),
+      },
+    ]);
+  };
+
+  return (
+    <View style={styles.categoryWrap}>
+      <View style={styles.categoryRow}>
+        {options.map((name) => {
+          const active = value === name;
+          const removable = list.includes(name);
+          return (
+            <View key={name} style={[styles.categoryChip, active && styles.categoryChipActive]}>
+              <Touchable
+                style={styles.categoryLabelBtn}
+                onPress={() => onChange(name)}
+                accessibilityLabel={`Categoria ${name}`}
+              >
+                <Text style={[styles.categoryText, active && styles.categoryTextActive]}>{name}</Text>
+              </Touchable>
+              {removable && (
+                <Touchable
+                  style={styles.categoryRemoveBtn}
+                  onPress={() => handleRemove(name)}
+                  accessibilityLabel={`Excluir categoria ${name}`}
+                >
+                  <Ionicons name="close" size={14} color={active ? colors.primary : colors.textMuted} />
+                </Touchable>
+              )}
+            </View>
+          );
+        })}
+
+        {!adding && (
+          <Touchable
+            style={[styles.categoryChip, styles.categoryAdd]}
+            onPress={() => setAdding(true)}
+            accessibilityLabel="Nova categoria"
+          >
+            <View style={styles.categoryLabelBtn}>
+              <Ionicons name="add" size={16} color={colors.primary} />
+              <Text style={[styles.categoryText, { color: colors.primary }]}>Nova</Text>
+            </View>
+          </Touchable>
+        )}
+      </View>
+
+      {adding && (
+        <View style={styles.categoryNewRow}>
+          <TextInput
+            style={[fieldStyles(colors).input, styles.categoryInput]}
+            placeholder="Nome da categoria"
+            placeholderTextColor={colors.textMuted}
+            value={draft}
+            onChangeText={setDraft}
+            onSubmitEditing={handleAdd}
+            maxLength={30}
+            autoFocus
+            returnKeyType="done"
+            accessibilityLabel="Nome da nova categoria"
+          />
+          <Button label="Adicionar" variant="primary" onPress={handleAdd} disabled={!draft.trim()} />
+        </View>
+      )}
     </View>
   );
 }
@@ -224,6 +322,60 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 4,
     textAlign: 'center',
+  },
+  categoryWrap: {
+    gap: 10,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 40,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  categoryChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  categoryAdd: {
+    borderStyle: 'dashed',
+  },
+  categoryLabelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 14,
+    minHeight: 36,
+  },
+  categoryText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  categoryTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  categoryRemoveBtn: {
+    width: 32,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryNewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  categoryInput: {
+    flex: 1,
   },
   coverPicker: {
     flexDirection: 'row',
