@@ -11,12 +11,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { importProgress } from '../services/importProgress';
+import { resumePendingTexts } from '../services/googleImport';
 import Header from '../components/Header';
 import BookCard from '../components/BookCard';
 import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
+import { matchesQuery } from '../services/textSearch';
 import { exporter } from '../services/exporter';
 import { biometrics } from '../services/biometrics';
 import { dialog } from '../services/dialog';
@@ -50,6 +52,7 @@ export default function BookshelfScreen({ navigation }) {
 
       setBooks(booksData);
       setChestCount(chestData.length);
+      resumePendingTexts(booksData);
     } catch (err) {
       setError(err.message || 'Falha ao carregar volumes da estante.');
     } finally {
@@ -181,16 +184,7 @@ export default function BookshelfScreen({ navigation }) {
   };
 
   const filteredBooks = books
-    .filter((b) => {
-      if (!searchQuery.trim()) return true;
-      const query = searchQuery.toLowerCase();
-      return (
-        b.title.toLowerCase().includes(query) ||
-        (b.subtitle && b.subtitle.toLowerCase().includes(query)) ||
-        (b.category && b.category.toLowerCase().includes(query)) ||
-        (b.tags || []).some(tag => tag.includes(query))
-      );
-    })
+    .filter(b => matchesQuery(searchQuery, [b.title, b.subtitle, b.category, ...(b.tags || [])]))
     .sort((a, b) => {
       if (sortOrder === 'az') return a.title.localeCompare(b.title);
       if (sortOrder === 'pages') return b.totalPages - a.totalPages;

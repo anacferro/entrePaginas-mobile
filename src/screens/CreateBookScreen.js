@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -50,6 +50,7 @@ export default function CreateBookScreen({ navigation, route }) {
   const [saving, setSaving] = useState(false);
   const [coverImage, setCoverImage] = useState(null);
   const [searchKey, setSearchKey] = useState(0);
+  const adding = useRef(new Set());
   const [tags, setTags] = useState([]);
 
   const [selectedFormat, setSelectedFormat] = useState('pdf');
@@ -108,6 +109,16 @@ export default function CreateBookScreen({ navigation, route }) {
   );
 
   const handleSelectGoogleBook = async (book) => {
+    if (adding.current.has(book.title)) return;
+    adding.current.add(book.title);
+    try {
+      await addGoogleBook(book);
+    } finally {
+      adding.current.delete(book.title);
+    }
+  };
+
+  const addGoogleBook = async (book) => {
     const normalize = (text) =>
       (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -142,6 +153,7 @@ export default function CreateBookScreen({ navigation, route }) {
         fontFamily: 'serif',
         totalPages: book.pageCount || undefined,
         isOwn: false,
+        textPending: book.gutenbergId || null,
         chapters: [
           {
             id: `chap-${Date.now()}-1`,

@@ -3,6 +3,17 @@ import { importer } from './importer';
 import { importProgress } from './importProgress';
 import { storage } from './storage';
 
+const resumed = new Set();
+
+export function resumePendingTexts(books) {
+  books
+    .filter(book => book.textPending && !resumed.has(book.id) && !importProgress.get(book.id))
+    .forEach((book) => {
+      resumed.add(book.id);
+      fetchFullTextInBackground(book.id, book.title, '', book.textPending);
+    });
+}
+
 export async function fetchFullTextInBackground(bookId, title, authors, gutenbergId) {
   importProgress.start(bookId);
   const timer = setInterval(() => importProgress.creep(bookId), 500);

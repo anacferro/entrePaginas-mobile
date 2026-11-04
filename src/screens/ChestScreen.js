@@ -16,6 +16,7 @@ import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
+import { matchesQuery } from '../services/textSearch';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -122,15 +123,7 @@ export default function ChestScreen({ navigation }) {
     );
   };
 
-  const filteredBooks = chestBooks.filter((b) => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      b.title.toLowerCase().includes(query) ||
-      (b.subtitle && b.subtitle.toLowerCase().includes(query)) ||
-      (b.category && b.category.toLowerCase().includes(query))
-    );
-  });
+  const filteredBooks = chestBooks.filter(b => matchesQuery(searchQuery, [b.title, b.subtitle, b.category]));
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>

@@ -18,12 +18,14 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
 8. **Modo Leitor (`ReaderScreen`):** Experiência de leitura imersiva com páginas de cerca de 1.800 caracteres, ajuste de tamanho de fonte (A- / A+), alternância de tema no leitor e modal de **Sumário** para salto direto entre capítulos. Inclui:
    - **Páginas:** o texto é dividido em páginas reais; passe de página **arrastando para o lado** (ou com *Anterior* e *Próxima*). O arrasto fica desligado enquanto você grifa.
    - **Folha e letra:** o leitor usa a cor da folha e o tipo de letra definidos no livro (ou a fonte original do EPUB); em folha escura o texto clareia sozinho.
+   - **Posição de leitura:** a última página lida de cada livro é guardada no aparelho e restaurada ao reabrir; se o livro não existir mais, o leitor mostra um aviso em vez de capítulos de exemplo.
    - **Modo foco:** botão que esconde os menus para ler sem distração.
    - **Escrita:** editor em tela cheia para editar, criar e excluir capítulos (somente em livros de autoria própria).
    - **Comentários:** em obras de terceiros (Google Books ou importadas) o texto não pode ser alterado; o botão de comentários registra anotações presas à página, mostradas abaixo do texto.
    - **Marcadores:** marcação da página com título e cor do pin, listados na aba *Marcadores* do sumário.
    - **Marca-texto:** grifos em 5 cores, negrito, itálico e sublinhado sobre trechos selecionados.
    - **Histórico de alterações:** registro das edições feitas em livros que não são de autoria do usuário (versão anterior e nova), visível no menu `⋮` do livro.
+   - **Buscas e downloads:** a busca da Estante e do Baú ignora acentos e maiúsculas; downloads de texto completo interrompidos (Project Gutenberg) são retomados uma vez por sessão; as gravações locais são serializadas e os IDs são únicos para não perder dados em operações rápidas.
 
 ---
 

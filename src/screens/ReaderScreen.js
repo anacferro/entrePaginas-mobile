@@ -28,6 +28,8 @@ import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles, ThemeScope } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
+import LoadingView from '../components/LoadingView';
+import EmptyView from '../components/EmptyView';
 
 export default function ReaderScreen(props) {
   const { isDark: appDark } = useTheme();
@@ -62,16 +64,28 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [originalFontReady, setOriginalFontReady] = useState(false);
   const scrollRef = useRef(null);
 
+  const [loadState, setLoadState] = useState(bookId ? 'loading' : 'missing');
+  const savedPage = useRef(1);
+
   useEffect(() => {
+    let active = true;
     async function loadBook() {
-      if (bookId) {
-        const found = await storage.getBookById(bookId);
-        if (found) {
-          setBook(found);
-        }
+      const found = bookId ? await storage.getBookById(bookId) : null;
+      if (!active) return;
+      if (!found) {
+        setLoadState('missing');
+        return;
       }
+      savedPage.current = await storage.getReadingPosition(bookId);
+      if (!active) return;
+      setCurrentPageIndex(savedPage.current - 1);
+      setBook(found);
+      setLoadState('ready');
     }
-    loadBook();
+    loadBook().catch(() => active && setLoadState('missing'));
+    return () => {
+      active = false;
+    };
   }, [bookId]);
 
   useEffect(() => {
@@ -91,22 +105,9 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     setSelection(end > start ? { start, end } : null);
   }, []);
 
-  const defaultChapters = [
-    {
-      id: 'p1',
-      title: 'Capítulo I: O Pórtico das Sombras',
-      content:
-        'Ao abrir na trigésima oitava página, um fragmento de pergaminho solto deslizou sobre o tampo da escrivaninha. Era um mapa estelar com tintas vegetais desbotadas, indicando as constelações que outrora vigiavam o Vale das Névoas. O silêncio da abóbada era denso, quebrado unicamente pelo roçar metódico de seu polegar sobre a borda áspera das folhas costuradas.\n\nNão havia pressa naquele refúgio. O tempo desdobrava-se em camadas, como as folhas de guarda marmorizadas dos velhos compêndios. Sentou-se na cadeira estofada em veludo desgastado, acendeu a lamparina de latão ao lado do tinteiro e permitiu que a penumbra acolhesse seus pensamentos mais íntimos.\n\nAproximando a chama da margem inferior, vislumbrou anotações à pena em caligrafia miúda: coordenadas para a sala secreta das matrizes tipográficas. Seus olhos cintilaram com a certeza de que a jornada estava apenas começando.',
-    },
-    {
-      id: 'p2',
-      title: 'Capítulo II: O Cântico das Marés Submersas',
-      content:
-        'Na manhã seguinte, a brisa marinha trouxe o cheiro de salitre misturado ao cedro das estantes ancestrais. Cada volume descansava em seu nicho de carvalho como sentinela de um tempo sem pressa.\n\nEle sabia que a biblioteca não guardava apenas palavras; guardava a respiração suspensa daqueles que ousaram registrar seus sonhos antes que o mar levasse a praia.',
-    },
-  ];
+  const emptyChapters = [{ id: 'empty', title: '', content: '' }];
 
-  const chapters = book?.chapters && book.chapters.length > 0 ? book.chapters : defaultChapters;
+  const chapters = book?.chapters && book.chapters.length > 0 ? book.chapters : emptyChapters;
   const pages = useMemo(() => paginate(chapters), [chapters]);
   const pageIndex = Math.min(currentPageIndex, pages.length - 1);
   const page = pages[pageIndex];
@@ -258,12 +259,39 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     );
   };
 
+  useEffect(() => {
+    if (loadState !== 'ready' || !bookId || currentPageNumber === savedPage.current) return undefined;
+    const timer = setTimeout(() => {
+      savedPage.current = currentPageNumber;
+      storage.setReadingPosition(bookId, currentPageNumber);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [loadState, bookId, currentPageNumber]);
+
   const usesPaper = !isDark && !!book?.paperColor;
   const paperIsDark = usesPaper && isDarkColor(book.paperColor);
   const readerBg = usesPaper ? book.paperColor : colors.reader.background;
   const readerTextColor = paperIsDark ? '#EDE6DA' : colors.reader.text;
   const useOriginal = book?.fontFamily === 'original' && originalFontReady;
   const bodyFont = useOriginal ? book.customFont : fontFamilyFor(book?.fontFamily === 'original' ? book?.fontFallback : book?.fontFamily);
+
+  if (loadState !== 'ready') {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        {loadState === 'loading' ? (
+          <LoadingView message="Abrindo o livro..." />
+        ) : (
+          <EmptyView
+            icon="book-outline"
+            title="Livro não encontrado"
+            description="Este livro não está mais disponível. Volte para a estante e abra outro."
+            actionLabel="Voltar"
+            onActionPress={() => navigation.goBack()}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>

@@ -5,12 +5,22 @@ import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
 
 let userId = null;
+let queue = Promise.resolve();
+
+const newId = (prefix) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+const exclusive = (task) => {
+  const run = queue.then(task);
+  queue = run.catch(() => {});
+  return run;
+};
 
 const keyFor = (name) => `@entre_paginas_${name}_v1${userId ? `_${userId}` : ''}`;
 
 const KEYS = {
   get BOOKS() { return userId ? keyFor('books') : '@entre_paginas_books_v1'; },
   get USER() { return userId ? keyFor('user') : '@entre_paginas_user_v1'; },
+  get POSITIONS() { return userId ? keyFor('positions') : '@entre_paginas_positions_v1'; },
   get SIMULATE_ERROR() { return userId ? keyFor('simulate_error') : '@entre_paginas_simulate_error'; },
 };
 
@@ -34,7 +44,7 @@ function logChange(book, type, chapterTitle, before, after) {
   if (book.isOwn !== false) return;
   book.changeLog = [
     {
-      id: `change-${Date.now()}`,
+      id: newId('change'),
       type,
       chapterTitle,
       before: before ? { title: before.title, content: before.content } : null,
@@ -124,7 +134,7 @@ export const storage = {
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
 
     const newBook = {
-      id: `book-${Date.now()}`,
+      id: newId('book'),
       title: bookData.title?.trim() || 'Nova Obra Sem Título',
       subtitle: bookData.subtitle?.trim() || 'Obra artesanal recém-encadernada',
       category: bookData.category || 'Geral',
@@ -137,13 +147,14 @@ export const storage = {
       coverImage: bookData.coverImage || null,
       status: 'estante',
       isOwn: bookData.isOwn !== false,
+      textPending: bookData.textPending || null,
       bookmarks: [],
       changeLog: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       chapters: bookData.chapters && bookData.chapters.length > 0 ? bookData.chapters : [
         {
-          id: `chap-${Date.now()}-1`,
+          id: newId('chap'),
           title: 'Primeiras Linhas',
           content: bookData.initialContent || 'Aqui começa a encadernação deste livro. As páginas em branco acolhem as ideias recém-nascidas do leitor e do autor.'
         }
@@ -190,6 +201,7 @@ export const storage = {
 
     book.chapters = chapters;
     book.totalPages = pages;
+    book.textPending = null;
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
     return book;
@@ -214,7 +226,7 @@ export const storage = {
     if (!book) return null;
 
     const newChapter = {
-      id: `chap-${Date.now()}`,
+      id: newId('chap'),
       title: chapterData.title?.trim() || `Capítulo ${book.chapters.length + 1}`,
       content: chapterData.content || '',
       photo: chapterData.photo || null,
@@ -308,7 +320,7 @@ export const storage = {
     book.bookmarks = [
       ...(book.bookmarks || []).filter(bm => !(bm.chapterId === bookmarkData.chapterId && bm.page === bookmarkData.page)),
       {
-        id: `pin-${Date.now()}`,
+        id: newId('pin'),
         chapterId: bookmarkData.chapterId,
         title: bookmarkData.title?.trim() || 'Marcador',
         color: bookmarkData.color,
@@ -329,7 +341,7 @@ export const storage = {
     book.comments = [
       ...(book.comments || []),
       {
-        id: `comment-${Date.now()}`,
+        id: newId('comment'),
         chapterId,
         page,
         text: String(text).slice(0, 2000),
@@ -427,6 +439,19 @@ export const storage = {
     return filtered;
   },
 
+  async getReadingPosition(bookId) {
+    const json = await AsyncStorage.getItem(KEYS.POSITIONS);
+    const positions = json ? JSON.parse(json) : {};
+    return positions[bookId] || 1;
+  },
+
+  async setReadingPosition(bookId, page) {
+    const json = await AsyncStorage.getItem(KEYS.POSITIONS);
+    const positions = json ? JSON.parse(json) : {};
+    positions[bookId] = page;
+    await AsyncStorage.setItem(KEYS.POSITIONS, JSON.stringify(positions));
+  },
+
   async getUserProfile() {
     const json = await AsyncStorage.getItem(KEYS.USER);
     return json ? JSON.parse(json) : INITIAL_USER;
@@ -456,6 +481,7 @@ export const storage = {
     const removedFromCloud = await cloud.wipe();
     if (!removedFromCloud) return false;
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
+    await AsyncStorage.removeItem(KEYS.POSITIONS);
     return true;
   },
 
@@ -465,3 +491,13 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.SIMULATE_ERROR, JSON.stringify(false));
   }
 };
+
+[
+  'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
+  'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
+  'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
+  'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData', 'clearAllBooks', 'resetToDefaults',
+].forEach((name) => {
+  const original = storage[name];
+  storage[name] = (...args) => exclusive(() => original.apply(storage, args));
+});
