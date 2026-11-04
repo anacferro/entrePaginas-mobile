@@ -244,3 +244,13 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 **O que foi feito:** o total de páginas passou a ser calculado pelo texto; a busca cai para a Open Library quando o Google Books recusa; os formulários ganharam blocos e campos de mesma altura; todos os botões passaram por um componente único com efeito ao passar o mouse e ao tocar; a biometria tenta a digital ou o rosto até 3 vezes e só depois pede a senha do aparelho.
 
 **O que o usuário/grupo ainda precisa revisar:** testar no celular real a foto de capa (galeria e câmera), a exportação pelo compartilhamento e a biometria em etapas.
+
+## 15. Busca de livros, catálogo A-Z e revisão geral (Claude Code)
+
+**O que foi pedido:** melhorar a fonte e a formatação (negrito, itálico) dos livros vindos do Google, fazer a busca de livros ter sentido (inclusive para uma letra só), criar um catálogo de A a Z carregando 30 por vez, ampliar idiomas e resultados, centralizar o botão de Novo Livro na barra inferior, e revisar tela por tela procurando bugs.
+
+**O que veio e o que foi aceito:** o texto passou a ser importado do HTML do Project Gutenberg, preservando negrito e itálico; a busca une Gutenberg e Google Books com ordenação por relevância; o catálogo A-Z com filtros de letra e idioma carrega de 30 em 30; o inglês usa o modo "mais baixados" porque a lista alfabética do Gutenberg para no limite de cerca de 5 mil itens. Na revisão, foram aceitas a fila de gravações locais, IDs únicos, retomada de downloads interrompidos, busca sem acentos, posição de leitura salva e a nova barra superior do leitor.
+
+**O que foi recusado:** remover o resumo de capítulo por IA (mantido, pois atende ao requisito de funcionalidade de IA); a sugestão de categoria por IA, já retirada antes, segue fora e a documentação foi corrigida.
+
+**O que o usuário/grupo ainda precisa revisar:** testar no iPhone (Expo Go) a barra inferior, o leitor e o catálogo; conferir a exclusão de contas de teste no Firebase Authentication.

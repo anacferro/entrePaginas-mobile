@@ -13,9 +13,9 @@ O selo no topo mostra o estado da sincronização: **Sincronizado**, **Sincroniz
 
 ## 2. Criar um livro
 
-1. Toque em **Novo Livro** (botão central).
+1. Toque em **Novo Livro** (o **+** central da barra inferior).
 2. Escolha as cores da capa, do título e da folha. A capa muda ao vivo.
-3. Opcional: em **Buscar no Google Books**, digite um título ou autor e toque em um resultado para preencher título, autor, categoria e páginas.
+3. Opcional: em **Buscar no Google Books**, digite um título, autor ou uma letra e toque em um resultado para preencher título, autor, categoria e páginas. A busca também consulta o Project Gutenberg (domínio público): esses livros trazem o texto completo, baixado em segundo plano com a formatação original (negrito e itálico). Em **Catálogo A-Z** você navega por letra e idioma, 30 livros por vez, com rolagem infinita.
 4. Preencha o título e, se quiser, escreva o primeiro capítulo. Toque em **Salvar Livro na Estante**.
 
 ## 3. Importar um arquivo
@@ -28,7 +28,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 ## 4. Ler, escrever e anotar
 
-1. Na **Estante**, toque em um livro para ler. O botão **Sumário** abre capítulos e marcadores; as setas ao lado de cada capítulo mudam a ordem.
+1. Na **Estante**, toque em um livro para ler; o app reabre na última página lida. O botão **Sumário** abre capítulos e marcadores; as setas ao lado de cada capítulo mudam a ordem.
 2. **Editar capítulo** (lápis): altera título e texto. **Escrever novo capítulo** adiciona ao final.
 3. **Marca-texto** (pincel): selecione um trecho e escolha grifo em 5 cores, negrito, itálico ou sublinhado.
 4. **Marcar página** (fita): dê um título e escolha a cor do pin. Os marcadores ficam na aba *Marcadores* do sumário.
@@ -42,7 +42,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 ## 6. Gerenciar os livros
 
-- **Editar Livro** (menu `⋮`): título, subtítulo, categoria, etiquetas e cores. O botão **Sugerir categoria e etiquetas com IA** (também em **Novo Livro**) mostra uma prévia; toque em **Aplicar** para aceitar ou **Descartar**. Se a IA falhar ou responder fora do formato, o app avisa e nada muda.
+- **Editar Livro** (menu `⋮`): título, subtítulo, categoria, etiquetas e cores.
 - A busca da Estante também encontra livros pelas etiquetas.
 - **Exportar como TXT** ou **JSON** (menu `⋮`): no celular abre o compartilhamento; no navegador baixa o arquivo.
 - **Mover para o Baú**: arquiva sem apagar. No **Baú** é possível restaurar um livro, restaurar todos ou excluir de vez.

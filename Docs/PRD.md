@@ -139,7 +139,7 @@ O sistema deve permitir abrir um livro e navegar por suas páginas em modo de le
 O sistema deve disponibilizar um sumário que permita visualizar e acessar diretamente as páginas do livro.
 
 ### RF20 — Consulta ao Google Books
-O sistema deve permitir consultar a API do Google Books para enriquecer automaticamente dados do livro (como capa e categoria sugeridas).
+O sistema deve permitir consultar a API do Google Books para enriquecer automaticamente dados do livro (como capa e categoria sugeridas). A consulta é complementada pelo Project Gutenberg (domínio público), que também fornece o texto completo, e por um catálogo navegável de A a Z por letra e idioma.
 
 ### RF21 — Resumo por IA
 O sistema deve permitir solicitar um resumo automático de um trecho longo de conteúdo, utilizando um serviço de IA.

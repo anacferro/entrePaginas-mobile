@@ -125,7 +125,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 | **03. Criar Obra** | [`CreateBookScreen.js`](../src/screens/CreateBookScreen.js) | `MainTabs` -> `CriarObra` | `{ initialTab: 'create' }` |
 | **04. Importar** | [`CreateBookScreen.js`](../src/screens/CreateBookScreen.js) | `MainTabs` -> `CriarObra` | `{ initialTab: 'import' }` |
 | **05. Baú Literário** | [`ChestScreen.js`](../src/screens/ChestScreen.js) | `MainTabs` -> `Bau` | — |
-| **06. Perfil** | [`ProfileScreen.js`](../src/screens/ProfileScreen.js) | `MainTabs` -> `Perfil` | — |
+| **06. Perfil** | [`ProfileScreen.js`](../src/screens/ProfileScreen.js) | `MainTabs` -> `Perfil` (aberto pelo avatar do topo; fora da barra inferior) | — |
 | **08. Configurações** | [`SettingsScreen.js`](../src/screens/SettingsScreen.js) | `Settings` (Stack) | — |
 | **07. Leitor** | [`ReaderScreen.js`](../src/screens/ReaderScreen.js) | `Reader` (Stack) | `{ bookId, bookTitle }` |
 
@@ -140,7 +140,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF06 (Edição do livro):** pelo menu `⋮` da estante, é possível alterar título, subtítulo, categoria e cores de capa, título e folha, com pré-visualização da capa.
 * **RF13 (Importação):** Seleção de arquivo real do aparelho e extração do texto em capítulos para PDF (com texto), EPUB, TXT, Markdown e JSON.
 * **RF17 (Ordem dos capítulos):** no sumário do leitor, setas sobem e descem cada capítulo; em livros importados a mudança entra no histórico de alterações.
-* **RF20 (Google Books):** na aba Criar Livro, o cartão "Buscar no Google Books" consulta a API pública (sem chave), lista os resultados e preenche título, autor, categoria e número de páginas. Tem estados de carregamento, erro (rede, tempo esgotado, limite de consultas) e lista vazia; o restante do formulário continua funcionando se a consulta falhar.
+* **RF20 (Google Books):** na aba Criar Livro, o cartão "Buscar no Google Books" consulta a API pública (sem chave) e o Project Gutenberg (OPDS, domínio público, com texto completo e formatação em HTML), mescla e ordena por relevância, e lista os resultados; o botão "Catálogo A-Z" navega por letra e idioma de 30 em 30 e preenche título, autor, categoria e número de páginas. Tem estados de carregamento, erro (rede, tempo esgotado, limite de consultas) e lista vazia; o restante do formulário continua funcionando se a consulta falhar.
 * **RF22 (Exportação):** o menu `⋮` do livro exporta em TXT ou JSON. No celular abre a folha de compartilhamento (`expo-sharing`); no navegador baixa o arquivo.
 * **Câmera (recurso nativo):** no editor de capítulo, o botão "Fotografar" pede permissão de câmera, guarda a foto no aparelho e a mostra acima do texto no leitor. Se a permissão for negada, o app explica e segue funcionando; se estiver bloqueada, oferece abrir os ajustes do aparelho.
 * **RF18 / RF19 (Leitor & Sumário):** Modo leitor com paginação, ajuste de tamanho de fonte, alternância de tema claro/escuro e modal de sumário para salto direto entre capítulos.
@@ -160,7 +160,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
 
 * **Configurações e tema:** tela com tema Automático, Claro ou Escuro, saída da conta e exclusão de todos os dados do aparelho e da nuvem (só apaga o aparelho se a nuvem confirmar).
-* **IA com saída estruturada:** em Criar Livro e em Editar Livro, o botão *Sugerir categoria e etiquetas com IA* devolve categoria, etiquetas e resumo curto, validados antes da prévia. As etiquetas ficam no livro, sincronizam com a nuvem e entram na busca da estante.
+* **Etiquetas:** as etiquetas do livro ficam salvas, sincronizam com a nuvem e entram na busca da estante. A sugestão automática de categoria por IA foi removida da interface por não agregar ao fluxo; a IA ficou no resumo de capítulo e na transcrição de fotos.
 * **Recurso nativo adicional (biometria):** o usuário escolhe quais livros ficam protegidos. Abrir, exportar ou remover a proteção exige a biometria do aparelho (`expo-local-authentication`, com senha do aparelho como alternativa). O app também fecha o livro protegido ao ir para segundo plano.
 
 ### Pendências
