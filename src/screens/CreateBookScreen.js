@@ -15,6 +15,7 @@ import GoogleBooksSearch from '../components/GoogleBooksSearch';
 import FormatCard from '../components/FormatCard';
 import { fetchFullTextInBackground } from '../services/googleImport';
 import { importProgress } from '../services/importProgress';
+import { bookFonts } from '../services/bookFonts';
 import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -186,7 +187,8 @@ export default function CreateBookScreen({ navigation, route }) {
         coverColor,
         titleColor,
         paperColor,
-        fontFamily,
+        fontFamily: importedFile?.fontHint || fontFamily,
+        fontFallback: importedFile?.fontHint || null,
         coverImage,
         totalPages: importedFile ? importedFile.pages : undefined,
         isOwn: activeTab === 'create',
@@ -202,6 +204,9 @@ export default function CreateBookScreen({ navigation, route }) {
               ]
             : undefined,
       });
+
+      const savedFont = importedFile?.font ? await bookFonts.save(newBook.id, importedFile.font).catch(() => null) : null;
+      if (savedFont) await storage.updateBook(newBook.id, { ...savedFont, fontFamily: 'original' });
 
       resetForm();
 

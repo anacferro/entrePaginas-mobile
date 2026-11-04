@@ -1,4 +1,5 @@
 import { inflateRaw } from 'pako';
+import { dominantFont } from './fontHints';
 
 const decoder = new TextDecoder('utf-8');
 
@@ -51,7 +52,156 @@ function readZip(bytes) {
       if (entry.method === 8) return decoder.decode(inflateRaw(raw));
       throw new Error('O EPUB usa um tipo de compactação não suportado.');
     },
+    bytes(name) {
+      const entry = entries[name];
+      if (!entry) return null;
+      const start = entry.localOffset + 30 + view.getUint16(entry.localOffset + 26, true) + view.getUint16(entry.localOffset + 28, true);
+      const raw = bytes.subarray(start, start + entry.compressedSize);
+      if (entry.method === 0) return raw.slice();
+      if (entry.method === 8) return inflateRaw(raw);
+      return null;
+    },
   };
+}
+
+function sha1(data) {
+  const words = [];
+  for (let i = 0; i < data.length; i += 1) words[i >> 2] |= data[i] << (24 - (i % 4) * 8);
+  const bitLength = data.length * 8;
+  words[bitLength >> 5] |= 0x80 << (24 - (bitLength % 32));
+  words[(((bitLength + 64) >> 9) << 4) + 15] = bitLength;
+
+  let h0 = 0x67452301;
+  let h1 = 0xefcdab89;
+  let h2 = 0x98badcfe;
+  let h3 = 0x10325476;
+  let h4 = 0xc3d2e1f0;
+  const w = new Array(80);
+  const rotl = (n, b) => (n << b) | (n >>> (32 - b));
+
+  for (let i = 0; i < words.length; i += 16) {
+    for (let t = 0; t < 80; t += 1) {
+      w[t] = t < 16 ? words[i + t] | 0 : rotl(w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16], 1);
+    }
+    let a = h0;
+    let b = h1;
+    let cc = h2;
+    let d = h3;
+    let e = h4;
+    for (let t = 0; t < 80; t += 1) {
+      const [f, k] =
+        t < 20 ? [(b & cc) | (~b & d), 0x5a827999] :
+        t < 40 ? [b ^ cc ^ d, 0x6ed9eba1] :
+        t < 60 ? [(b & cc) | (b & d) | (cc & d), 0x8f1bbcdc] :
+        [b ^ cc ^ d, 0xca62c1d6];
+      const temp = (rotl(a, 5) + f + e + k + w[t]) | 0;
+      e = d;
+      d = cc;
+      cc = rotl(b, 30);
+      b = a;
+      a = temp;
+    }
+    h0 = (h0 + a) | 0;
+    h1 = (h1 + b) | 0;
+    h2 = (h2 + cc) | 0;
+    h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0;
+  }
+
+  const out = new Uint8Array(20);
+  [h0, h1, h2, h3, h4].forEach((h, i) => {
+    out[i * 4] = h >>> 24;
+    out[i * 4 + 1] = (h >>> 16) & 255;
+    out[i * 4 + 2] = (h >>> 8) & 255;
+    out[i * 4 + 3] = h & 255;
+  });
+  return out;
+}
+
+function deobfuscate(data, algorithm, identifier) {
+  const idpf = /idpf\.org\/2008\/embedding/i.test(algorithm);
+  const adobe = /adobe\.com\/pdf\/enc/i.test(algorithm);
+  if (!idpf && !adobe) return data;
+
+  let key;
+  let span;
+  if (idpf) {
+    key = sha1(new TextEncoder().encode(identifier.replace(/\s/g, '')));
+    span = 1040;
+  } else {
+    const hex = identifier.replace(/^urn:uuid:/i, '').replace(/-/g, '');
+    if (hex.length < 32) return data;
+    key = Uint8Array.from({ length: 16 }, (_, i) => parseInt(hex.slice(i * 2, i * 2 + 2), 16));
+    span = 1024;
+  }
+
+  const out = data.slice();
+  for (let i = 0; i < Math.min(span, out.length); i += 1) out[i] ^= key[i % key.length];
+  return out;
+}
+
+function cssFontFaces(zip, manifest, base) {
+  const faces = [];
+  Object.values(manifest).forEach((item) => {
+    if (!/css/i.test(item.type) || !item.href) return;
+    const cssPath = resolvePath(base, item.href);
+    const css = zip.text(cssPath);
+    if (!css) return;
+    const cssBase = cssPath.includes('/') ? cssPath.slice(0, cssPath.lastIndexOf('/') + 1) : '';
+    (css.match(/@font-face\s*\{[^}]*\}/gi) || []).forEach((block) => {
+      const family = block.match(/font-family\s*:\s*["']?([^;"']+)/i)?.[1]?.trim();
+      const url = block.match(/url\(\s*["']?([^)"']+)["']?\s*\)/i)?.[1];
+      if (!family || !url) return;
+      faces.push({
+        family,
+        path: resolvePath(cssBase, url),
+        italic: /font-style\s*:\s*(italic|oblique)/i.test(block),
+        bold: /font-weight\s*:\s*(bold|[6-9]00)/i.test(block),
+      });
+    });
+  });
+  return faces;
+}
+
+function bodyFamilies(zip, manifest, base) {
+  const names = [];
+  Object.values(manifest).forEach((item) => {
+    if (!/css/i.test(item.type) || !item.href) return;
+    const css = zip.text(resolvePath(base, item.href)) || '';
+    (css.match(/(?:^|[}\s])(?:body|html|p)\s*\{[^}]*\}/gi) || []).forEach((rule) => {
+      const list = rule.match(/font-family\s*:\s*([^;}]+)/i)?.[1];
+      if (list) names.push(...list.split(',').map(n => n.replace(/["']/g, '').trim()));
+    });
+  });
+  return names;
+}
+
+function extractFont(zip, manifest, base, opf) {
+  const encryption = zip.text('META-INF/encryption.xml') || '';
+  const algorithms = {};
+  (encryption.match(/<(?:enc:)?EncryptedData[\s\S]*?<\/(?:enc:)?EncryptedData>/gi) || []).forEach((block) => {
+    const algorithm = block.match(/Algorithm\s*=\s*["']([^"']+)["']/i)?.[1];
+    const uri = block.match(/<(?:enc:)?CipherReference[^>]*URI\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (algorithm && uri) algorithms[decodeURIComponent(uri)] = algorithm;
+  });
+
+  const uidRef = opf.match(/<package[^>]*unique-identifier\s*=\s*["']([^"']+)["']/i)?.[1];
+  const idTag = (opf.match(/<dc:identifier[^>]*>[\s\S]*?<\/dc:identifier>/gi) || []).find(tag => !uidRef || attr(tag, 'id') === uidRef);
+  const identifier = decodeEntities((idTag || '').replace(/<[^>]+>/g, '')).trim();
+
+  const faces = cssFontFaces(zip, manifest, base).filter(f => /\.(ttf|otf)$/i.test(f.path));
+  const wanted = bodyFamilies(zip, manifest, base).map(n => n.toLowerCase());
+  const regular = faces.filter(f => !f.italic && !f.bold);
+  const pool = regular.length ? regular : faces;
+  const chosen = pool.find(f => wanted.includes(f.family.toLowerCase())) || pool[0];
+  if (!chosen) return null;
+
+  const data = zip.bytes(chosen.path);
+  if (!data) return null;
+  const fixed = deobfuscate(data, algorithms[chosen.path] || algorithms[chosen.path.replace(base, '')] || '', identifier);
+  const head = (fixed[0] << 24) | (fixed[1] << 16) | (fixed[2] << 8) | fixed[3];
+  const valid = head === 0x00010000 || head === 0x4f54544f || head === 0x74727565;
+  return valid ? { family: chosen.family, ext: /\.otf$/i.test(chosen.path) ? 'otf' : 'ttf', bytes: fixed } : null;
 }
 
 function attr(tag, name) {
@@ -125,5 +275,12 @@ export function parseEpub(bytes) {
   });
 
   if (chapters.length === 0) throw new Error('Não foi possível extrair texto deste EPUB.');
-  return { title, author, chapters };
+  let font = null;
+  try {
+    font = extractFont(zip, manifest, base, opf);
+  } catch {
+    font = null;
+  }
+  const fontHint = dominantFont([font?.family, ...bodyFamilies(zip, manifest, base)].filter(Boolean));
+  return { title, author, chapters, font, fontHint };
 }

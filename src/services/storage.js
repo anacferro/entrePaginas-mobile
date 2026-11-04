@@ -132,6 +132,7 @@ export const storage = {
       titleColor: bookData.titleColor || '#FFFFFF',
       paperColor: bookData.paperColor || '#F4EAE0',
       fontFamily: bookData.fontFamily || 'serif',
+      fontFallback: bookData.fontFallback || null,
       coverImage: bookData.coverImage || null,
       status: 'estante',
       isOwn: bookData.isOwn !== false,
@@ -169,6 +170,11 @@ export const storage = {
     book.titleColor = updates.titleColor || book.titleColor;
     book.paperColor = updates.paperColor || book.paperColor;
     book.fontFamily = updates.fontFamily || book.fontFamily;
+    if (updates.customFont) {
+      book.customFont = updates.customFont;
+      book.fontPath = updates.fontPath || null;
+      book.fontLabel = updates.fontLabel || null;
+    }
     if ('coverImage' in updates) book.coverImage = updates.coverImage || null;
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);

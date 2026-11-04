@@ -11,6 +11,8 @@ import {
   KeyboardAvoidingView,
   Image,
   AppState,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -19,6 +21,7 @@ import AnnotatedText from '../components/AnnotatedText';
 import AiSummary from '../components/AiSummary';
 import CommentsModal from '../components/CommentsModal';
 import { paginate } from '../services/pagination';
+import { bookFonts } from '../services/bookFonts';
 import { fontFamilyFor, isDarkColor } from '../theme/bookOptions';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
 import { storage } from '../services/storage';
@@ -57,6 +60,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [editorMode, setEditorMode] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [originalFontReady, setOriginalFontReady] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -72,9 +76,17 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   }, [bookId]);
 
   useEffect(() => {
+    if (book?.fontFamily !== 'original') return;
+    bookFonts.load(book).then(setOriginalFontReady);
+  }, [book]);
+
+  const [fade] = useState(() => new Animated.Value(1));
+  useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     setSelection(null);
-  }, [currentPageIndex]);
+    fade.setValue(0.25);
+    Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [currentPageIndex, fade]);
 
   const handleSelect = useCallback((start, end) => {
     setSelection(end > start ? { start, end } : null);
@@ -105,6 +117,18 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const isLastPage = pageIndex >= pages.length - 1;
   const firstPageOf = (chapterId, list = pages) => Math.max(0, list.findIndex(p => p.chapterId === chapterId));
   const pageForIndex = (idx) => firstPageOf(chapters[idx].id) + 1;
+
+  const pageCount = pages.length;
+  const pan = useMemo(() => {
+    const go = (step) => setCurrentPageIndex(i => Math.max(0, Math.min(pageCount - 1, Math.min(i, pageCount - 1) + step)));
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => !annotating && Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -50) go(1);
+        else if (g.dx > 50) go(-1);
+      },
+    });
+  }, [annotating, pageCount]);
 
   const openNewChapter = () => {
     setShowSummary(false);
@@ -239,7 +263,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const paperIsDark = usesPaper && isDarkColor(book.paperColor);
   const readerBg = usesPaper ? book.paperColor : colors.reader.background;
   const readerTextColor = paperIsDark ? '#EDE6DA' : colors.reader.text;
-  const bodyFont = fontFamilyFor(book?.fontFamily);
+  const useOriginal = book?.fontFamily === 'original' && originalFontReady;
+  const bodyFont = useOriginal ? book.customFont : fontFamilyFor(book?.fontFamily === 'original' ? book?.fontFallback : book?.fontFamily);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
@@ -378,7 +403,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         </View>
       )}
 
-      <View style={styles.readerScroll}>
+      <View style={styles.readerScroll} {...pan.panHandlers}>
+        <Animated.View style={{ flex: 1, opacity: fade }}>
         <ScrollView
           ref={scrollRef}
           style={styles.readerScroll}
@@ -473,6 +499,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             </Touchable>
           </View>
         </ScrollView>
+        </Animated.View>
 
         {currentBookmark && (
           <Touchable style={styles.ribbon} onPress={openBookmarkSheet} activeOpacity={0.85}>

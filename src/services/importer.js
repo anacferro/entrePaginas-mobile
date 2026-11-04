@@ -132,7 +132,7 @@ function isReadable(text) {
 }
 
 async function importPdf(asset) {
-  const { pages, title, text } = parsePdf(await readBytes(asset));
+  const { pages, title, text, fontHint } = parsePdf(await readBytes(asset));
   const bookTitle = title || titleFromFileName(asset.name);
 
   if (!isReadable(text)) {
@@ -140,6 +140,7 @@ async function importPdf(asset) {
       title: bookTitle,
       subtitle: 'Importado de PDF',
       pages,
+      fontHint,
       warning: 'O texto deste PDF não pôde ser extraído. Ele pode ser digitalizado (imagem) ou usar fontes protegidas.',
       chapters: [
         {
@@ -155,18 +156,21 @@ async function importPdf(asset) {
     title: bookTitle,
     subtitle: 'Importado de PDF',
     pages,
+    fontHint,
     chapters: splitByHeadings(text),
   };
 }
 
 async function importEpub(asset) {
-  const { title, author, chapters } = parseEpub(await readBytes(asset));
+  const { title, author, chapters, font, fontHint } = parseEpub(await readBytes(asset));
   const fullText = chapters.map(c => c.content).join(' ');
 
   return {
     title: title || titleFromFileName(asset.name),
     subtitle: author ? `Por ${author}` : 'Importado de EPUB',
     pages: estimatePages(fullText),
+    font,
+    fontHint,
     chapters: chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` })),
   };
 }

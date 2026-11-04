@@ -150,7 +150,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
             <Section icon="document-text-outline" title="Folha de leitura" hint="Cor e letra usadas nas páginas ao ler.">
               <ColorRow label="Cor da folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
               <Field label="Tipo de letra">
-                <FontPicker value={fontFamily} onChange={setFontFamily} />
+                <FontPicker value={fontFamily} onChange={setFontFamily} original={book?.customFont ? book.fontLabel : null} />
               </Field>
             </Section>
           </ScrollView>

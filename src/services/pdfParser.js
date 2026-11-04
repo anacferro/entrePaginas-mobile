@@ -1,4 +1,5 @@
 import { inflate } from 'pako';
+import { dominantFont } from './fontHints';
 
 const WIN_ANSI = {
   0x80: '€', 0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',
@@ -316,5 +317,6 @@ export function parsePdf(bytes) {
     pages: pages.length || 1,
     title: /^[\x20-\x7EÀ-ÿ‘’“”–—…]{3,}$/.test(infoTitle) ? infoTitle : null,
     text: normalizeText(pageTexts.join('\n')),
+    fontHint: dominantFont([...raw.matchAll(/\/BaseFont\s*\/(?:[A-Z]{6}\+)?([A-Za-z0-9,\-]+)/g)].map(m => m[1])),
   };
 }

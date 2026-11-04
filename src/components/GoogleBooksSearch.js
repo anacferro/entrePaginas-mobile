@@ -63,7 +63,6 @@ export default function GoogleBooksSearch({ onSelect }) {
           <Ionicons name="search-outline" size={18} color={colors.primary} />
           <Text style={styles.cardHeaderTitle}>Buscar no Google Books</Text>
         </View>
-        <Text style={styles.metaLabel}>Só obras com texto completo</Text>
       </View>
 
       <View style={styles.searchRow}>

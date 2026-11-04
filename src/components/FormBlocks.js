@@ -115,10 +115,23 @@ export function ColorRow({ label, options, value, onChange, outlined }) {
   );
 }
 
-export function FontPicker({ value, onChange }) {
+export function FontPicker({ value, onChange, original }) {
   const styles = useThemedStyles(createStyles);
   return (
     <View style={styles.categoryRow}>
+      {original && (
+        <Touchable
+          style={[styles.categoryChip, value === 'original' && styles.categoryChipActive]}
+          onPress={() => onChange('original')}
+          accessibilityLabel={`Letra original ${original}`}
+        >
+          <View style={styles.categoryLabelBtn}>
+            <Text style={[styles.categoryText, value === 'original' && styles.categoryTextActive]}>
+              Original do livro ({original})
+            </Text>
+          </View>
+        </Touchable>
+      )}
       {BOOK_FONTS.map((font) => {
         const active = (value || 'serif') === font.id;
         return (
