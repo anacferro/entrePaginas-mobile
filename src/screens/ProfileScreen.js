@@ -14,6 +14,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
+import { authService } from '../services/auth';
+import Avatar from '../components/Avatar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
@@ -23,7 +25,7 @@ export default function ProfileScreen({ navigation }) {
   const [chestBooksCount, setChestBooksCount] = useState(0);
   const [readerTheme, setReaderTheme] = useState('light');
   const [simulateError, setSimulateError] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [libraryStats, setLibraryStats] = useState({ chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
 
   const loadUserData = async () => {
     try {
@@ -36,6 +38,16 @@ export default function ProfileScreen({ navigation }) {
       setUser(u);
       setActiveBooksCount(books.length);
       setChestBooksCount(chest.length);
+      const allBooks = [...books, ...chest];
+      setLibraryStats({
+        chapters: allBooks.reduce((sum, b) => sum + (b.chapters?.length || 0), 0),
+        bookmarks: allBooks.reduce((sum, b) => sum + (b.bookmarks?.length || 0), 0),
+        marks: allBooks.reduce(
+          (sum, b) => sum + (b.chapters || []).reduce((n, c) => n + (c.marks?.length || 0), 0),
+          0
+        ),
+        sizeKb: Math.max(1, Math.round(JSON.stringify(allBooks).length / 1024)),
+      });
       setReaderTheme(u.readerTheme || 'light');
       setSimulateError(isErr);
     } catch (e) {
@@ -65,14 +77,6 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
-  const handleManualSync = () => {
-    setSyncing(true);
-    setTimeout(() => {
-      setSyncing(false);
-      dialog.alert('Sincronização Concluída', 'Todos os compêndios locais foram sincronizados e validados.');
-    }, 900);
-  };
-
   const handleClearAll = () => {
     dialog.alert(
       'Testar Estado Vazio',
@@ -95,7 +99,7 @@ export default function ProfileScreen({ navigation }) {
   const handleResetDefaults = () => {
     dialog.alert(
       'Restaurar Dados Padrão',
-      'Deseja restaurar a biblioteca com os livros e configurações iniciais do Figma?',
+      'Deseja restaurar a biblioteca com os livros e configurações iniciais de exemplo?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -131,12 +135,12 @@ export default function ProfileScreen({ navigation }) {
   const handleLogout = () => {
     dialog.alert(
       'Desconectar da Conta',
-      'Deseja encerrar a sessão local e retornar para a tela de boas-vindas?',
+      'Deseja encerrar a sessão neste aparelho? Seus livros continuam salvos na sua conta.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Desconectar',
-          onPress: () => navigation.replace('Login'),
+          onPress: () => authService.signOut(),
         },
       ]
     );
@@ -151,17 +155,14 @@ export default function ProfileScreen({ navigation }) {
         {/* User Card */}
         <View style={styles.userCard}>
           <View style={styles.avatarWrapper}>
-            <Image
-              source={{ uri: user?.avatarUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=240&auto=format&fit=crop&q=80' }}
-              style={styles.avatarImg}
-            />
+            <Avatar size={60} style={styles.avatarImg} />
             <View style={styles.avatarBadge}>
               <Ionicons name="book" size={12} color="#FFFFFF" />
             </View>
           </View>
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.name || 'Camila Duarte'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'camila.livros@gmail.com'}</Text>
+            <Text style={styles.userName}>{user?.name}</Text>
+            <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
         </View>
 
@@ -187,62 +188,49 @@ export default function ProfileScreen({ navigation }) {
             <View style={styles.statIconCircle}>
               <Ionicons name="reader-outline" size={18} color={colors.accentGold} />
             </View>
-            <Text style={styles.statNumber}>1.420</Text>
-            <Text style={styles.statLabel}>Páginas Lidas</Text>
+            <Text style={styles.statNumber}>{libraryStats.chapters}</Text>
+            <Text style={styles.statLabel}>Capítulos</Text>
           </View>
         </View>
 
-        {/* Sincronização & Nuvem */}
+        {/* Armazenamento */}
         <View style={styles.sectionCard}>
           <View style={styles.sectionCardHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="cloud-done-outline" size={18} color={colors.success} style={{ marginRight: 8 }} />
-              <Text style={styles.sectionCardTitle}>Sincronização & Nuvem</Text>
+              <Ionicons name="phone-portrait-outline" size={18} color={colors.success} style={{ marginRight: 8 }} />
+              <Text style={styles.sectionCardTitle}>Armazenamento</Text>
             </View>
-            <View style={styles.firebaseTag}>
-              <Text style={styles.firebaseTagText}>Firebase</Text>
+            <View style={styles.storageTag}>
+              <Text style={styles.storageTagText}>Local</Text>
             </View>
           </View>
 
-          <View style={styles.syncStatusBanner}>
+          <View style={styles.storageStatusBanner}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={styles.greenPulse} />
               <View>
-                <Text style={styles.syncStatusTitle}>Conectado e Ativo</Text>
-                <Text style={styles.syncStatusSubtitle}>Sincronizado em tempo real</Text>
+                <Text style={styles.storageStatusTitle}>Salvo no aparelho e na nuvem</Text>
+                <Text style={styles.storageStatusSubtitle}>Funciona sem internet e sincroniza ao reconectar</Text>
               </View>
             </View>
-            <Ionicons name="cloud-outline" size={20} color={colors.primary} />
+            <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
           </View>
 
-          {/* Progress gauge */}
-          <View style={styles.gaugeHeader}>
-            <Text style={styles.gaugeLabel}>Espaço do Acervo</Text>
-            <Text style={styles.gaugeValue}>24.5 MB de 1 GB utilizado</Text>
+          <View style={styles.storageRow}>
+            <Text style={styles.storageLabel}>Espaço do acervo</Text>
+            <Text style={styles.storageValue}>{libraryStats.sizeKb.toLocaleString('pt-BR')} KB</Text>
           </View>
-          <View style={styles.gaugeTrack}>
-            <View style={[styles.gaugeFill, { width: '25%' }]} />
+          <View style={styles.storageRow}>
+            <Text style={styles.storageLabel}>Páginas marcadas</Text>
+            <Text style={styles.storageValue}>{libraryStats.bookmarks}</Text>
           </View>
-          <Text style={styles.gaugeFooterText}>
-            Seus destaques, capas e anotações estão salvos e protegidos localmente.
+          <View style={styles.storageRow}>
+            <Text style={styles.storageLabel}>Trechos grifados</Text>
+            <Text style={styles.storageValue}>{libraryStats.marks}</Text>
+          </View>
+          <Text style={styles.storageFooterText}>
+            Seus livros, destaques e anotações ficam salvos no aparelho e sincronizados com a sua conta.
           </Text>
-
-          <TouchableOpacity
-            style={styles.syncNowBtn}
-            activeOpacity={0.8}
-            onPress={handleManualSync}
-            disabled={syncing}
-          >
-            <Ionicons
-              name="sync-outline"
-              size={16}
-              color="#FFFFFF"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.syncNowBtnText}>
-              {syncing ? 'Sincronizando...' : 'Sincronizar agora manualmente'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         {/* Preferências de Leitura */}
@@ -455,18 +443,18 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: 'serif',
   },
-  firebaseTag: {
+  storageTag: {
     backgroundColor: '#EBE1D5',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 10,
   },
-  firebaseTagText: {
+  storageTagText: {
     fontSize: 10,
     fontWeight: '700',
     color: colors.textSecondary,
   },
-  syncStatusBanner: {
+  storageStatusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -484,59 +472,37 @@ const styles = StyleSheet.create({
     backgroundColor: colors.success,
     marginRight: 10,
   },
-  syncStatusTitle: {
+  storageStatusTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.text,
   },
-  syncStatusSubtitle: {
+  storageStatusSubtitle: {
     fontSize: 11,
     color: colors.textSecondary,
   },
-  gaugeHeader: {
+  storageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  gaugeLabel: {
+  storageLabel: {
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '500',
   },
-  gaugeValue: {
-    fontSize: 11,
+  storageValue: {
+    fontSize: 12,
     fontWeight: '700',
     color: colors.text,
   },
-  gaugeTrack: {
-    height: 6,
-    backgroundColor: '#E6DCD1',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  gaugeFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-  },
-  gaugeFooterText: {
+  storageFooterText: {
     fontSize: 11,
     color: colors.textSecondary,
     lineHeight: 16,
-    marginBottom: 14,
-  },
-  syncNowBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary,
-    height: 44,
-    borderRadius: 10,
-  },
-  syncNowBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    marginTop: 10,
   },
   subLabel: {
     fontSize: 11,

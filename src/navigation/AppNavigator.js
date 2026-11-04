@@ -10,6 +10,8 @@ import ChestScreen from '../screens/ChestScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ReaderScreen from '../screens/ReaderScreen';
 import CustomTabBar from '../components/CustomTabBar';
+import LoadingView from '../components/LoadingView';
+import { useAuth } from '../context/AuthContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -32,24 +34,32 @@ function MainTabNavigator() {
 }
 
 export default function AppNavigator() {
+  const { user, initializing } = useAuth();
+
+  if (initializing) return <LoadingView message="Abrindo sua estante..." />;
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
         screenOptions={{
           headerShown: false,
           animation: 'fade',
         }}
       >
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-        <Stack.Screen
-          name="Reader"
-          component={ReaderScreen}
-          options={{
-            animation: 'slide_from_right',
-          }}
-        />
+        {user ? (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen
+              name="Reader"
+              component={ReaderScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+          </>
+        ) : (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

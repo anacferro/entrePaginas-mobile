@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { File } from 'expo-file-system';
 import { parsePdf } from './pdfParser';
+import { parseEpub } from './epubParser';
 
 const CHAPTER_SIZE = 1800;
 
@@ -124,6 +125,18 @@ async function importPdf(asset) {
   };
 }
 
+async function importEpub(asset) {
+  const { title, author, chapters } = parseEpub(await readBytes(asset));
+  const fullText = chapters.map(c => c.content).join(' ');
+
+  return {
+    title: title || titleFromFileName(asset.name),
+    subtitle: author ? `Por ${author}` : 'Importado de EPUB',
+    pages: estimatePages(fullText),
+    chapters: chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` })),
+  };
+}
+
 async function importText(asset) {
   const text = (await readText(asset)).trim();
   if (!text) throw new Error('O arquivo de texto está vazio.');
@@ -179,8 +192,8 @@ export const importer = {
     const asset = result.assets[0];
     const extension = asset.name.split('.').pop().toLowerCase();
 
-    if (format === 'epub') {
-      throw new Error('A importação de EPUB ainda não está disponível nesta versão.');
+    if (format === 'epub' && extension !== 'epub') {
+      throw new Error('Selecione um arquivo com extensão .epub.');
     }
     if (format === 'pdf' && extension !== 'pdf') {
       throw new Error('Selecione um arquivo com extensão .pdf.');
@@ -194,6 +207,7 @@ export const importer = {
 
     const imported =
       format === 'pdf' ? await importPdf(asset) :
+      format === 'epub' ? await importEpub(asset) :
       format === 'json' ? await importJson(asset) :
       await importText(asset);
 

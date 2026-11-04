@@ -147,3 +147,87 @@ Nem todos os elementos acabaram ficando exatamente iguais aos do figma por fins 
 **O que o usuário/grupo ainda precisa revisar/revisou:**
 
 Funcionamento geral do app em diferentes modelos de celular
+
+# 2026-10-30 a 2026-11-04 — Execução no celular, revisão das telas e novas funcionalidades (Claude Code)
+
+**O que foi pedido:**
+
+1. Clonar o repositório e fazer o app rodar no celular via Expo Go.
+2. Corrigir o layout no Android, onde o cabeçalho ficava sob a barra de status e a barra de abas sob os botões de navegação.
+3. Montar um roteiro curto para a apresentação da etapa 2, com perguntas prováveis do professor.
+4. Revisar o app tela por tela e ajustar o que não funcionava, sem comentários no código e seguindo o padrão existente.
+5. Revisar a escrita no livro e a importação de PDF, que até então era apenas uma simulação.
+6. Implementar histórico de alterações (antes/depois) em livros que não são do usuário, marcadores de página com pin e título, e grifos com cores, negrito, itálico e sublinhado.
+7. Comparar o enunciado do trabalho com o app e listar o que falta, do mais fácil ao mais difícil.
+
+**O que a IA fez:**
+
+1. Instalou as dependências e diagnosticou os problemas de conexão com o celular: o Expo Go da Play Store estava no SDK 58 enquanto o projeto usa o SDK 57, a rede da universidade bloqueava a conexão e o modo túnel (ngrok) foi bloqueado pelo antivírus da máquina.
+2. Encontrou o motivo de o app ter parado de abrir: o texto `npx expo start --tunnel` havia sido colado por engano na primeira linha do `ProfileScreen.js`.
+3. Trocou o `SafeAreaView` do React Native (que só funciona no iOS) pelo da biblioteca `react-native-safe-area-context` e ajustou a barra de abas aos botões do Android.
+4. Como o celular não conseguiu conectar, configurou o app para rodar no navegador (Expo Web) e testou cada tela por lá.
+5. Identificou que os alertas e confirmações (`Alert.alert`) não funcionam na web e criou o serviço `dialog.js`, que usa o alerta nativo no celular e o do navegador na web.
+6. Corrigiu o avatar do leitor (não navegava), a numeração de páginas (era um número fixo), o botão "Excluir dados da biblioteca" (que na verdade restaurava os dados padrão) e textos de busca que citavam campos inexistentes.
+7. Criou o editor de capítulos, a importação real de arquivos (PDF, TXT, Markdown e JSON), o histórico de alterações, os marcadores e o marca-texto.
+8. Testou o leitor de PDF com arquivos gerados pelo navegador, incluindo um PDF só com imagem para validar o aviso de texto não extraível.
+9. Removeu indicadores falsos das telas ("Firebase Ativo", "Sincronizado", "Tudo salvo na nuvem", "24.5 MB de 1 GB", "1.420 páginas lidas") e trocou por informações reais do armazenamento local.
+
+**Decisões que a IA perguntou ao usuário/grupo, em vez de decidir sozinha:**
+
+- Se o commit deveria ir direto para a branch `main` ou para uma branch separada, e depois se deveria ser enviado ao GitHub.
+- O formato do roteiro de apresentação.
+- Por onde começar a lista de pendências da etapa 3.
+
+**Decisões técnicas que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
+
+- Escrever um leitor de PDF próprio (com a biblioteca `pako` para descompactar o texto) em vez de usar o `pdf.js`, que depende de recursos de navegador e não funciona de forma confiável no Expo Go.
+- Considerar como "livro que não é do usuário" todo livro importado de arquivo, já que o app ainda não tem compartilhamento entre usuários.
+- Guardar grifos e formatações como intervalos de caracteres sobre o texto puro do capítulo, em vez de transformar o texto em HTML ou rich text.
+
+**O que foi aceito pelo usuário/grupo:**
+
+As correções das telas, as novas funcionalidades do leitor, a importação real de arquivos e o uso do navegador como alternativa para demonstrar o app.
+
+**O que foi recusado ou alterado:**
+
+- O roteiro de apresentação foi refeito três vezes: o grupo recusou a versão com tabelas, depois a que tinha tempo estimado por parte, e pediu só texto com as respostas das perguntas.
+- O modo túnel do Expo foi descartado porque o Windows da universidade bloqueia o ngrok.
+- A importação de EPUB ficou de fora por enquanto e aparece como "Em breve" no app.
+
+**O que o usuário/grupo ainda precisa revisar:**
+
+- Testar no celular real a seleção de texto do marca-texto, que no Android e no iOS usa um mecanismo diferente do navegador.
+- Implementar a etapa 3: autenticação, Firebase, API externa, recurso nativo e funcionalidade de IA.
+
+## 2026-11-04 — Etapa 3: itens 4 a 16 da lista (Claude Code)
+
+**O que foi pedido:** implementar, do mais fácil ao mais difícil, o que faltava em relação ao documento do professor: edição do livro, reordenar capítulos, exportar, importar EPUB, Google Books, câmera, Firebase (login e nuvem), IA e tutorial.
+
+**O que a IA fez:**
+1. Edição dos dados do livro (título, subtítulo, categoria e cores), reordenação de capítulos por setas no sumário e exportação em TXT e JSON.
+2. Leitor de EPUB próprio, sem biblioteca nova além do `pako` já usado no PDF.
+3. Busca no Google Books (API pública, sem chave) com estados de carregamento, erro e vazio.
+4. Câmera para fotografar a página, com pedido de permissão e mensagens para permissão negada ou bloqueada.
+5. Criou o projeto Firebase `entre-paginas-utf` pela linha de comando (o CLI já estava logado na conta do usuário), com app Web, Firestore, regras de segurança e login por e-mail e senha.
+6. Login e cadastro reais, sessão persistente, telas privadas e sincronização dos livros com o Firestore (testada apagando os dados locais e recuperando da nuvem).
+7. Resumo de capítulo e transcrição de foto com Gemini via Firebase AI Logic, com mensagens de erro e limite de tempo.
+8. Documentou estrutura de dados, regras, decisões (DA10 a DA12) e escreveu o tutorial de uso.
+
+**Decisões que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
+
+- Trocar o login com Google do PRD por e-mail e senha (DA10).
+- Usar o Firebase AI Logic em vez de uma chave de IA no app (DA12).
+- Novas contas começam com a estante vazia, em vez de receber os livros de exemplo.
+
+**O que foi aceito pelo usuário/grupo:** o usuário autorizou a IA a seguir toda a lista sem pedir confirmação a cada item.
+
+**Problemas encontrados e corrigidos durante o trabalho:**
+
+- Uma linha com quebra de linha solta no importador deixou o app em branco; foi achada e corrigida na hora.
+- O nome do modelo de IA sugerido pela documentação (`gemini-3.8-flash`) ficou sem responder, enquanto o `gemini-2.5-flash` foi recusado como indisponível; o `gemini-3.5-flash` respondeu em cerca de 3 segundos e virou o padrão. O caso serviu para validar o tratamento de falha da IA (limite de tempo e mensagem ao usuário).
+- A API do Google Books respondeu com limite de consultas (erro 429) nos testes; a tela mostrou a mensagem prevista.
+
+**O que o usuário/grupo ainda precisa revisar:**
+
+- Testar no celular real a câmera, a permissão negada e o marca-texto.
+- Conferir no console do Firebase se os dados de teste (conta `teste.entrepaginas@example.com` e um livro de teste) devem ser apagados antes da apresentação.

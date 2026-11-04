@@ -10,11 +10,13 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import ChapterEditor from '../components/ChapterEditor';
 import AnnotatedText from '../components/AnnotatedText';
+import AiSummary from '../components/AiSummary';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -92,18 +94,26 @@ export default function ReaderScreen({ route, navigation }) {
     setTimeout(() => setEditorMode('new'), 300);
   };
 
-  const handleSaveChapter = async ({ title, content }) => {
+  const handleSaveChapter = async ({ title, content, photo }) => {
     if (editorMode === 'new') {
-      const updated = await storage.addChapter(book.id, { title, content });
+      const updated = await storage.addChapter(book.id, { title, content, photo });
       if (updated) {
         setBook(updated);
         setCurrentPageIndex(updated.chapters.length - 1);
       }
     } else {
-      const updated = await storage.updateChapter(book.id, currentChapter.id, { title, content });
+      const updated = await storage.updateChapter(book.id, currentChapter.id, { title, content, photo });
       if (updated) setBook(updated);
     }
     setEditorMode(null);
+  };
+
+  const handleMoveChapter = async (chapterId, direction) => {
+    const updated = await storage.moveChapter(book.id, chapterId, direction);
+    if (!updated) return;
+    const keepId = currentChapter.id;
+    setBook(updated);
+    setCurrentPageIndex(Math.max(0, updated.chapters.findIndex(c => c.id === keepId)));
   };
 
   const isOwnBook = book?.isOwn !== false;
@@ -332,6 +342,17 @@ export default function ReaderScreen({ route, navigation }) {
             </TouchableOpacity>
           )}
 
+          <AiSummary chapter={currentChapter} isDark={isDark} />
+
+          {currentChapter.photo && (
+            <Image
+              source={{ uri: currentChapter.photo }}
+              style={styles.pagePhoto}
+              resizeMode="contain"
+              accessibilityLabel="Foto da página"
+            />
+          )}
+
           <AnnotatedText
             content={currentChapter.content}
             marks={currentChapter.marks}
@@ -545,6 +566,26 @@ export default function ReaderScreen({ route, navigation }) {
                   )}
                   {currentPageIndex === idx && (
                     <Ionicons name="book" size={16} color={colors.primary} />
+                  )}
+                  {book && chapters.length > 1 && (
+                    <View style={styles.tocMove}>
+                      <TouchableOpacity
+                        onPress={() => handleMoveChapter(chap.id, -1)}
+                        disabled={idx === 0}
+                        hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+                        accessibilityLabel={`Subir capítulo ${idx + 1}`}
+                      >
+                        <Ionicons name="chevron-up" size={20} color={idx === 0 ? colors.border : colors.textSecondary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleMoveChapter(chap.id, 1)}
+                        disabled={idx === chapters.length - 1}
+                        hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+                        accessibilityLabel={`Descer capítulo ${idx + 1}`}
+                      >
+                        <Ionicons name="chevron-down" size={20} color={idx === chapters.length - 1 ? colors.border : colors.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </TouchableOpacity>
               ))}
@@ -911,6 +952,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
   },
+  pagePhoto: {
+    width: '100%',
+    height: 320,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
   bookParagraphs: {
     fontFamily: 'serif',
     letterSpacing: 0.2,
@@ -1025,6 +1072,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  tocMove: {
+    marginLeft: 10,
+    alignItems: 'center',
   },
   tocAddBtn: {
     flexDirection: 'row',

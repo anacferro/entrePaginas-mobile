@@ -8,6 +8,7 @@ import { colors } from '../theme/colors';
 const TYPE_INFO = {
   edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accentGold },
   add: { label: 'Capítulo adicionado', icon: 'add-circle-outline', color: colors.success },
+  move: { label: 'Capítulo reordenado', icon: 'swap-vertical-outline', color: colors.secondary },
   delete: { label: 'Capítulo removido', icon: 'remove-circle-outline', color: colors.danger },
 };
 
@@ -63,6 +64,19 @@ function ChangeEntry({ entry }) {
               <Text style={styles.addedText}>{diff.added || ' '}</Text>
               {diff.trail}
             </Text>
+          </View>
+        </View>
+      )}
+
+      {entry.type === 'move' && (
+        <View style={styles.compareBlock}>
+          <View style={[styles.versionBox, styles.beforeBox]}>
+            <Text style={[styles.compareLabel, { color: colors.danger }]}>ANTES</Text>
+            <Text style={styles.versionText}>{entry.before.title}</Text>
+          </View>
+          <View style={[styles.versionBox, styles.afterBox]}>
+            <Text style={[styles.compareLabel, { color: colors.success }]}>DEPOIS</Text>
+            <Text style={styles.versionText}>{entry.after.title}</Text>
           </View>
         </View>
       )}

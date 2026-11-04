@@ -7,9 +7,14 @@ import {
   TouchableOpacity,
   Modal,
   KeyboardAvoidingView,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { camera } from '../services/camera';
+import { ai } from '../services/ai';
+import { dialog } from '../services/dialog';
 import { colors } from '../theme/colors';
 
 export default function ChapterEditor({
@@ -24,12 +29,15 @@ export default function ChapterEditor({
 }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [photo, setPhoto] = useState(null);
+  const [transcribing, setTranscribing] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setTitle(chapter?.title || '');
       setContent(chapter?.content || '');
+      setPhoto(chapter?.photo || null);
       setSaving(false);
     }
   }, [visible, chapter]);
@@ -37,12 +45,33 @@ export default function ChapterEditor({
   const theme = isDark ? colors.reader.dark : colors.reader.light;
   const mutedColor = isDark ? '#9A928A' : colors.textSecondary;
   const wordCount = content.trim() ? content.trim().split(/\s+/).length : 0;
-  const canSave = content.trim().length > 0 && !saving;
+  const canSave = (content.trim().length > 0 || !!photo) && !saving;
+
+  const handleTakePhoto = async () => {
+    const uri = await camera.capturePage();
+    if (uri) setPhoto(uri);
+  };
+
+  const handleTranscribe = async () => {
+    setTranscribing(true);
+    try {
+      const text = await ai.transcribePhoto(photo);
+      if (text.trim() === 'SEM_TEXTO') {
+        dialog.alert('Sem texto', 'Não encontrei texto legível nessa foto. Tente fotografar de novo com mais luz e a página inteira.');
+      } else {
+        setContent(prev => (prev.trim() ? `${prev.trim()}\n\n${text}` : text));
+      }
+    } catch (e) {
+      dialog.alert('Falha na transcrição', e.message);
+    } finally {
+      setTranscribing(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!canSave) return;
     setSaving(true);
-    await onSave({ title, content });
+    await onSave({ title, content, photo });
     setSaving(false);
   };
 
@@ -96,6 +125,35 @@ export default function ChapterEditor({
               returnKeyType="next"
             />
 
+            {photo && (
+              <View style={styles.photoRow}>
+                <Image source={{ uri: photo }} style={styles.photoThumb} />
+                <Text style={[styles.photoLabel, { color: mutedColor }]}>Página fotografada</Text>
+                {ai.isAvailable && (
+                  <TouchableOpacity
+                    style={styles.transcribeBtn}
+                    onPress={handleTranscribe}
+                    disabled={transcribing}
+                    accessibilityLabel="Transcrever texto da foto"
+                  >
+                    {transcribing ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Ionicons name="sparkles" size={14} color={colors.primary} />
+                    )}
+                    <Text style={styles.transcribeText}>{transcribing ? 'Lendo...' : 'Transcrever'}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  onPress={() => setPhoto(null)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityLabel="Remover foto"
+                >
+                  <Ionicons name="close-circle" size={22} color={colors.danger} />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <TextInput
               style={[styles.contentInput, { color: theme.text }]}
               placeholder="Comece a escrever aqui..."
@@ -112,6 +170,16 @@ export default function ChapterEditor({
             <Text style={[styles.wordCount, { color: mutedColor }]}>
               {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
             </Text>
+
+            <TouchableOpacity
+              style={styles.cameraBtn}
+              onPress={handleTakePhoto}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Fotografar página"
+            >
+              <Ionicons name="camera-outline" size={18} color={colors.primary} />
+              <Text style={styles.cameraText}>Fotografar</Text>
+            </TouchableOpacity>
 
             {chapter && onDelete && (
               <TouchableOpacity
@@ -215,6 +283,46 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderTopWidth: 1,
+  },
+  photoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  photoThumb: {
+    width: 44,
+    height: 60,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  photoLabel: {
+    flex: 1,
+    fontSize: 13,
+  },
+  transcribeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: colors.primaryLight,
+    marginRight: 10,
+  },
+  transcribeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  cameraBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cameraText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
   },
   wordCount: {
     fontSize: 12,

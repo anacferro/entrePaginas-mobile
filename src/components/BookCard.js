@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import BookCover from './BookCover';
 import ChangeHistoryModal from './ChangeHistoryModal';
+import BookEditModal from './BookEditModal';
 import { colors } from '../theme/colors';
 
 export default function BookCard({
@@ -10,11 +11,14 @@ export default function BookCard({
   onPress,
   onMoveToChest,
   onRestore,
+  onEdit,
+  onExport,
   onDelete,
   isChest = false,
 }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
   const isOwn = book.isOwn !== false;
   const changeCount = book.changeLog?.length || 0;
 
@@ -89,6 +93,45 @@ export default function BookCard({
               <Text style={styles.menuItemText}>Abrir para Leitura</Text>
             </TouchableOpacity>
 
+            {onEdit && (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  setEditVisible(true);
+                }}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.secondary} />
+                <Text style={styles.menuItemText}>Editar Livro</Text>
+              </TouchableOpacity>
+            )}
+
+            {onExport && (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  onExport(book, 'txt');
+                }}
+              >
+                <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+                <Text style={styles.menuItemText}>Exportar como TXT</Text>
+              </TouchableOpacity>
+            )}
+
+            {onExport && (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  onExport(book, 'json');
+                }}
+              >
+                <Ionicons name="code-slash-outline" size={20} color={colors.primary} />
+                <Text style={styles.menuItemText}>Exportar como JSON</Text>
+              </TouchableOpacity>
+            )}
+
             {!isOwn && (
               <TouchableOpacity
                 style={styles.menuItem}
@@ -146,6 +189,16 @@ export default function BookCard({
           </View>
         </Pressable>
       </Modal>
+
+      <BookEditModal
+        visible={editVisible}
+        book={book}
+        onCancel={() => setEditVisible(false)}
+        onSave={async (updates) => {
+          await onEdit(book.id, updates);
+          setEditVisible(false);
+        }}
+      />
 
       <ChangeHistoryModal
         visible={historyVisible}

@@ -156,9 +156,6 @@ export const INITIAL_USER = {
   name: 'Camila Duarte',
   email: 'camila.livros@gmail.com',
   avatarUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=240&auto=format&fit=crop&q=80',
-  storageUsedMb: 24.5,
-  storageLimitGb: 1,
   readerTheme: 'light', // 'light' | 'dark'
-  fontSize: 18,
-  pagesRead: 1420
+  fontSize: 18
 };

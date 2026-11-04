@@ -12,36 +12,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
+import GoogleBooksSearch from '../components/GoogleBooksSearch';
 import BookCover from '../components/BookCover';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
-
-const COVER_COLORS = [
-  { label: 'Clean', color: '#D9C8B5' },
-  { label: 'Floresta', color: '#215C50' },
-  { label: 'Musgo', color: '#4C6044' },
-  { label: 'Vinho', color: '#7A2E26' },
-  { label: 'Marinho', color: '#1F3347' },
-  { label: 'Âmbar', color: '#9E6219' },
-];
-
-const TITLE_COLORS = [
-  { label: 'Castanho', color: '#332722' },
-  { label: 'Bege', color: '#EFE7DC' },
-  { label: 'Céu', color: '#97B5D5' },
-  { label: 'Branco', color: '#FFFFFF' },
-];
-
-const PAPER_COLORS = [
-  { label: 'Comum', color: '#F4EAE0' },
-  { label: 'Escuro', color: '#22201E' },
-  { label: 'Mofo', color: '#DCD4C5' },
-];
-
-const CATEGORIES = ['Literatura', 'Memórias', 'Filosofia', 'Gastronomia', 'Arte & Design', 'Viagens'];
+import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
 
 export default function CreateBookScreen({ navigation, route }) {
   const initialTab = route?.params?.initialTab || 'create';
@@ -57,6 +35,7 @@ export default function CreateBookScreen({ navigation, route }) {
   const [firstChapterTitle, setFirstChapterTitle] = useState('');
   const [firstChapterContent, setFirstChapterContent] = useState('');
   const [saving, setSaving] = useState(false);
+  const [suggestedPages, setSuggestedPages] = useState(null);
 
   // Import State
   const [selectedFormat, setSelectedFormat] = useState('pdf');
@@ -93,6 +72,16 @@ export default function CreateBookScreen({ navigation, route }) {
     }
   };
 
+  const handleSelectGoogleBook = (book) => {
+    setTitle(book.title);
+    setSubtitle(book.authors ? `Por ${book.authors}` : '');
+    setSuggestedPages(book.pageCount);
+    if (book.category) {
+      const match = CATEGORIES.find(c => book.category.toLowerCase().includes(c.toLowerCase().split(' ')[0]));
+      setCategory(match || book.category);
+    }
+  };
+
   const handleSaveBook = async () => {
     if (activeTab === 'import' && !importedFile) {
       dialog.alert('Nenhum Arquivo', 'Selecione um arquivo para importar antes de salvar.');
@@ -112,7 +101,7 @@ export default function CreateBookScreen({ navigation, route }) {
         coverColor,
         titleColor,
         paperColor,
-        totalPages: importedFile ? importedFile.pages : Math.floor(Math.random() * 60) + 20,
+        totalPages: importedFile ? importedFile.pages : suggestedPages || Math.floor(Math.random() * 60) + 20,
         isOwn: activeTab === 'create',
         chapters: activeTab === 'import'
           ? importedFile.chapters
@@ -311,6 +300,8 @@ export default function CreateBookScreen({ navigation, route }) {
                 </View>
               </View>
 
+              <GoogleBooksSearch onSelect={handleSelectGoogleBook} />
+
               {/* Ficha Catalográfica */}
               <View style={styles.formCard}>
                 <View style={styles.cardHeaderWithMeta}>
@@ -347,7 +338,7 @@ export default function CreateBookScreen({ navigation, route }) {
 
                 <Text style={styles.fieldLabel}>Categoria</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-                  {CATEGORIES.map((cat) => (
+                  {(CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES]).map((cat) => (
                     <TouchableOpacity
                       key={cat}
                       style={[
@@ -435,7 +426,7 @@ export default function CreateBookScreen({ navigation, route }) {
                     <Ionicons name="tablet-portrait" size={20} color="#E65100" />
                   </View>
                   <Text style={styles.formatName}>EPUB</Text>
-                  <Text style={styles.formatDesc}>Em breve</Text>
+                  <Text style={styles.formatDesc}>Livro digital</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -523,9 +514,9 @@ export default function CreateBookScreen({ navigation, route }) {
             <View style={styles.syncStatusRow}>
               <View style={styles.statusIndicatorRow}>
                 <View style={styles.statusDot} />
-                <Text style={styles.statusTitle}>Armazenamento Local: Pronto</Text>
+                <Text style={styles.statusTitle}>Armazenamento: Pronto</Text>
               </View>
-              <Text style={styles.statusSubtitle}>Auto-salvo agora</Text>
+              <Text style={styles.statusSubtitle}>No aparelho e na nuvem</Text>
             </View>
 
             <TouchableOpacity

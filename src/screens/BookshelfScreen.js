@@ -17,6 +17,7 @@ import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
+import { exporter } from '../services/exporter';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
@@ -76,6 +77,23 @@ export default function BookshelfScreen({ navigation }) {
       loadData();
     } catch (e) {
       dialog.alert('Erro', 'Não foi possível mover o livro para o baú.');
+    }
+  };
+
+  const handleEditBook = async (bookId, updates) => {
+    try {
+      await storage.updateBook(bookId, updates);
+      loadData();
+    } catch (e) {
+      dialog.alert('Erro', 'Não foi possível salvar as alterações do livro.');
+    }
+  };
+
+  const handleExportBook = async (book, format) => {
+    try {
+      await exporter.exportBook(book, format);
+    } catch (e) {
+      dialog.alert('Erro', e.message || 'Não foi possível exportar o livro.');
     }
   };
 
@@ -144,8 +162,8 @@ export default function BookshelfScreen({ navigation }) {
         <View style={styles.collectionHeaderRow}>
           <Text style={styles.collectionTitle}>Sua Coleção</Text>
           <View style={styles.cloudBadge}>
-            <Ionicons name="cloud-outline" size={13} color={colors.primary} />
-            <Text style={styles.cloudBadgeText}>Firebase Ativo</Text>
+            <Ionicons name="phone-portrait-outline" size={13} color={colors.primary} />
+            <Text style={styles.cloudBadgeText}>Aparelho e nuvem</Text>
           </View>
         </View>
 
@@ -265,6 +283,8 @@ export default function BookshelfScreen({ navigation }) {
                 book={book}
                 onPress={handleBookPress}
                 onMoveToChest={handleMoveToChest}
+                onEdit={handleEditBook}
+                onExport={handleExportBook}
                 onDelete={handleDeleteBook}
               />
             ))}

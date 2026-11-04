@@ -1,9 +1,25 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Avatar from './Avatar';
+import { cloud } from '../services/cloud';
 import { colors } from '../theme/colors';
 
+const SYNC_INFO = {
+  idle: { label: 'Salvo', color: colors.success },
+  synced: { label: 'Sincronizado', color: colors.success },
+  syncing: { label: 'Sincronizando', color: colors.accentGold },
+  offline: { label: 'Offline', color: colors.textMuted },
+  error: { label: 'Falha ao sincronizar', color: colors.danger },
+};
+
 export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPress }) {
+  const [syncStatus, setSyncStatus] = useState(cloud.getStatus());
+
+  useEffect(() => cloud.subscribe(setSyncStatus), []);
+
+  const sync = SYNC_INFO[syncStatus] || SYNC_INFO.idle;
+
   return (
     <View style={styles.container}>
       <TouchableOpacity 
@@ -22,8 +38,8 @@ export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPre
 
       <View style={styles.rightRow}>
         <View style={styles.syncBadge}>
-          <View style={styles.syncDot} />
-          <Text style={styles.syncText}>Sincronizado</Text>
+          <View style={[styles.syncDot, { backgroundColor: sync.color }]} />
+          <Text style={styles.syncText}>{sync.label}</Text>
         </View>
 
         <TouchableOpacity 
@@ -31,10 +47,7 @@ export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPre
           activeOpacity={0.8}
           onPress={onProfilePress}
         >
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=120&auto=format&fit=crop&q=80' }}
-            style={styles.avatarImage}
-          />
+          <Avatar size={38} />
         </TouchableOpacity>
       </View>
     </View>
