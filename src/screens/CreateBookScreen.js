@@ -13,8 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GoogleBooksSearch from '../components/GoogleBooksSearch';
 import FormatCard from '../components/FormatCard';
-import { publicDomain } from '../services/publicDomain';
-import { Section, Field, CoverPicker, CategoryPicker, ColorRow, fieldStyles } from '../components/FormBlocks';
+import { fetchFullTextInBackground } from '../services/googleImport';
+import { importProgress } from '../services/importProgress';
+import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
@@ -42,6 +43,7 @@ export default function CreateBookScreen({ navigation, route }) {
   const [coverColor, setCoverColor] = useState('#215C50');
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [paperColor, setPaperColor] = useState('#F4EAE0');
+  const [fontFamily, setFontFamily] = useState('serif');
   const [firstChapterTitle, setFirstChapterTitle] = useState('');
   const [firstChapterContent, setFirstChapterContent] = useState('');
   const [saving, setSaving] = useState(false);
@@ -61,6 +63,7 @@ export default function CreateBookScreen({ navigation, route }) {
     setCoverColor('#215C50');
     setTitleColor('#FFFFFF');
     setPaperColor('#F4EAE0');
+    setFontFamily('serif');
     setFirstChapterTitle('');
     setFirstChapterContent('');
     setImportedFile(null);
@@ -129,36 +132,33 @@ export default function CreateBookScreen({ navigation, route }) {
 
     try {
       setSaving(true);
-      const fullText = await publicDomain.findFullText(book.title, book.authors);
-      const full = fullText ? importer.fromText(fullText) : null;
-
       const newBook = await storage.addBook({
         title: book.title,
         subtitle: book.authors ? `Por ${book.authors}` : '',
         category: bookCategory,
         coverImage: book.thumbnail,
-        totalPages: full ? full.pages : book.pageCount || undefined,
+        paperColor: '#EFE2C4',
+        fontFamily: 'serif',
+        totalPages: book.pageCount || undefined,
         isOwn: false,
-        chapters: full
-          ? full.chapters
-          : [
-              {
-                id: `chap-${Date.now()}-1`,
-                title: book.description ? 'Sinopse' : 'Capítulo 1',
-                content: book.description || 'Livro adicionado pela busca. Esta obra não traz o texto; use o botão de comentários no leitor para fazer suas anotações.',
-              },
-            ],
+        chapters: [
+          {
+            id: `chap-${Date.now()}-1`,
+            title: book.description ? 'Sinopse' : 'Capítulo 1',
+            content: book.description || 'Livro adicionado pela busca. Esta obra não traz o texto; use o botão de comentários no leitor para fazer suas anotações.',
+          },
+        ],
       });
 
       resetForm();
+      navigation.navigate('Estante');
 
-      dialog.alert(
-        'Livro adicionado!',
-        full
-          ? `"${newBook.title}" já está na sua estante com o texto completo (domínio público).`
-          : `"${newBook.title}" já está na estante com a sinopse. A busca não traz o texto de livros com direitos autorais; no leitor você pode registrar seus comentários, sem alterar a obra.`,
-        [{ text: 'Ver na Estante', onPress: () => navigation.navigate('Estante') }]
-      );
+      fetchFullTextInBackground(newBook.id, newBook.title, book.authors, book.gutenbergId).then(async (result) => {
+        if (result !== 'failed') return;
+        await storage.deleteBookPermanently(newBook.id);
+        importProgress.finish(newBook.id);
+        dialog.alert('Livro não adicionado', `Não foi possível baixar o texto de "${newBook.title}" agora. Verifique a conexão e tente de novo.`);
+      });
     } catch {
       dialog.alert('Erro ao Salvar', 'Não foi possível adicionar o livro à estante.');
     } finally {
@@ -186,6 +186,7 @@ export default function CreateBookScreen({ navigation, route }) {
         coverColor,
         titleColor,
         paperColor,
+        fontFamily,
         coverImage,
         totalPages: importedFile ? importedFile.pages : undefined,
         isOwn: activeTab === 'create',
@@ -340,8 +341,11 @@ export default function CreateBookScreen({ navigation, route }) {
                 )}
               </Section>
 
-              <Section icon="document-text-outline" title="Folha de leitura" hint="Cor do fundo das páginas ao ler.">
+              <Section icon="document-text-outline" title="Folha de leitura" hint="Cor e letra usadas nas páginas ao ler.">
                 <ColorRow label="Cor da folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
+                <Field label="Tipo de letra">
+                  <FontPicker value={fontFamily} onChange={setFontFamily} />
+                </Field>
               </Section>
 
               <Section icon="reader-outline" title="Primeiro capítulo" hint="Opcional. Você pode escrever depois, direto no leitor.">

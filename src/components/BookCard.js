@@ -16,6 +16,11 @@ export default function BookCard({
   onExport,
   onToggleLock,
   onDelete,
+  progress = null,
+  selecting = false,
+  selected = false,
+  onLongPress,
+  onToggle,
   isChest = false,
 }) {
   const { colors } = useTheme();
@@ -26,13 +31,20 @@ export default function BookCard({
   const coverWidth = useShelfCoverWidth();
   const isOwn = book.isOwn !== false;
   const changeCount = book.changeLog?.length || 0;
+  const press = () => (selecting ? onToggle && onToggle(book.id) : onPress && onPress(book));
+  const longPress = () => {
+    if (onLongPress) onLongPress(book.id);
+  };
 
   return (
     <View style={styles.cardContainer}>
       <Touchable
         activeOpacity={0.85}
-        onPress={() => onPress && onPress(book)}
+        onPress={press}
+        onLongPress={longPress}
+        delayLongPress={350}
         style={styles.coverWrapper}
+        accessibilityState={{ selected }}
       >
         <BookCover
           title={book.title}
@@ -43,6 +55,24 @@ export default function BookCard({
           width={coverWidth}
           size="medium"
         />
+        {progress && (
+          <View style={[styles.progressBox, { width: coverWidth }]} pointerEvents="none">
+            <Text style={styles.progressLabel} numberOfLines={1}>{progress.label}</Text>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${Math.round(progress.value * 100)}%` }]} />
+            </View>
+          </View>
+        )}
+        {selecting && (
+          <View
+            pointerEvents="none"
+            style={[styles.selectOverlay, selected && styles.selectOverlayOn, { width: coverWidth }]}
+          >
+            <View style={[styles.selectCheck, selected && styles.selectCheckOn]}>
+              {selected && <Ionicons name="checkmark" size={16} color={colors.onPrimary} />}
+            </View>
+          </View>
+        )}
         {book.locked && (
           <View style={styles.lockBadge} accessibilityLabel="Livro protegido">
             <Ionicons name="lock-closed" size={13} color="#FFFFFF" />
@@ -53,7 +83,9 @@ export default function BookCard({
       <View style={[styles.infoRow, { width: coverWidth }]}>
         <Touchable
           style={styles.titleArea}
-          onPress={() => onPress && onPress(book)}
+          onPress={press}
+          onLongPress={longPress}
+          delayLongPress={350}
           activeOpacity={0.7}
         >
           <Text style={styles.bookTitle} numberOfLines={1}>
@@ -69,13 +101,15 @@ export default function BookCard({
           </Text>
         </Touchable>
 
-        <Touchable
-          style={styles.moreButton}
-          onPress={() => setMenuVisible(true)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
-        </Touchable>
+        {!selecting && (
+          <Touchable
+            style={styles.moreButton}
+            onPress={() => setMenuVisible(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="ellipsis-vertical" size={18} color={colors.textSecondary} />
+          </Touchable>
+        )}
       </View>
 
       <Modal
@@ -248,6 +282,62 @@ const createStyles = (colors) => StyleSheet.create({
   coverWrapper: {
     alignItems: 'center',
     marginBottom: 8,
+  },
+  progressBox: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    paddingHorizontal: 10,
+    paddingTop: 22,
+    paddingBottom: 12,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  progressLabel: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFFFFF',
+  },
+  selectOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    borderRadius: 8,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    backgroundColor: 'rgba(0,0,0,0.18)',
+    alignItems: 'flex-start',
+    padding: 8,
+  },
+  selectOverlayOn: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(0,0,0,0.32)',
+  },
+  selectCheck: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectCheckOn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   lockBadge: {
     position: 'absolute',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { diffSnippet } from '../services/marks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -109,7 +109,7 @@ export default function ChangeHistoryModal({ visible, book, onClose }) {
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaProvider><SafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
           <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Ionicons name="arrow-back" size={22} color={colors.text} />
@@ -137,7 +137,7 @@ export default function ChangeHistoryModal({ visible, book, onClose }) {
             changes.map(entry => <ChangeEntry key={entry.id} entry={entry} />)
           )}
         </ScrollView>
-      </SafeAreaView>
+      </SafeAreaView></SafeAreaProvider>
     </Modal>
   );
 }

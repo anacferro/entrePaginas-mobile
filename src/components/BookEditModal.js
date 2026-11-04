@@ -9,8 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Section, Field, CoverPicker, CategoryPicker, ColorRow, fieldStyles } from './FormBlocks';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from './FormBlocks';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS } from '../theme/bookOptions';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
@@ -24,6 +24,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const [coverColor, setCoverColor] = useState('#215C50');
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [paperColor, setPaperColor] = useState('#F4EAE0');
+  const [fontFamily, setFontFamily] = useState('serif');
   const [tags, setTags] = useState([]);
   const [coverImage, setCoverImage] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
       setCoverColor(book.coverColor);
       setTitleColor(book.titleColor);
       setPaperColor(book.paperColor || '#F4EAE0');
+      setFontFamily(book.fontFamily || 'serif');
       setTags(book.tags || []);
       setCoverImage(book.coverImage || null);
       setSaving(false);
@@ -47,13 +49,13 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
 
   const handleSave = async () => {
     setSaving(true);
-    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor, tags, coverImage });
+    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor, fontFamily, tags, coverImage });
     setSaving(false);
   };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onCancel}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaProvider><SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -145,12 +147,15 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
               )}
             </Section>
 
-            <Section icon="document-text-outline" title="Folha de leitura" hint="Cor do fundo das páginas ao ler.">
+            <Section icon="document-text-outline" title="Folha de leitura" hint="Cor e letra usadas nas páginas ao ler.">
               <ColorRow label="Cor da folha" options={PAPER_COLORS} value={paperColor} onChange={setPaperColor} outlined />
+              <Field label="Tipo de letra">
+                <FontPicker value={fontFamily} onChange={setFontFamily} />
+              </Field>
             </Section>
           </ScrollView>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </SafeAreaView></SafeAreaProvider>
     </Modal>
   );
 }

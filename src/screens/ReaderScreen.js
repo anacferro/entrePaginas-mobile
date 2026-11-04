@@ -19,6 +19,7 @@ import AnnotatedText from '../components/AnnotatedText';
 import AiSummary from '../components/AiSummary';
 import CommentsModal from '../components/CommentsModal';
 import { paginate } from '../services/pagination';
+import { fontFamilyFor, isDarkColor } from '../theme/bookOptions';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -234,8 +235,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     );
   };
 
-  const readerBg = colors.reader.background;
-  const readerTextColor = colors.reader.text;
+  const usesPaper = !isDark && !!book?.paperColor;
+  const paperIsDark = usesPaper && isDarkColor(book.paperColor);
+  const readerBg = usesPaper ? book.paperColor : colors.reader.background;
+  const readerTextColor = paperIsDark ? '#EDE6DA' : colors.reader.text;
+  const bodyFont = fontFamilyFor(book?.fontFamily);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
@@ -411,6 +415,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 color: readerTextColor,
                 fontSize: fontSize,
                 lineHeight: fontSize * 1.68,
+                fontFamily: bodyFont,
               },
             ]}
           />

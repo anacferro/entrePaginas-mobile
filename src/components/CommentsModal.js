@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Modal, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
@@ -21,7 +21,7 @@ export default function CommentsModal({ visible, book, pageNumber, onAdd, onRemo
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaProvider><SafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
           <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Fechar comentários">
             <Ionicons name="arrow-back" size={22} color={colors.text} />
@@ -74,7 +74,7 @@ export default function CommentsModal({ visible, book, pageNumber, onAdd, onRemo
             </Touchable>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </SafeAreaView></SafeAreaProvider>
     </Modal>
   );
 }
@@ -121,7 +121,7 @@ const createStyles = (colors) => StyleSheet.create({
   },
   composerLabel: { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
   send: {
-    height: METRICS.button,
+    height: METRICS.buttonHeight,
     borderRadius: METRICS.radius,
     backgroundColor: colors.primary,
     flexDirection: 'row',

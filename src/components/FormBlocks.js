@@ -7,6 +7,7 @@ import { camera } from '../services/camera';
 import { categories as categoryStore } from '../services/categories';
 import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import { BOOK_FONTS, fontFamilyFor } from '../theme/bookOptions';
 
 export const METRICS = {
   inputHeight: 48,
@@ -110,6 +111,31 @@ export function ColorRow({ label, options, value, onChange, outlined }) {
           </Touchable>
         ))}
       </View>
+    </View>
+  );
+}
+
+export function FontPicker({ value, onChange }) {
+  const styles = useThemedStyles(createStyles);
+  return (
+    <View style={styles.categoryRow}>
+      {BOOK_FONTS.map((font) => {
+        const active = (value || 'serif') === font.id;
+        return (
+          <Touchable
+            key={font.id}
+            style={[styles.categoryChip, active && styles.categoryChipActive]}
+            onPress={() => onChange(font.id)}
+            accessibilityLabel={`Letra ${font.label}`}
+          >
+            <View style={styles.categoryLabelBtn}>
+              <Text style={[styles.categoryText, active && styles.categoryTextActive, { fontFamily: fontFamilyFor(font.id) }]}>
+                {font.label}
+              </Text>
+            </View>
+          </Touchable>
+        );
+      })}
     </View>
   );
 }

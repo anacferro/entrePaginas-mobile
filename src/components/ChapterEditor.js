@@ -11,7 +11,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { camera } from '../services/camera';
 import { ai } from '../services/ai';
@@ -94,7 +94,7 @@ export default function ChapterEditor({
       animationType="slide"
       onRequestClose={onCancel}
     >
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <SafeAreaProvider><SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -217,7 +217,7 @@ export default function ChapterEditor({
             )}
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </SafeAreaView></SafeAreaProvider>
     </Modal>
   );
 }

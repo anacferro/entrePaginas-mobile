@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { googleBooks } from '../services/googleBooks';
+import { publicDomain } from '../services/publicDomain';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 import { fieldStyles } from './FormBlocks';
@@ -26,7 +27,21 @@ export default function GoogleBooksSearch({ onSelect }) {
     setLoading(true);
     setError(null);
     try {
-      setResults(await googleBooks.search(query));
+      const found = await googleBooks.search(query);
+      const checked = await Promise.all(
+        found.slice(0, 15).map(async (book) => {
+          const entry = await publicDomain.findEntry(book.title, book.authors);
+          return entry ? { ...book, gutenbergId: entry.id } : null;
+        })
+      );
+      const seen = new Set();
+      setResults(
+        checked.filter((book) => {
+          if (!book || seen.has(book.gutenbergId)) return false;
+          seen.add(book.gutenbergId);
+          return true;
+        })
+      );
     } catch (e) {
       setResults(null);
       setError(e.message || 'Não foi possível consultar o Google Books.');
@@ -48,7 +63,7 @@ export default function GoogleBooksSearch({ onSelect }) {
           <Ionicons name="search-outline" size={18} color={colors.primary} />
           <Text style={styles.cardHeaderTitle}>Buscar no Google Books</Text>
         </View>
-        <Text style={styles.metaLabel}>Adiciona direto à estante</Text>
+        <Text style={styles.metaLabel}>Só obras com texto completo</Text>
       </View>
 
       <View style={styles.searchRow}>
@@ -76,7 +91,7 @@ export default function GoogleBooksSearch({ onSelect }) {
       {loading && (
         <View style={styles.stateBox}>
           <ActivityIndicator color={colors.primary} />
-          <Text style={styles.stateText}>Consultando o Google Books...</Text>
+          <Text style={styles.stateText}>Procurando obras com texto completo...</Text>
         </View>
       )}
 
@@ -92,7 +107,7 @@ export default function GoogleBooksSearch({ onSelect }) {
 
       {results && results.length === 0 && !loading && (
         <View style={styles.stateBox}>
-          <Text style={styles.stateText}>Nenhum livro encontrado para essa busca.</Text>
+          <Text style={styles.stateText}>Nenhuma obra com texto completo para essa busca. Só livros de domínio público podem ser adicionados por aqui.</Text>
         </View>
       )}
 

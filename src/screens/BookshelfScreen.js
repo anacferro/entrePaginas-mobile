@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { importProgress } from '../services/importProgress';
 import Header from '../components/Header';
 import BookCard from '../components/BookCard';
 import LoadingView from '../components/LoadingView';
@@ -33,6 +34,9 @@ export default function BookshelfScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('recent');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const selecting = selectedIds.length > 0;
+  const [, setTick] = useState(0);
 
   const loadData = async (isPullRefresh = false) => {
     try {
@@ -60,12 +64,25 @@ export default function BookshelfScreen({ navigation }) {
     }, [])
   );
 
+  useEffect(
+    () =>
+      importProgress.subscribe((type) => {
+        if (type === 'finish') loadData(true);
+        else setTick(n => n + 1);
+      }),
+    []
+  );
+
   const onRefresh = () => {
     setRefreshing(true);
     loadData(true);
   };
 
   const handleBookPress = async (book) => {
+    if (importProgress.get(book.id)) {
+      dialog.alert('Carregando', 'O texto deste livro ainda está sendo baixado. Em instantes ele fica disponível para leitura.');
+      return;
+    }
     if (book.locked && !(await biometrics.unlock(book.title))) return;
     navigation.navigate('Reader', {
       bookId: book.id,
@@ -126,6 +143,30 @@ export default function BookshelfScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await storage.deleteBookPermanently(bookId);
+            loadData();
+          },
+        },
+      ]
+    );
+  };
+
+  const toggleSelected = (bookId) => {
+    setSelectedIds(prev => (prev.includes(bookId) ? prev.filter(id => id !== bookId) : [...prev, bookId]));
+  };
+
+  const handleDeleteSelected = () => {
+    const count = selectedIds.length;
+    dialog.alert(
+      'Excluir livros',
+      `Deseja remover ${count} ${count === 1 ? 'livro' : 'livros'} permanentemente da sua biblioteca?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            await storage.deleteBooksPermanently(selectedIds);
+            setSelectedIds([]);
             loadData();
           },
         },
@@ -234,6 +275,27 @@ export default function BookshelfScreen({ navigation }) {
           </Touchable>
         </View>
 
+        {selecting ? (
+          <View style={styles.selectionBar}>
+            <Touchable style={styles.selectionIcon} onPress={() => setSelectedIds([])} accessibilityLabel="Cancelar seleção">
+              <Ionicons name="close" size={20} color={colors.text} />
+            </Touchable>
+            <Text style={styles.selectionCount}>
+              {selectedIds.length} {selectedIds.length === 1 ? 'selecionado' : 'selecionados'}
+            </Text>
+            <Touchable
+              style={styles.selectionAll}
+              onPress={() => setSelectedIds(filteredBooks.map(b => b.id))}
+              accessibilityLabel="Selecionar todos"
+            >
+              <Text style={styles.selectionAllText}>Todos</Text>
+            </Touchable>
+            <Touchable style={styles.selectionDelete} onPress={handleDeleteSelected} accessibilityLabel="Excluir selecionados">
+              <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.selectionDeleteText}>Excluir</Text>
+            </Touchable>
+          </View>
+        ) : (
         <View style={styles.sectionHeaderRow}>
           <View style={styles.sectionTitleWithCount}>
             <Text style={styles.sectionTitle}>Minha Estante</Text>
@@ -248,6 +310,7 @@ export default function BookshelfScreen({ navigation }) {
             <Ionicons name="swap-vertical" size={15} color={colors.textSecondary} />
           </Touchable>
         </View>
+        )}
 
         {loading && <LoadingView message="Organizando as prateleiras da estante..." />}
 
@@ -288,6 +351,11 @@ export default function BookshelfScreen({ navigation }) {
                 onExport={handleExportBook}
                 onToggleLock={handleToggleLock}
                 onDelete={handleDeleteBook}
+                progress={importProgress.get(book.id)}
+                selecting={selecting}
+                selected={selectedIds.includes(book.id)}
+                onLongPress={toggleSelected}
+                onToggle={toggleSelected}
               />
             ))}
           </View>
@@ -479,6 +547,57 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '600',
+  },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  selectionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectionCount: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  selectionAll: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectionAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  selectionDelete: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: colors.danger,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  selectionDeleteText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   booksGrid: {
     flexDirection: 'row',

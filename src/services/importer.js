@@ -91,6 +91,40 @@ function splitByHeadings(text) {
   }));
 }
 
+function reflow(text) {
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split(/\n{2,}/)
+    .map(paragraph => paragraph.replace(/\s*\n\s*/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+function extractItalics(content) {
+  const marks = [];
+  const pattern = /_([^_\n]{1,300}?)_/g;
+  let out = '';
+  let last = 0;
+  let match;
+
+  while ((match = pattern.exec(content))) {
+    out += content.slice(last, match.index);
+    const start = out.length;
+    out += match[1];
+    marks.push({
+      id: `mark-${Date.now()}-${marks.length}`,
+      start,
+      end: out.length,
+      type: 'italic',
+      color: null,
+      text: match[1],
+    });
+    last = match.index + match[0].length;
+  }
+
+  return { content: out + content.slice(last), marks };
+}
+
 function isReadable(text) {
   if (text.length < 30) return false;
   const letters = text.match(/[A-Za-zÀ-ÿ]/g)?.length || 0;
@@ -205,8 +239,13 @@ async function importAsset(format, asset) {
 }
 
 export const importer = {
-  fromText(text) {
-    return { pages: estimatePages(text), chapters: splitByHeadings(text) };
+  fromGutenberg(text) {
+    const flowed = reflow(text);
+    const chapters = splitByHeadings(flowed).map((chapter) => {
+      const { content, marks } = extractItalics(chapter.content);
+      return { ...chapter, content, marks };
+    });
+    return { pages: estimatePages(chapters.map(c => c.content).join('')), chapters };
   },
 
   async pickAndImport(format) {

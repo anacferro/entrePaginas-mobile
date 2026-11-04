@@ -74,7 +74,7 @@ async function downloadText(id) {
 }
 
 export const publicDomain = {
-  async findFullText(title, authors) {
+  async findEntry(title, authors) {
     try {
       const query = `${title} ${authors || ''}`.trim();
       const response = await request(`${SEARCH_ENDPOINT}?query=${encodeURIComponent(query).replace(/%20/g, '+')}`);
@@ -86,9 +86,20 @@ export const publicDomain = {
           normalize(entry.title.replace(/\([^)]*\)\s*$/, '')).startsWith(wantedTitle) &&
           authorMatches(entry.author, authors)
       );
-      if (!match) return null;
+      return match ? { id: match.id } : null;
+    } catch {
+      return null;
+    }
+  },
 
-      const raw = await downloadText(match.id);
+  async findFullText(title, authors, onStage, knownId) {
+    try {
+      onStage?.('search');
+      const id = knownId || (await this.findEntry(title, authors))?.id;
+      if (!id) return null;
+
+      onStage?.('download');
+      const raw = await downloadText(id);
       if (!raw) return null;
       const text = stripGutenberg(raw);
       return text.length > 2000 && text.length <= MAX_CHARS ? text : null;

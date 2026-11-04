@@ -131,6 +131,7 @@ export const storage = {
       coverColor: bookData.coverColor || '#215C50',
       titleColor: bookData.titleColor || '#FFFFFF',
       paperColor: bookData.paperColor || '#F4EAE0',
+      fontFamily: bookData.fontFamily || 'serif',
       coverImage: bookData.coverImage || null,
       status: 'estante',
       isOwn: bookData.isOwn !== false,
@@ -167,7 +168,21 @@ export const storage = {
     book.coverColor = updates.coverColor || book.coverColor;
     book.titleColor = updates.titleColor || book.titleColor;
     book.paperColor = updates.paperColor || book.paperColor;
+    book.fontFamily = updates.fontFamily || book.fontFamily;
     if ('coverImage' in updates) book.coverImage = updates.coverImage || null;
+    book.updatedAt = new Date().toISOString();
+    await saveBooks(list);
+    return book;
+  },
+
+  async setBookContent(bookId, { chapters, pages }) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.chapters = chapters;
+    book.totalPages = pages;
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
     return book;
@@ -389,6 +404,15 @@ export const storage = {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const filtered = list.filter(b => b.id !== id);
+    await saveBooks(filtered);
+    return filtered;
+  },
+
+  async deleteBooksPermanently(ids) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const drop = new Set(ids);
+    const filtered = list.filter(b => !drop.has(b.id));
     await saveBooks(filtered);
     return filtered;
   },
