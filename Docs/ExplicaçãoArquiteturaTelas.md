@@ -96,6 +96,12 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Consequências assumidas:** a IA depende de o projeto Firebase estar ativo; o modelo é configurável por `EXPO_PUBLIC_GEMINI_MODEL`, pois os nomes de modelo mudam com frequência (o `gemini-2.5-flash` já estava indisponível para novos projetos).
 * **Resiliência:** toda chamada tem limite de 40 segundos e mensagem de erro própria; sem IA, criar, ler e editar livros continuam funcionando.
 
+### DA13 (Nova Decisão) — Proteção de Livros por Biometria no Aparelho
+
+* **Decisão:** guardar apenas o indicador `locked` no livro e verificar a identidade com a biometria do próprio sistema, sem criar PIN ou senha própria no app.
+* **Alternativas consideradas:** PIN próprio do app (descartado: exigiria guardar e proteger um segredo e criar telas de recuperação); criptografar o conteúdo dos livros (descartado: custo e risco de perda de dados para o escopo da disciplina).
+* **Consequências assumidas:** a proteção é uma barreira de uso, não criptografia: o texto continua armazenado normalmente no aparelho e na nuvem. No navegador não há biometria, então livros protegidos ficam bloqueados na web.
+
 ---
 
 ## 3. Mapeamento das Telas do Figma para a Implementação
@@ -139,6 +145,8 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF23 (Nuvem):** livros, capítulos, marcadores e grifos são sincronizados com o Firestore, por usuário, com uso offline. Estrutura e regras em [EstruturaDados.md](EstruturaDados.md).
 * **RF14 (Câmera e OCR):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
 * **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
+
+* **Recurso nativo adicional (biometria):** o usuário escolhe quais livros ficam protegidos. Abrir, exportar ou remover a proteção exige a biometria do aparelho (`expo-local-authentication`, com senha do aparelho como alternativa). O app também fecha o livro protegido ao ir para segundo plano.
 
 ### Pendências
 

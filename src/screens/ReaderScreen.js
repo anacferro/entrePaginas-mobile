@@ -11,6 +11,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
@@ -93,6 +94,14 @@ export default function ReaderScreen({ route, navigation }) {
     setShowSummary(false);
     setTimeout(() => setEditorMode('new'), 300);
   };
+
+  useEffect(() => {
+    if (!book?.locked) return undefined;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') navigation.goBack();
+    });
+    return () => subscription.remove();
+  }, [book?.locked]);
 
   const handleSaveChapter = async ({ title, content, photo }) => {
     if (editorMode === 'new') {

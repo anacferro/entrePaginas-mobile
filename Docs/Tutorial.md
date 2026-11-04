@@ -46,13 +46,20 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 - **Exportar como TXT** ou **JSON** (menu `⋮`): no celular abre o compartilhamento; no navegador baixa o arquivo.
 - **Mover para o Baú**: arquiva sem apagar. No **Baú** é possível restaurar um livro, restaurar todos ou excluir de vez.
 
-## 7. Roteiro sugerido para a apresentação (5 a 7 minutos)
+## 7. Proteger livros com biometria
+
+1. No menu `⋮` de um livro da estante, toque em **Proteger com biometria** e confirme com a digital, o rosto ou a senha do aparelho.
+2. O livro ganha um cadeado na capa. Para abrir, exportar ou remover a proteção, o app pede a biometria de novo.
+3. Se o app for para segundo plano enquanto você lê um livro protegido, ele volta para a estante.
+4. Sem biometria cadastrada no aparelho, o app explica como cadastrar. Na versão para navegador a proteção não está disponível, e livros protegidos só abrem no celular.
+
+## 8. Roteiro sugerido para a apresentação (5 a 7 minutos)
 
 1. Mostrar o login e criar uma conta nova; reabrir o app e mostrar a sessão preservada.
 2. Criar um livro usando a busca do Google Books.
 3. Importar um PDF ou EPUB e abrir o Histórico de Alterações depois de editar um capítulo.
 4. No leitor: grifar, marcar a página e reordenar capítulos.
-5. Fotografar uma página, transcrever com IA e resumir o capítulo.
+5. Fotografar uma página, transcrever com IA e resumir o capítulo; proteger um livro com biometria.
 6. Desligar a internet do aparelho: mostrar que o app continua funcionando e que o selo muda para **Offline**; religar e mostrar **Sincronizado**.
 7. Apagar os dados do app, entrar de novo e mostrar os livros voltando da nuvem.
 8. Mostrar o `firestore.rules`, o `.env.example` (sem chaves) e o `Docs/EstruturaDados.md`.

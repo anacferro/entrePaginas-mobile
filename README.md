@@ -152,6 +152,7 @@ entrePaginas-mobile/
 │   │   ├── ProfileScreen.js   # Perfil, preferências e testes de estados
 │   │   └── ReaderScreen.js    # Leitor de livros com sumário e tipografia
 │   ├── services/
+│   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
 │   │   ├── ai.js              # Resumo e transcrição de foto com Gemini (Firebase AI Logic)
 │   │   ├── auth.js            # Cadastro, login e logout (Firebase Authentication)

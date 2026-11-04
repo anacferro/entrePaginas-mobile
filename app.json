@@ -25,6 +25,12 @@
       "expo-status-bar",
       "expo-sharing",
       [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Permita que o Entre Páginas use o Face ID para abrir seus livros protegidos."
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "cameraPermission": "Permita que o Entre Páginas use a câmera para fotografar páginas de livros."

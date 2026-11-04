@@ -18,6 +18,7 @@ import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
 import { exporter } from '../services/exporter';
+import { biometrics } from '../services/biometrics';
 import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
@@ -62,8 +63,8 @@ export default function BookshelfScreen({ navigation }) {
     loadData(true);
   };
 
-  const handleBookPress = (book) => {
-    // Navigation with parameter passing to ReaderScreen
+  const handleBookPress = async (book) => {
+    if (book.locked && !(await biometrics.unlock(book.title))) return;
     navigation.navigate('Reader', {
       bookId: book.id,
       bookTitle: book.title,
@@ -89,7 +90,22 @@ export default function BookshelfScreen({ navigation }) {
     }
   };
 
+  const handleToggleLock = async (book) => {
+    const confirmed = book.locked
+      ? await biometrics.unlock(book.title)
+      : await biometrics.confirmToProtect(book.title);
+    if (!confirmed) return;
+
+    try {
+      await storage.setBookLocked(book.id, !book.locked);
+      loadData();
+    } catch (e) {
+      dialog.alert('Erro', 'Não foi possível alterar a proteção do livro.');
+    }
+  };
+
   const handleExportBook = async (book, format) => {
+    if (book.locked && !(await biometrics.unlock(book.title))) return;
     try {
       await exporter.exportBook(book, format);
     } catch (e) {
@@ -285,6 +301,7 @@ export default function BookshelfScreen({ navigation }) {
                 onMoveToChest={handleMoveToChest}
                 onEdit={handleEditBook}
                 onExport={handleExportBook}
+                onToggleLock={handleToggleLock}
                 onDelete={handleDeleteBook}
               />
             ))}

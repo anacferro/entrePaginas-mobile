@@ -211,7 +211,8 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 5. Criou o projeto Firebase `entre-paginas-utf` pela linha de comando (o CLI já estava logado na conta do usuário), com app Web, Firestore, regras de segurança e login por e-mail e senha.
 6. Login e cadastro reais, sessão persistente, telas privadas e sincronização dos livros com o Firestore (testada apagando os dados locais e recuperando da nuvem).
 7. Resumo de capítulo e transcrição de foto com Gemini via Firebase AI Logic, com mensagens de erro e limite de tempo.
-8. Documentou estrutura de dados, regras, decisões (DA10 a DA12) e escreveu o tutorial de uso.
+8. Acrescentou a proteção de livros por biometria, escolhida pelo usuário (menu do livro, cadeado na capa, bloqueio ao ir para segundo plano).
+9. Documentou estrutura de dados, regras, decisões (DA10 a DA12) e escreveu o tutorial de uso.
 
 **Decisões que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
 

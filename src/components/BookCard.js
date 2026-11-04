@@ -13,6 +13,7 @@ export default function BookCard({
   onRestore,
   onEdit,
   onExport,
+  onToggleLock,
   onDelete,
   isChest = false,
 }) {
@@ -36,6 +37,11 @@ export default function BookCard({
           totalPages={book.totalPages}
           size="medium"
         />
+        {book.locked && (
+          <View style={styles.lockBadge} accessibilityLabel="Livro protegido">
+            <Ionicons name="lock-closed" size={13} color="#FFFFFF" />
+          </View>
+        )}
       </TouchableOpacity>
 
       <View style={styles.infoRow}>
@@ -103,6 +109,25 @@ export default function BookCard({
               >
                 <Ionicons name="create-outline" size={20} color={colors.secondary} />
                 <Text style={styles.menuItemText}>Editar Livro</Text>
+              </TouchableOpacity>
+            )}
+
+            {onToggleLock && !isChest && (
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  onToggleLock(book);
+                }}
+              >
+                <Ionicons
+                  name={book.locked ? 'lock-open-outline' : 'finger-print-outline'}
+                  size={20}
+                  color={colors.primary}
+                />
+                <Text style={styles.menuItemText}>
+                  {book.locked ? 'Remover proteção' : 'Proteger com biometria'}
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -218,6 +243,17 @@ const styles = StyleSheet.create({
   coverWrapper: {
     alignItems: 'center',
     marginBottom: 8,
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   infoRow: {
     flexDirection: 'row',

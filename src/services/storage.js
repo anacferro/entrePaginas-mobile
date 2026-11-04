@@ -158,6 +158,18 @@ export const storage = {
     return book;
   },
 
+  async setBookLocked(bookId, locked) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const book = list.find(b => b.id === bookId);
+    if (!book) return null;
+
+    book.locked = !!locked;
+    book.updatedAt = new Date().toISOString();
+    await saveBooks(list);
+    return book;
+  },
+
   async addChapter(bookId, chapterData) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];

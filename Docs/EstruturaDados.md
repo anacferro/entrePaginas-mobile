@@ -35,6 +35,7 @@ users/{uid}
   "totalPages": 82,
   "status": "estante",
   "isOwn": true,
+  "locked": false,
   "chapterCount": 3,
   "bookmarks": [
     { "id": "pin-1", "chapterId": "chap-1", "title": "Cena do rio", "color": "#C0392B", "page": 3, "createdAt": "2026-11-02T09:00:00.000Z" }
@@ -57,6 +58,7 @@ users/{uid}
 | Campo | Tipo | Observação |
 | :--- | :--- | :--- |
 | `status` | `"estante"` ou `"bau"` | `"bau"` é o livro arquivado |
+| `locked` | boolean | `true` quando o livro exige biometria para abrir (o campo sincroniza, mas a verificação é feita no aparelho) |
 | `isOwn` | boolean | `false` para livros importados; só eles têm `changeLog` |
 | `changeLog[].type` | `edit`, `add`, `delete` ou `move` | histórico antes/depois |
 
