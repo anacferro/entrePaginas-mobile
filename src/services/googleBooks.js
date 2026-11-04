@@ -79,9 +79,8 @@ async function searchOpenLibrary(term) {
   return (data.docs || []).map(fromOpenLibrary);
 }
 
-async function searchPublicDomain(term) {
-  const entries = await publicDomain.search(term);
-  return entries.map(entry => ({
+function fromPublicDomain(entry) {
+  return {
     id: `pg-${entry.id}`,
     title: entry.title,
     authors: entry.author,
@@ -91,7 +90,11 @@ async function searchPublicDomain(term) {
     thumbnail: `https://www.gutenberg.org/cache/epub/${entry.id}/pg${entry.id}.cover.medium.jpg`,
     gutenbergId: entry.id,
     language: LANGUAGES[entry.language] || entry.language,
-  }));
+  };
+}
+
+async function searchPublicDomain(term) {
+  return (await publicDomain.search(term)).map(fromPublicDomain);
 }
 
 async function searchCatalogs(term) {
@@ -173,11 +176,30 @@ function failureMessage(errors) {
   return 'As buscas de livros estão indisponíveis agora. Tente novamente em instantes ou preencha manualmente.';
 }
 
+export const BROWSE_LANGUAGES = [
+  { code: 'pt', label: 'Português' },
+  { code: 'es', label: 'Espanhol' },
+  { code: 'fr', label: 'Francês' },
+  { code: 'de', label: 'Alemão' },
+  { code: 'it', label: 'Italiano' },
+];
+
+export function singleLetter(query) {
+  const value = normalize(query);
+  return /^[a-z]$/.test(value) ? value.toUpperCase() : null;
+}
+
 export function isSearchable(query) {
+  if (singleLetter(query)) return true;
   return normalize(query).split(' ').some(word => word.length > 2);
 }
 
 export const googleBooks = {
+  async browse(language, letter, cursor) {
+    const page = await publicDomain.browse(language, letter, cursor);
+    return { books: page.entries.map(fromPublicDomain), cursor: page.cursor, hasMore: page.hasMore };
+  },
+
   async search(query) {
     const term = query.trim();
     if (!isSearchable(term)) return [];

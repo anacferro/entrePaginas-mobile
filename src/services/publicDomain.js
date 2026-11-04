@@ -46,6 +46,80 @@ function parseEntries(xml) {
   return entries;
 }
 
+function toEntry(entry) {
+  return {
+    id: entry.id,
+    title: entry.title.replace(/\s*\([^)]*\)\s*$/, '').trim(),
+    language: entry.title.match(/\(([^)]*)\)\s*$/)?.[1]?.trim() || 'English',
+    author: /downloads?$/i.test(entry.author.trim()) ? '' : entry.author.trim(),
+  };
+}
+
+export function letterKey(title) {
+  const first = normalize(title).replace(/\s/g, '')[0];
+  return first && /[a-z]/.test(first) ? first.toUpperCase() : '#';
+}
+
+const API_PAGE = 25;
+const BROWSE_PAGE = 30;
+const GRID = [1, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+const probes = new Map();
+const starts = new Map();
+
+async function fetchPage(language, index) {
+  const response = await request(`${SEARCH_ENDPOINT}?sort_order=title&query=l.${language}&start_index=${index}`);
+  if (response.status === 400) return [];
+  if (!response.ok) throw new Error('gutenberg-unavailable');
+  return parseEntries(await response.text()).map(toEntry);
+}
+
+async function probe(language, index) {
+  const id = `${language}:${index}`;
+  if (!probes.has(id)) {
+    const entries = await fetchPage(language, index);
+    probes.set(id, entries[0] ? letterKey(entries[0].title) : null);
+  }
+  return probes.get(id);
+}
+
+const reaches = (key, letter) => key === null || key >= letter;
+
+async function letterStart(language, letter) {
+  if (letter === '#') return 1;
+  const cacheId = `${language}:${letter}`;
+  if (starts.has(cacheId)) return starts.get(cacheId);
+
+  const keys = await Promise.all(GRID.map(index => probe(language, index)));
+  const found = keys.findIndex(key => reaches(key, letter));
+  let start;
+
+  if (found === 0) {
+    start = 1;
+  } else if (found === -1) {
+    start = GRID[GRID.length - 1];
+  } else {
+    let low = GRID[found - 1];
+    let high = GRID[found];
+    while (high - low > API_PAGE) {
+      const points = [...new Set(
+        Array.from({ length: 8 }, (_, j) => low + Math.round(((high - low) * (j + 1)) / 9))
+      )].filter(point => point > low && point < high);
+      const sample = await Promise.all(points.map(point => probe(language, point)));
+      const hit = sample.findIndex(key => reaches(key, letter));
+      if (hit === -1) {
+        low = points[points.length - 1];
+      } else {
+        high = points[hit];
+        if (hit > 0) low = points[hit - 1];
+      }
+    }
+    start = low;
+  }
+
+  starts.set(cacheId, start);
+  return start;
+}
+
 function authorMatches(entryAuthor, authors) {
   const wanted = normalize(authors);
   if (!wanted) return true;
@@ -95,18 +169,49 @@ export const publicDomain = {
 
     const words = normalize(term).split(' ').filter(word => word.length > 2);
     return parseEntries(await response.text())
-      .map(entry => ({
-        id: entry.id,
-        title: entry.title.replace(/\s*\([^)]*\)\s*$/, '').trim(),
-        language: entry.title.match(/\(([^)]*)\)\s*$/)?.[1]?.trim() || 'English',
-        author: /downloads?$/i.test(entry.author.trim()) ? '' : entry.author.trim(),
-      }))
+      .map(toEntry)
       .filter(entry => {
         const haystack = normalize(`${entry.title} ${entry.author}`);
         return words.every(word => haystack.includes(word));
       })
       .filter((entry, index, all) => all.findIndex(other => other.title === entry.title && other.author === entry.author) === index)
       .slice(0, 12);
+  },
+
+  async browse(language, letter, cursor) {
+    let position = cursor || (letter ? await letterStart(language, letter) : 1);
+    const books = [];
+    let done = false;
+    let filled = false;
+
+    while (!filled && !done) {
+      const pages = await Promise.all([position, position + API_PAGE].map(index => fetchPage(language, index)));
+      const entries = pages.flat();
+      if (entries.length === 0) {
+        done = true;
+        break;
+      }
+
+      for (let i = 0; i < entries.length; i += 1) {
+        const key = letterKey(entries[i].title);
+        if (letter && key > letter) {
+          done = true;
+          break;
+        }
+        if (!letter || key === letter) {
+          books.push(entries[i]);
+          if (books.length === BROWSE_PAGE) {
+            position += i + 1;
+            filled = true;
+            break;
+          }
+        }
+      }
+
+      if (!filled && !done) position += entries.length;
+    }
+
+    return { entries: books, cursor: position, hasMore: !done };
   },
 
   async findEntry(title, authors) {

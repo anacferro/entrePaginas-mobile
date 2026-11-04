@@ -5,25 +5,14 @@ import {
   StyleSheet,
   TextInput,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { googleBooks, isSearchable } from '../services/googleBooks';
+import { googleBooks, isSearchable, singleLetter } from '../services/googleBooks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import BookResultRow from './BookResultRow';
+import CatalogModal from './CatalogModal';
 import { fieldStyles } from './FormBlocks';
-
-function Thumb({ uri, styles, color }) {
-  const [failed, setFailed] = useState(false);
-  if (!uri || failed) {
-    return (
-      <View style={[styles.thumb, styles.thumbEmpty]}>
-        <Ionicons name="book-outline" size={18} color={color} />
-      </View>
-    );
-  }
-  return <Image source={{ uri }} style={styles.thumb} onError={() => setFailed(true)} />;
-}
 
 export default function GoogleBooksSearch({ onSelect }) {
   const { colors } = useTheme();
@@ -32,10 +21,16 @@ export default function GoogleBooksSearch({ onSelect }) {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [catalog, setCatalog] = useState(null);
   const searchable = isSearchable(query);
 
   const handleSearch = async () => {
     if (!searchable || loading) return;
+    const letter = singleLetter(query);
+    if (letter) {
+      setCatalog({ letter });
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -49,6 +44,7 @@ export default function GoogleBooksSearch({ onSelect }) {
   };
 
   const handleSelect = (book) => {
+    setCatalog(null);
     onSelect(book);
     setResults(null);
     setQuery('');
@@ -61,12 +57,15 @@ export default function GoogleBooksSearch({ onSelect }) {
           <Ionicons name="search-outline" size={18} color={colors.primary} />
           <Text style={styles.cardHeaderTitle}>Buscar no Google Books</Text>
         </View>
+        <Touchable onPress={() => setCatalog({ letter: null })} accessibilityLabel="Abrir catálogo de A a Z">
+          <Text style={styles.catalogLink}>Catálogo A-Z</Text>
+        </Touchable>
       </View>
 
       <View style={styles.searchRow}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Título ou autor..."
+          placeholder="Título, autor ou uma letra..."
           placeholderTextColor={colors.textMuted}
           value={query}
           onChangeText={setQuery}
@@ -86,7 +85,7 @@ export default function GoogleBooksSearch({ onSelect }) {
       </View>
 
       {query.trim().length > 0 && !searchable && !loading && (
-        <Text style={styles.hint}>Digite pelo menos uma palavra com 3 letras, como parte do título ou o nome do autor.</Text>
+        <Text style={styles.hint}>Digite uma letra para ver as obras que começam com ela, ou uma palavra com 3 letras, como parte do título ou o nome do autor.</Text>
       )}
 
       {loading && (
@@ -113,23 +112,16 @@ export default function GoogleBooksSearch({ onSelect }) {
       )}
 
       {results && !loading && results.map((book) => (
-        <Touchable
-          key={book.id}
-          style={styles.resultRow}
-          onPress={() => handleSelect(book)}
-          activeOpacity={0.7}
-          accessibilityLabel={`Adicionar ${book.title}`}
-        >
-          <Thumb uri={book.thumbnail} styles={styles} color={colors.textMuted} />
-          <View style={styles.resultInfo}>
-            <Text style={styles.resultTitle} numberOfLines={2}>{book.title}</Text>
-            <Text style={styles.resultMeta} numberOfLines={1}>
-              {[book.authors, book.language, book.pageCount && `${book.pageCount}p`].filter(Boolean).join(' • ') || 'Autor não informado'}
-            </Text>
-          </View>
-          <Ionicons name="add-circle" size={26} color={colors.primary} />
-        </Touchable>
+        <BookResultRow key={book.id} book={book} onPress={handleSelect} />
       ))}
+
+      {catalog && (
+        <CatalogModal
+          initialLetter={catalog.letter}
+          onSelect={handleSelect}
+          onClose={() => setCatalog(null)}
+        />
+      )}
     </View>
   );
 }
@@ -160,10 +152,10 @@ const createStyles = (colors) => StyleSheet.create({
     fontFamily: 'SpaceGrotesk_700Bold',
     marginLeft: 8,
   },
-  metaLabel: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '600',
+  catalogLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
   },
   searchRow: {
     flexDirection: 'row',
@@ -211,37 +203,5 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    marginTop: 8,
-  },
-  thumb: {
-    width: 40,
-    height: 58,
-    borderRadius: 4,
-    backgroundColor: colors.borderLight,
-  },
-  thumbEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resultInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  resultMeta: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
   },
 });
