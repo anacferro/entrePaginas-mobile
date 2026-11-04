@@ -63,27 +63,27 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
 
 ## 🧪 Como Testar os Requisitos desta Etapa
 
-### 1. Navegação com Passagem de Parâmetros
-- Na tela de **Login**, toque em *"Criar conta"*, informe nome, e-mail e senha e entre. Ao fechar e reabrir o app, a sessão continua ativa. As demais telas só existem para quem está autenticado.
-- Na **Estante**, toque em qualquer livro (ex.: *"Crônicas do Silêncio"* ou *"Cantos de Marés"*). O app navega para o **Leitor**, repassando o ID e o título da obra via rota (`route.params`), carregando o respectivo conteúdo e sumário.
-- Toque no banner *"Novo Livro"* para ser direcionado diretamente à aba de criação.
+Antes de testar, configure o Firebase (seção seguinte). O passo a passo completo de uso está em [Docs/Tutorial.md](Docs/Tutorial.md).
 
-### 2. Persistência Local (Offline-First com AsyncStorage)
-- Crie um novo livro na aba **Novo Livro**, personalize as cores e clique em *"Salvar Livro na Estante"*.
-- O livro aparecerá imediatamente na estante.
-- Mova um livro para o baú através do menu `⋮` > *"Mover para o Baú"*. Ele sairá da estante e aparecerá na aba **Baú**.
-- Feche e reabra o aplicativo: todos os dados permanecem salvos no armazenamento local do dispositivo.
+| Requisito | Como verificar |
+| :--- | :--- |
+| **Autenticação e sessão persistente** | Em **Criar conta**, informe nome, e-mail e senha. Feche e abra o app: a sessão continua. Em **Perfil > Desconectar da conta** a tela de login volta. Sem login, nenhuma tela interna é acessível. |
+| **Telas privadas** | As telas (Estante, Novo Livro, Baú, Perfil, Leitor) só são registradas no navegador de rotas para usuário autenticado (`src/navigation/AppNavigator.js`). |
+| **CRUD com persistência local e remota** | Crie, edite (menu `⋮` > *Editar Livro*), arquive (*Mover para o Baú*) e exclua livros e capítulos. Os dados ficam no AsyncStorage e no Firestore; o selo do cabeçalho mostra *Sincronizado*. Apague os dados do app, entre de novo e os livros voltam da nuvem. |
+| **Uso offline** | Desligue a internet: o app continua funcionando e o selo muda para *Offline*; ao religar, sincroniza sozinho. |
+| **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. |
+| **Recurso nativo com permissão negada** | No editor de capítulo, toque em **Fotografar**. Se negar a câmera, o app explica e permite continuar; se o sistema bloquear, oferece abrir os ajustes. A biometria (*Proteger com biometria*, menu `⋮`) também explica quando não há biometria cadastrada. |
+| **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor), *Transcrever* (foto) e *Sugerir categoria e etiquetas com IA* (Novo Livro e Editar Livro). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
+| **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) e nega todo o resto. Teste: uma requisição REST sem login a `users/qualquer/books` retorna `403 PERMISSION_DENIED`. |
+| **Estrutura dos dados** | [Docs/EstruturaDados.md](Docs/EstruturaDados.md) e o arquivo de exemplo [Docs/exemplo-dados.json](Docs/exemplo-dados.json). |
 
-### 3. Tratamento dos Três Estados nas Listagens (Carregamento, Vazio e Erro)
-Na aba **Perfil**, foi incluída uma seção de ferramentas de avaliação para facilitar a validação dos requisitos:
+### Estados de listagem (carregamento, vazio e erro)
 
-- **Estado de Carregamento (Loading):** Puxe a lista para baixo (Pull-to-refresh) na Estante ou no Baú para visualizar o spinner suave com mensagem contextual (*LoadingView*).
-- **Estado Vazio (Empty):** 
-  - Toque no botão *"Testar Estado Vazio"* na aba **Perfil** (ou filtre por um termo inexistente na barra de busca). A listagem exibirá a ilustração temática de acervo vazio e botão de ação direta (*EmptyView*).
-- **Estado de Erro (Error):** 
-  - Ative a opção *"Simular Erro nas Listagens"* na aba **Perfil**.
-  - Retorne à **Estante** ou ao **Baú**: a aplicação exibirá o componente de erro tratado (*ErrorView*) com explicação clara e o botão **"Tentar Novamente"** para restabelecer a consulta.
-  - Para restaurar o acervo original a qualquer momento, clique em *"Restaurar Padrões"* na tela de Perfil.
+Na aba **Perfil**, a seção de avaliação ajuda a validar:
+
+- **Carregamento:** puxe a lista para baixo (pull-to-refresh) na Estante ou no Baú.
+- **Vazio:** use *Testar Estado Vazio* no Perfil ou busque um termo inexistente.
+- **Erro:** ative *Simular Erro nas Listagens*; Estante e Baú mostram o erro tratado com **Tentar Novamente**. *Restaurar Padrões* devolve o acervo original.
 
 ---
 
@@ -109,6 +109,8 @@ O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio pr
 6. Opcional: `EXPO_PUBLIC_GEMINI_MODEL` troca o modelo de IA (padrão `gemini-3.5-flash`).
 7. Reinicie o Metro com cache limpo: `npx expo start -c`.
 
+**Para quem vai avaliar o projeto:** o `.env` não está no repositório. Há duas opções: usar o `.env` enviado junto com a entrega (por exemplo, anexado no Moodle), copiando-o para a raiz do projeto, ou criar o próprio projeto Firebase seguindo os passos acima (leva alguns minutos). Depois, `npm install` e `npx expo start -c`.
+
 O arquivo `.env` está no `.gitignore` e nunca deve ser commitado. A chave de API do Firebase para apps clientes identifica o projeto e não é um segredo; quem protege os dados são as regras do Firestore e a autenticação.
 
 ## 📁 Estrutura do Projeto
@@ -121,6 +123,7 @@ entrePaginas-mobile/
 │   ├── TelasMockup.md         # Referência do mockup no Figma
 │   ├── diarioIA.md            # Diário de uso de IA
 │   ├── EstruturaDados.md      # Estrutura JSON, Firestore e regras de segurança
+│   ├── exemplo-dados.json     # Exemplo da estrutura de dados com livros fictícios
 │   ├── Tutorial.md            # Passo a passo de uso do aplicativo
 │   └── ExplicaçãoArquiteturaTelas.md  # Revisão das decisões de arquitetura
 ├── Telas/                     # Telas e vetores exportados do Figma
@@ -128,6 +131,7 @@ entrePaginas-mobile/
 │   ├── context/
 │   │   └── AuthContext.js     # Usuário autenticado e sessão persistente
 │   ├── components/            # Componentes reutilizáveis
+│   │   ├── AiSuggest.js       # Sugestão de categoria e etiquetas por IA
 │   │   ├── AiSummary.js       # Resumo do capítulo por IA
 │   │   ├── Avatar.js          # Iniciais do usuário
 │   │   ├── AnnotatedText.js   # Texto do leitor com grifos e seleção de trechos
@@ -154,7 +158,7 @@ entrePaginas-mobile/
 │   ├── services/
 │   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
-│   │   ├── ai.js              # Resumo e transcrição de foto com Gemini (Firebase AI Logic)
+│   │   ├── ai.js              # Resumo, transcrição e sugestão por IA (Gemini via Firebase AI Logic)
 │   │   ├── auth.js            # Cadastro, login e logout (Firebase Authentication)
 │   │   ├── cloud.js           # Sincronização dos livros com o Firestore
 │   │   ├── dialog.js          # Alertas e confirmações (nativo e web)
@@ -166,7 +170,8 @@ entrePaginas-mobile/
 │   │   ├── marks.js           # Grifos, marcadores e comparação antes/depois
 │   │   ├── mockData.js        # Dados seminais de livros e usuário
 │   │   ├── pdfParser.js       # Extração de texto e páginas de PDFs
-│   │   └── storage.js         # Camada de persistência local (AsyncStorage)
+│   │   ├── storage.js         # Camada de persistência local (AsyncStorage)
+│   │   └── suggestion.js      # Validação da resposta estruturada da IA
 │   └── theme/
 │       ├── bookOptions.js     # Cores de capa e categorias
 │       └── colors.js          # Paleta de cores e temas (Claro / Escuro)
@@ -184,3 +189,6 @@ entrePaginas-mobile/
 
 - [Revisão das Decisões de Arquitetura e Requisitos](Docs/ExplicaçãoArquiteturaTelas.md)
 - [PRD — Estante Virtual](Docs/PRD.md)
+- [Estrutura dos dados e regras de segurança](Docs/EstruturaDados.md) e [exemplo de dados](Docs/exemplo-dados.json)
+- [Tutorial de uso](Docs/Tutorial.md)
+- [Diário de uso de IA](Docs/diarioIA.md)

@@ -153,7 +153,7 @@ async function importJson(asset) {
   let data;
   try {
     data = JSON.parse(await readText(asset));
-  } catch (e) {
+  } catch {
     throw new Error('O arquivo JSON está mal formatado.');
   }
 

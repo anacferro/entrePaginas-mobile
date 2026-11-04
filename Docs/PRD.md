@@ -1,11 +1,13 @@
 # PRD — Estante Virtual (porte mobile)
 
+> **Revisão da Etapa 3 (novembro/2026):** o login passou de conta Google para **e-mail e senha** (Firebase Authentication), a persistência virou **local primeiro com sincronização no Firestore** (um documento por livro e subcoleção de capítulos, ver `EstruturaDados.md`), a IA usa **Firebase AI Logic (Gemini)** sem chave no aplicativo e foram acrescentados **proteção de livros por biometria**, **etiquetas e categoria sugeridas por IA** e **edição de capítulos com reordenação**. As decisões estão registradas em `ExplicaçãoArquiteturaTelas.md`.
+
 ## 1. Visão geral
 
 **Nome do produto:** Estante Virtual
 **Tipo:** Porte para mobile de um projeto já existente — app de estante virtual de livros digitais
 **Plataforma:** Mobile, desenvolvido com Expo/React Native
-**Autenticação e armazenamento:** Firebase (login com conta Google)
+**Autenticação e armazenamento:** Firebase (login com e-mail e senha)
 
 Este documento descreve o porte para mobile de um projeto já existente. Cada usuário cria e mantém sua própria estante de livros digitais: monta um livro do zero, escolhendo cor da capa e avatar, adiciona páginas de conteúdo (escrevendo direto ou importando de arquivos PDF, EPUB, texto ou JSON, ou fotografando texto físico), organiza por categoria e lê tudo depois com sumário. Livros que o usuário não quer mais na estante não são apagados de vez — vão para um "baú", onde ficam guardados. Tudo fica salvo automaticamente na nuvem via Firebase, com sessão persistente.
 
@@ -23,7 +25,7 @@ Um app mobile onde cada usuário monta e mantém sua própria estante de livros 
 
 O fluxo principal é:
 
-1. O usuário entra com sua conta Google.
+1. O usuário cria uma conta ou entra com e-mail e senha.
 2. O usuário acessa sua estante.
 3. O usuário cria um novo livro, escolhendo cor da capa e avatar.
 4. O usuário adiciona páginas: digitando, importando um arquivo (PDF, EPUB, texto ou JSON) ou fotografando uma página física (câmera/OCR).
@@ -63,7 +65,7 @@ Portar para mobile (Expo/React Native) o produto já existente, mantendo sua pro
 
 ### 6.2 Objetivos específicos
 
-- Permitir autenticação com conta Google.
+- Permitir autenticação com e-mail e senha.
 - Manter sessão persistente entre aberturas do aplicativo.
 - Permitir criação e personalização de livros (cor da capa, avatar).
 - Permitir criação, edição, leitura e exclusão de páginas.
@@ -79,8 +81,8 @@ Portar para mobile (Expo/React Native) o produto já existente, mantendo sua pro
 
 ## 7. Requisitos funcionais
 
-### RF01 — Autenticação com Google
-O sistema deve permitir que o usuário faça login utilizando uma conta Google, via Firebase Authentication.
+### RF01 — Autenticação com e-mail e senha
+O sistema deve permitir que o usuário crie uma conta, entre e recupere a senha por e-mail, via Firebase Authentication. As telas internas só ficam acessíveis a usuários autenticados.
 
 ### RF02 — Sessão persistente
 O sistema deve manter a sessão do usuário ativa entre fechamentos e reaberturas do aplicativo, enquanto a sessão for válida.
@@ -207,7 +209,7 @@ As telas devem se adaptar a diferentes tamanhos de tela de dispositivos mobile.
 
 ## 10. Integrações externas
 
-- **Firebase**: autenticação (Google), armazenamento e sincronização dos dados.
+- **Firebase**: autenticação (e-mail e senha), armazenamento e sincronização dos dados.
 - **Google Books API**: enriquecimento automático de dados do livro (capa, categoria sugerida).
 - **Serviço de IA**: geração de resumos automáticos de trechos longos.
 - **Câmera/OCR**: captura e reconhecimento de texto de páginas físicas.
@@ -217,7 +219,9 @@ As telas devem se adaptar a diferentes tamanhos de tela de dispositivos mobile.
 ## 11. Escopo
 
 - Aplicativo mobile (Expo/React Native).
-- Login com conta Google via Firebase.
+- Login com e-mail e senha via Firebase.
+- Proteção de livros por biometria do aparelho.
+- Etiquetas e categoria sugeridas por IA, com saída estruturada validada.
 - Sessão persistente.
 - Estante individual por usuário.
 - Criação e personalização de livros (cor da capa, avatar).
@@ -261,7 +265,7 @@ As telas devem se adaptar a diferentes tamanhos de tela de dispositivos mobile.
 
 **Consequências assumidas:**
 - Redução de infraestrutura própria a desenvolver.
-- Integração simplificada com login Google.
+- Integração simplificada com login por e-mail e senha.
 - Dependência de serviços externos do Firebase e de seus limites de uso.
 
 ### DA02 — Expo/React Native para o app mobile
@@ -307,7 +311,7 @@ As telas devem se adaptar a diferentes tamanhos de tela de dispositivos mobile.
 
 ## 14. Critérios de aceitação do MVP
 
-- É possível fazer login com conta Google e a sessão persiste ao reabrir o app.
+- É possível criar conta, entrar com e-mail e senha e a sessão persiste ao reabrir o app.
 - Um usuário não acessa os livros de outra conta.
 - É possível criar, personalizar (cor da capa, avatar), editar e categorizar um livro.
 - É possível enviar um livro para o baú, restaurá-lo e excluí-lo definitivamente do baú.

@@ -101,7 +101,7 @@ export default function ReaderScreen({ route, navigation }) {
       if (state !== 'active') navigation.goBack();
     });
     return () => subscription.remove();
-  }, [book?.locked]);
+  }, [book?.locked, navigation]);
 
   const handleSaveChapter = async ({ title, content, photo }) => {
     if (editorMode === 'new') {

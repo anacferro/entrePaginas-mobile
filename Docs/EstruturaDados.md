@@ -15,6 +15,8 @@ Chaves por usuário (o `uid` do Firebase entra no nome, então duas contas no me
 
 ## 2. Estrutura no Firestore
 
+Um arquivo de exemplo, com livros fictícios nessa estrutura, está em [`exemplo-dados.json`](exemplo-dados.json). Nele, `chapters` aparece aninhado dentro de cada livro só para facilitar a leitura; no Firestore cada capítulo é um documento da subcoleção.
+
 ```
 users/{uid}
   books/{bookId}
@@ -29,6 +31,7 @@ users/{uid}
   "title": "Crônicas do Silêncio",
   "subtitle": "Por Fulana de Tal",
   "category": "Literatura",
+  "tags": ["infância", "rio"],
   "coverColor": "#215C50",
   "titleColor": "#FFFFFF",
   "paperColor": "#F4EAE0",
@@ -57,6 +60,7 @@ users/{uid}
 
 | Campo | Tipo | Observação |
 | :--- | :--- | :--- |
+| `tags` | lista de até 5 textos curtos, em minúsculas; podem vir da sugestão por IA |
 | `status` | `"estante"` ou `"bau"` | `"bau"` é o livro arquivado |
 | `locked` | boolean | `true` quando o livro exige biometria para abrir (o campo sincroniza, mas a verificação é feita no aparelho) |
 | `isOwn` | boolean | `false` para livros importados; só eles têm `changeLog` |

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -76,7 +76,7 @@ export default function BookshelfScreen({ navigation }) {
       await storage.moveToChest(bookId);
       dialog.alert('Volume Guardado', 'O livro foi transferido com segurança para o Baú Literário.');
       loadData();
-    } catch (e) {
+    } catch {
       dialog.alert('Erro', 'Não foi possível mover o livro para o baú.');
     }
   };
@@ -85,7 +85,7 @@ export default function BookshelfScreen({ navigation }) {
     try {
       await storage.updateBook(bookId, updates);
       loadData();
-    } catch (e) {
+    } catch {
       dialog.alert('Erro', 'Não foi possível salvar as alterações do livro.');
     }
   };
@@ -99,7 +99,7 @@ export default function BookshelfScreen({ navigation }) {
     try {
       await storage.setBookLocked(book.id, !book.locked);
       loadData();
-    } catch (e) {
+    } catch {
       dialog.alert('Erro', 'Não foi possível alterar a proteção do livro.');
     }
   };
@@ -145,7 +145,8 @@ export default function BookshelfScreen({ navigation }) {
       return (
         b.title.toLowerCase().includes(query) ||
         (b.subtitle && b.subtitle.toLowerCase().includes(query)) ||
-        (b.category && b.category.toLowerCase().includes(query))
+        (b.category && b.category.toLowerCase().includes(query)) ||
+        (b.tags || []).some(tag => tag.includes(query))
       );
     })
     .sort((a, b) => {

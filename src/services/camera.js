@@ -55,7 +55,7 @@ export const camera = {
 
       const uri = result.assets[0].uri;
       return Platform.OS === 'web' ? uri : await keepPhoto(uri);
-    } catch (e) {
+    } catch {
       dialog.alert('Falha na câmera', 'Não foi possível abrir a câmera ou salvar a foto. Tente novamente.');
       return null;
     }

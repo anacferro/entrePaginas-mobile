@@ -58,7 +58,7 @@ export default function ChestScreen({ navigation }) {
       await storage.restoreFromChest(bookId);
       dialog.alert('Volume Restaurado', 'O livro retornou com sucesso para a sua estante.');
       loadChestData();
-    } catch (e) {
+    } catch {
       dialog.alert('Erro', 'Não foi possível restaurar o livro.');
     }
   };

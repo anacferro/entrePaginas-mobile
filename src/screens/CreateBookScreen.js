@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GoogleBooksSearch from '../components/GoogleBooksSearch';
+import AiSuggest from '../components/AiSuggest';
 import BookCover from '../components/BookCover';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -36,6 +37,7 @@ export default function CreateBookScreen({ navigation, route }) {
   const [firstChapterContent, setFirstChapterContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [suggestedPages, setSuggestedPages] = useState(null);
+  const [tags, setTags] = useState([]);
 
   // Import State
   const [selectedFormat, setSelectedFormat] = useState('pdf');
@@ -82,6 +84,16 @@ export default function CreateBookScreen({ navigation, route }) {
     }
   };
 
+  const handleApplySuggestion = (suggestion) => {
+    if (suggestion.category) setCategory(suggestion.category);
+    if (suggestion.tags) setTags(suggestion.tags);
+    if (suggestion.synopsis && !subtitle.trim()) setSubtitle(suggestion.synopsis);
+  };
+
+  const suggestionText = importedFile
+    ? importedFile.chapters.map(c => c.content).join('\n\n')
+    : firstChapterContent;
+
   const handleSaveBook = async () => {
     if (activeTab === 'import' && !importedFile) {
       dialog.alert('Nenhum Arquivo', 'Selecione um arquivo para importar antes de salvar.');
@@ -98,6 +110,7 @@ export default function CreateBookScreen({ navigation, route }) {
         title,
         subtitle,
         category,
+        tags,
         coverColor,
         titleColor,
         paperColor,
@@ -132,7 +145,7 @@ export default function CreateBookScreen({ navigation, route }) {
           },
         ]
       );
-    } catch (e) {
+    } catch {
       dialog.alert('Erro ao Salvar', 'Não foi possível gravar a obra no armazenamento local.');
     } finally {
       setSaving(false);
@@ -358,6 +371,23 @@ export default function CreateBookScreen({ navigation, route }) {
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+
+                {tags.length > 0 && (
+                  <View style={styles.tagsRow}>
+                    {tags.map((tag) => (
+                      <TouchableOpacity
+                        key={tag}
+                        style={styles.tagChip}
+                        onPress={() => setTags(tags.filter(t => t !== tag))}
+                        accessibilityLabel={`Remover etiqueta ${tag}`}
+                      >
+                        <Text style={styles.tagText}>{tag} ×</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                <AiSuggest title={title} text={suggestionText} onApply={handleApplySuggestion} />
               </View>
 
               <View style={styles.formCard}>
@@ -491,7 +521,7 @@ export default function CreateBookScreen({ navigation, route }) {
                 <View style={styles.importSuccessBox}>
                   <Ionicons name="checkmark-circle" size={18} color={colors.success} style={{ marginRight: 8 }} />
                   <Text style={styles.importSuccessText}>
-                    "{importedFile.title}": {importedFile.pages} {importedFile.pages === 1 ? 'página' : 'páginas'} e{' '}
+                    &ldquo;{importedFile.title}&rdquo;: {importedFile.pages} {importedFile.pages === 1 ? 'página' : 'páginas'} e{' '}
                     {importedFile.chapters.length} {importedFile.chapters.length === 1 ? 'capítulo' : 'capítulos'} prontos para leitura.
                   </Text>
                 </View>
@@ -735,6 +765,24 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 23,
     fontFamily: 'serif',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+  },
+  tagChip: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 6,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
   },
   categoryScroll: {
     flexDirection: 'row',

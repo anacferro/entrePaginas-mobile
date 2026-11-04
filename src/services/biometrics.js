@@ -8,7 +8,7 @@ async function availability() {
     if (!(await LocalAuthentication.hasHardwareAsync())) return 'unsupported';
     if (!(await LocalAuthentication.isEnrolledAsync())) return 'not_enrolled';
     return 'ready';
-  } catch (e) {
+  } catch {
     return 'unsupported';
   }
 }

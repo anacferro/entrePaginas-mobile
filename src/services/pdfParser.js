@@ -53,7 +53,7 @@ function streamText(obj) {
   if (/\/FlateDecode/.test(obj.dict)) {
     try {
       return bytesToLatin1(inflate(obj.data));
-    } catch (e) {
+    } catch {
       return '';
     }
   }

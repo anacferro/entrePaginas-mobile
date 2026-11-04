@@ -1,0 +1,112 @@
+{
+  "users": {
+    "UID_DO_USUARIO": {
+      "books": {
+        "book-1730000000001": {
+          "id": "book-1730000000001",
+          "title": "Crônicas do Silêncio",
+          "subtitle": "Memórias de uma infância à beira do rio",
+          "category": "Memórias",
+          "tags": ["infância", "rio", "família"],
+          "coverColor": "#215C50",
+          "titleColor": "#FFFFFF",
+          "paperColor": "#F4EAE0",
+          "totalPages": 82,
+          "status": "estante",
+          "isOwn": true,
+          "locked": false,
+          "chapterCount": 2,
+          "bookmarks": [
+            {
+              "id": "pin-1",
+              "chapterId": "chap-1",
+              "title": "Cena do rio",
+              "color": "#C0392B",
+              "page": 3,
+              "createdAt": "2026-11-02T09:00:00.000Z"
+            }
+          ],
+          "changeLog": [],
+          "createdAt": "2026-11-01T10:00:00.000Z",
+          "updatedAt": "2026-11-04T12:00:00.000Z",
+          "chapters": {
+            "chap-1": {
+              "id": "chap-1",
+              "title": "A casa perto da água",
+              "content": "Na minha infância, o rio passava atrás de casa e o silêncio era a primeira coisa que se ouvia de manhã.",
+              "order": 0,
+              "marks": [
+                { "id": "m-1", "start": 3, "end": 22, "type": "highlight", "color": "#FFE680", "text": "minha infância, o rio" },
+                { "id": "m-2", "start": 60, "end": 70, "type": "bold", "color": null, "text": "o silêncio" }
+              ]
+            },
+            "chap-2": {
+              "id": "chap-2",
+              "title": "As cheias de março",
+              "content": "Em março o rio subia, e meu avô contava histórias até a água baixar.",
+              "order": 1,
+              "marks": []
+            }
+          }
+        },
+        "book-1730000000002": {
+          "id": "book-1730000000002",
+          "title": "Terras Altas",
+          "subtitle": "Importado de EPUB",
+          "category": "Viagens",
+          "tags": ["montanha", "diário de viagem"],
+          "coverColor": "#4D6143",
+          "titleColor": "#FFFFFF",
+          "paperColor": "#F4EAE0",
+          "totalPages": 260,
+          "status": "estante",
+          "isOwn": false,
+          "locked": true,
+          "chapterCount": 1,
+          "bookmarks": [],
+          "changeLog": [
+            {
+              "id": "change-1",
+              "type": "edit",
+              "chapterTitle": "Capítulo 1",
+              "before": { "title": "Capítulo 1", "content": "Texto original do arquivo." },
+              "after": { "title": "Capítulo 1", "content": "Texto original do arquivo, com correção." },
+              "date": "2026-11-04T12:00:00.000Z"
+            }
+          ],
+          "createdAt": "2026-11-03T15:30:00.000Z",
+          "updatedAt": "2026-11-04T12:00:00.000Z",
+          "chapters": {
+            "chap-1": {
+              "id": "chap-1",
+              "title": "Capítulo 1",
+              "content": "Texto original do arquivo, com correção.",
+              "order": 0,
+              "marks": []
+            }
+          }
+        },
+        "book-1730000000003": {
+          "id": "book-1730000000003",
+          "title": "Receitas",
+          "subtitle": "Caderno da família",
+          "category": "Gastronomia",
+          "tags": ["receitas", "doces"],
+          "coverColor": "#A66A1B",
+          "titleColor": "#FFFFFF",
+          "paperColor": "#F4EAE0",
+          "totalPages": 384,
+          "status": "bau",
+          "isOwn": true,
+          "locked": false,
+          "chapterCount": 0,
+          "bookmarks": [],
+          "changeLog": [],
+          "createdAt": "2026-10-20T08:00:00.000Z",
+          "updatedAt": "2026-11-01T18:00:00.000Z",
+          "chapters": {}
+        }
+      }
+    }
+  }
+}

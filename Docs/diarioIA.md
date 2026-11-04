@@ -212,7 +212,9 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 6. Login e cadastro reais, sessão persistente, telas privadas e sincronização dos livros com o Firestore (testada apagando os dados locais e recuperando da nuvem).
 7. Resumo de capítulo e transcrição de foto com Gemini via Firebase AI Logic, com mensagens de erro e limite de tempo.
 8. Acrescentou a proteção de livros por biometria, escolhida pelo usuário (menu do livro, cadeado na capa, bloqueio ao ir para segundo plano).
-9. Documentou estrutura de dados, regras, decisões (DA10 a DA12) e escreveu o tutorial de uso.
+9. Documentou estrutura de dados, regras, decisões (DA10 a DA14) e escreveu o tutorial de uso.
+10. Criou a sugestão de categoria, etiquetas e resumo curto com IA em JSON estruturado, com validação própria (`suggestion.js`) que recusa respostas fora do formato; testou os casos válidos, com cerca de crases, categoria desconhecida, lista, `null`, vazio e texto solto.
+11. Gerou `Docs/exemplo-dados.json`, atualizou o PRD (login por e-mail e senha) e testou que o Firestore recusa leitura e escrita sem login (HTTP 403).
 
 **Decisões que a IA sugeriu e justificou, mas que devem ser revisadas pelo usuário/grupo:**
 

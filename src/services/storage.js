@@ -18,6 +18,21 @@ async function saveBooks(list) {
   cloud.schedule(list);
 }
 
+function logChange(book, type, chapterTitle, before, after) {
+  if (book.isOwn !== false) return;
+  book.changeLog = [
+    {
+      id: `change-${Date.now()}`,
+      type,
+      chapterTitle,
+      before: before ? { title: before.title, content: before.content } : null,
+      after: after ? { title: after.title, content: after.content } : null,
+      date: new Date().toISOString(),
+    },
+    ...(book.changeLog || []),
+  ];
+}
+
 function profileFor(authUser) {
   if (!authUser) return INITIAL_USER;
   return {
@@ -117,6 +132,7 @@ export const storage = {
       title: bookData.title?.trim() || 'Nova Obra Sem Título',
       subtitle: bookData.subtitle?.trim() || 'Obra artesanal recém-encadernada',
       category: bookData.category || 'Geral',
+      tags: bookData.tags || [],
       coverColor: bookData.coverColor || '#215C50',
       titleColor: bookData.titleColor || '#FFFFFF',
       paperColor: bookData.paperColor || '#F4EAE0',
@@ -150,6 +166,7 @@ export const storage = {
     book.title = updates.title?.trim() || book.title;
     book.subtitle = updates.subtitle?.trim() || book.subtitle;
     book.category = updates.category || book.category;
+    if (updates.tags) book.tags = updates.tags;
     book.coverColor = updates.coverColor || book.coverColor;
     book.titleColor = updates.titleColor || book.titleColor;
     book.paperColor = updates.paperColor || book.paperColor;

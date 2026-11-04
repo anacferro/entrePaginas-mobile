@@ -42,7 +42,8 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 ## 6. Gerenciar os livros
 
-- **Editar Livro** (menu `⋮`): título, subtítulo, categoria e cores.
+- **Editar Livro** (menu `⋮`): título, subtítulo, categoria, etiquetas e cores. O botão **Sugerir categoria e etiquetas com IA** (também em **Novo Livro**) mostra uma prévia; toque em **Aplicar** para aceitar ou **Descartar**. Se a IA falhar ou responder fora do formato, o app avisa e nada muda.
+- A busca da Estante também encontra livros pelas etiquetas.
 - **Exportar como TXT** ou **JSON** (menu `⋮`): no celular abre o compartilhamento; no navegador baixa o arquivo.
 - **Mover para o Baú**: arquiva sem apagar. No **Baú** é possível restaurar um livro, restaurar todos ou excluir de vez.
 

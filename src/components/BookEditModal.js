@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BookCover from './BookCover';
+import AiSuggest from './AiSuggest';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
 import { colors } from '../theme/colors';
 
@@ -51,6 +52,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const [coverColor, setCoverColor] = useState('#215C50');
   const [titleColor, setTitleColor] = useState('#FFFFFF');
   const [paperColor, setPaperColor] = useState('#F4EAE0');
+  const [tags, setTags] = useState([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
       setCoverColor(book.coverColor);
       setTitleColor(book.titleColor);
       setPaperColor(book.paperColor || '#F4EAE0');
+      setTags(book.tags || []);
       setSaving(false);
     }
   }, [visible, book]);
@@ -68,9 +71,17 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const canSave = title.trim().length > 0 && !saving;
   const categories = CATEGORIES.includes(category) ? CATEGORIES : [category, ...CATEGORIES];
 
+  const handleApplySuggestion = (suggestion) => {
+    if (suggestion.category) setCategory(suggestion.category);
+    if (suggestion.tags) setTags(suggestion.tags);
+    if (suggestion.synopsis && !subtitle.trim()) setSubtitle(suggestion.synopsis);
+  };
+
+  const bookText = (book?.chapters || []).map(c => c.content).join('\n\n');
+
   const handleSave = async () => {
     setSaving(true);
-    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor });
+    await onSave({ title, subtitle, category, coverColor, titleColor, paperColor, tags });
     setSaving(false);
   };
 
@@ -149,6 +160,23 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
                 </TouchableOpacity>
               ))}
             </ScrollView>
+
+            {tags.length > 0 && (
+              <View style={styles.tagsRow}>
+                {tags.map((tag) => (
+                  <TouchableOpacity
+                    key={tag}
+                    style={styles.tagChip}
+                    onPress={() => setTags(tags.filter(t => t !== tag))}
+                    accessibilityLabel={`Remover etiqueta ${tag}`}
+                  >
+                    <Text style={styles.tagText}>{tag} ×</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <AiSuggest title={title} text={bookText} onApply={handleApplySuggestion} />
 
             <ColorRow label="Cor da Capa" options={COVER_COLORS} value={coverColor} onChange={setCoverColor} />
             <ColorRow label="Cor do Título" options={TITLE_COLORS} value={titleColor} onChange={setTitleColor} outlined />
@@ -259,6 +287,24 @@ const styles = StyleSheet.create({
   categoryChipTextActive: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+  },
+  tagChip: {
+    backgroundColor: colors.primaryLight,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 6,
+  },
+  tagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
   },
   swatchesRow: {
     flexDirection: 'row',

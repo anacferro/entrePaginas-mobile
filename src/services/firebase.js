@@ -23,7 +23,7 @@ function createAuth(app) {
     return FirebaseAuth.initializeAuth(app, {
       persistence: FirebaseAuth.getReactNativePersistence(AsyncStorage),
     });
-  } catch (e) {
+  } catch {
     return FirebaseAuth.getAuth(app);
   }
 }
@@ -35,7 +35,7 @@ function createDb(firebaseApp) {
   if (Platform.OS === 'web') return getFirestore(firebaseApp);
   try {
     return initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
-  } catch (e) {
+  } catch {
     return getFirestore(firebaseApp);
   }
 }

@@ -102,6 +102,12 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Alternativas consideradas:** PIN próprio do app (descartado: exigiria guardar e proteger um segredo e criar telas de recuperação); criptografar o conteúdo dos livros (descartado: custo e risco de perda de dados para o escopo da disciplina).
 * **Consequências assumidas:** a proteção é uma barreira de uso, não criptografia: o texto continua armazenado normalmente no aparelho e na nuvem. No navegador não há biometria, então livros protegidos ficam bloqueados na web.
 
+### DA14 (Nova Decisão) — IA com Saída Estruturada e Validação no App
+
+* **Decisão:** pedir ao Gemini categoria, etiquetas e resumo curto em JSON (`responseMimeType` e `responseSchema`) e validar a resposta no app (`src/services/suggestion.js`) antes de mostrar. A categoria só vale se for uma das listadas; etiquetas são limpas (minúsculas, sem repetição, até 5); respostas que não são JSON, ou sem nenhum campo válido, são recusadas.
+* **Alternativas consideradas:** confiar no schema do modelo sem validar (descartado: o modelo pode devolver texto fora do formato); pedir texto livre e extrair com expressões regulares (descartado: frágil).
+* **Consequências assumidas:** a sugestão nunca altera o livro sozinha: aparece em uma prévia com **Aplicar** e **Descartar**. Se a IA falhar ou responder fora do formato, o app mostra a mensagem e o formulário segue funcionando para preenchimento manual.
+
 ---
 
 ## 3. Mapeamento das Telas do Figma para a Implementação
@@ -146,6 +152,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF14 (Câmera e OCR):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
 * **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
 
+* **IA com saída estruturada:** em Criar Livro e em Editar Livro, o botão *Sugerir categoria e etiquetas com IA* devolve categoria, etiquetas e resumo curto, validados antes da prévia. As etiquetas ficam no livro, sincronizam com a nuvem e entram na busca da estante.
 * **Recurso nativo adicional (biometria):** o usuário escolhe quais livros ficam protegidos. Abrir, exportar ou remover a proteção exige a biometria do aparelho (`expo-local-authentication`, com senha do aparelho como alternativa). O app também fecha o livro protegido ao ir para segundo plano.
 
 ### Pendências
