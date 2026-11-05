@@ -179,7 +179,7 @@ export default function LoginScreen() {
             <Text style={styles.trustText}>Não guardamos sua senha. O acesso é feito pelo Google.</Text>
           </View>
 
-          <Text style={styles.copyrightText}>Entre Páginas © 2025 • Edição de Colecionador</Text>
+          <Text style={styles.copyrightText}>Entre Páginas © {new Date().getFullYear()} • Edição de Colecionador</Text>
         </Animated.View>
       </ScrollView>
     </View>

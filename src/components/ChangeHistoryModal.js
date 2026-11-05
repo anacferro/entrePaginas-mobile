@@ -111,7 +111,7 @@ export default function ChangeHistoryModal({ visible, book, onClose }) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <SafeAreaProvider><SafeAreaView style={styles.safeArea}>
         <View style={styles.topBar}>
-          <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Touchable onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Fechar histórico">
             <Ionicons name="arrow-back" size={22} color={colors.text} />
           </Touchable>
           <View style={{ flex: 1, marginLeft: 12 }}>
