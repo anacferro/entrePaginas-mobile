@@ -1,4 +1,4 @@
-export function foldText(value) {
+function foldText(value) {
   return (value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 

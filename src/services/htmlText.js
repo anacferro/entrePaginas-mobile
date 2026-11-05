@@ -28,8 +28,6 @@ Object.assign(ENTITIES, { ccedil: 'ç', Ccedil: 'Ç', aelig: 'æ', AElig: 'Æ', 
 
 const BREAK_TAGS = new Set(['p', 'div', 'blockquote', 'li', 'tr', 'hr', 'table', 'ul', 'ol', 'pre', 'section']);
 
-export const MARK_SENTINELS = { BOLD_OPEN, BOLD_CLOSE, ITALIC_OPEN, ITALIC_CLOSE };
-
 export function looksLikeHtml(text) {
   return /^\s*(<\?xml|<!doctype|<html)/i.test(text.slice(0, 400));
 }

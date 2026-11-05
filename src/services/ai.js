@@ -1,24 +1,13 @@
 import { Platform } from 'react-native';
 import { File } from 'expo-file-system';
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai';
+import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { app } from './firebase';
-import { parseSuggestion } from './suggestion';
-import { CATEGORIES } from '../theme/bookOptions';
 
 const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.5-flash';
 const TIMEOUT_MS = 40000;
 const MAX_CHARS = 24000;
 
 let model = null;
-let jsonModel = null;
-
-const SUGGESTION_SCHEMA = Schema.object({
-  properties: {
-    category: Schema.string(),
-    tags: Schema.array({ items: Schema.string() }),
-    synopsis: Schema.string(),
-  },
-});
 
 function getModel() {
   if (!app) {
@@ -28,19 +17,6 @@ function getModel() {
     model = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), { model: MODEL });
   }
   return model;
-}
-
-function getJsonModel() {
-  if (!app) {
-    throw new Error('O recurso de IA precisa do Firebase configurado. Veja o README.');
-  }
-  if (!jsonModel) {
-    jsonModel = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), {
-      model: MODEL,
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SUGGESTION_SCHEMA },
-    });
-  }
-  return jsonModel;
 }
 
 function friendly(error) {
@@ -63,10 +39,10 @@ function friendly(error) {
   return 'Não foi possível usar a IA agora. O restante do app continua funcionando.';
 }
 
-async function generate(parts, pickModel = getModel) {
+async function generate(parts) {
   try {
     const result = await Promise.race([
-      pickModel().generateContent(parts),
+      getModel().generateContent(parts),
       new Promise((_, reject) =>
         setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'timeout' })), TIMEOUT_MS)
       ),
@@ -106,22 +82,6 @@ export const ai = {
         'Responda apenas com o resumo, sem títulos nem marcadores.\n\n' +
         `Título: ${title}\n\n${text}`,
     ]);
-  },
-
-  async suggestMetadata(title, text) {
-    const excerpt = text.length > 6000 ? text.slice(0, 6000) : text;
-    const raw = await generate(
-      [
-        'Você ajuda a catalogar livros. Com base no título e no trecho abaixo, responda somente em JSON ' +
-          'com as chaves: "category" (exatamente uma entre: ' + CATEGORIES.join(', ') + '), ' +
-          '"tags" (de 3 a 5 etiquetas curtas em minúsculas, em português) e ' +
-          '"synopsis" (resumo de uma frase com até 150 caracteres, sem inventar fatos). ' +
-          'Se o texto for insuficiente, use tags vazias e synopsis vazia.\n\n' +
-          'Título: ' + (title || 'sem título') + '\n\nTrecho:\n' + excerpt,
-      ],
-      getJsonModel
-    );
-    return parseSuggestion(raw, CATEGORIES);
   },
 
   async transcribePhoto(uri) {

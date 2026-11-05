@@ -388,22 +388,6 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.text,
     fontFamily: 'SpaceGrotesk_700Bold',
   },
-  cloudBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surfaceWarm,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    gap: 4,
-  },
-  cloudBadgeText: {
-    fontSize: 11,
-    color: colors.primary,
-    fontWeight: '600',
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,9 +411,6 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: colors.text,
-  },
-  filterButton: {
-    padding: 4,
   },
   bannersRow: {
     flexDirection: 'row',

@@ -40,7 +40,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Decisão:** Criação de componentes dedicados para os três estados fundamentais de listagem em dispositivos móveis:
   1. **Carregamento (`LoadingView`):** Feedback visual suave durante a leitura assíncrona do armazenamento local.
   2. **Vazio (`EmptyView`):** Ilustração, mensagem contextual e botão de ação primária (ex.: "Criar Primeiro Livro") quando o acervo não possuir volumes.
-  3. **Erro (`ErrorView`):** Apresentação controlada de falha com botão de nova tentativa ("Tentar Novamente"), acionável via chave de simulação na tela de Perfil para auditoria e avaliação.
+  3. **Erro (`ErrorView`):** Apresentação controlada de falha com botão de nova tentativa ("Tentar Novamente"), acionada quando a leitura dos dados locais ou o carregamento do catálogo falha de verdade.
 
 ### DA06 (Nova Decisão) — Importação de Arquivos com Leitor de PDF Próprio
 
@@ -79,7 +79,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### DA10 (Nova Decisão) — Autenticação Somente com Google, por Página Hospedada
 
-* **Decisão:** a única forma de entrar é a conta Google (RF01), via Firebase Authentication. No navegador usa a janela do Firebase (`signInWithPopup`). No celular, como o botão nativo do Google não existe no Expo Go e o Google não aceita o endereço `exp://` de retorno, o app abre uma página no Firebase Hosting (`hosting/index.html`), que faz o login com Google e devolve o resultado ao app por um endereço de retorno validado (só `entrepaginas://` e `exp://` de rede local ou túnel); o app então entra com `signInWithCredential`.
+* **Decisão:** a única forma de entrar é a conta Google (RF-AUT-01), via Firebase Authentication. No navegador usa a janela do Firebase (`signInWithPopup`). No celular, como o botão nativo do Google não existe no Expo Go e o Google não aceita o endereço `exp://` de retorno, o app abre uma página no Firebase Hosting (`hosting/index.html`), que faz o login com Google e devolve o resultado ao app por um endereço de retorno validado (só `entrepaginas://` e `exp://` de rede local ou túnel); o app então entra com `signInWithCredential`.
 * **Alternativas consideradas:** biblioteca nativa de login do Google (descartado: exige build de desenvolvimento e não roda no Expo Go); `expo-auth-session` com cliente OAuth próprio (descartado: o Expo Go não oferece endereço de retorno aceito pelo Google); manter também e-mail e senha (descartado: o requisito é entrar só com Google).
 * **Consequências assumidas:** o login depende de internet e da página hospedada. O servidor reforça a regra: o `firestore.rules` só libera dados para quem entrou com o provedor `google.com`, então contas criadas por e-mail e senha não leem nem gravam nada, mesmo que o provedor esteja ativo no console.
 
@@ -102,13 +102,11 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **Alternativas consideradas:** PIN próprio do app (descartado: exigiria guardar e proteger um segredo e criar telas de recuperação); criptografar o conteúdo dos livros (descartado: custo e risco de perda de dados para o escopo da disciplina).
 * **Consequências assumidas:** a proteção é uma barreira de uso, não criptografia: o texto continua armazenado normalmente no aparelho e na nuvem. No navegador não há biometria, então livros protegidos ficam bloqueados na web.
 
-### DA14 (Nova Decisão) — IA com Saída Estruturada e Validação no App
+### DA14 (Descartada) — Sugestão de Categoria e Etiquetas por IA
 
-> **Revisada:** a sugestão de categoria foi retirada da interface porque não agregava ao fluxo. O serviço e a validação seguem no código (`ai.suggestMetadata`, `suggestion.js`), mas sem botão que os use; a IA em uso é o resumo de capítulo e a transcrição de fotos.
-
-* **Decisão:** pedir ao Gemini categoria, etiquetas e resumo curto em JSON (`responseMimeType` e `responseSchema`) e validar a resposta no app (`src/services/suggestion.js`) antes de mostrar. A categoria só vale se for uma das listadas; etiquetas são limpas (minúsculas, sem repetição, até 5); respostas que não são JSON, ou sem nenhum campo válido, são recusadas.
-* **Alternativas consideradas:** confiar no schema do modelo sem validar (descartado: o modelo pode devolver texto fora do formato); pedir texto livre e extrair com expressões regulares (descartado: frágil).
-* **Consequências assumidas:** a sugestão nunca altera o livro sozinha: aparece em uma prévia com **Aplicar** e **Descartar**. Se a IA falhar ou responder fora do formato, o app mostra a mensagem e o formulário segue funcionando para preenchimento manual.
+* **Decisão:** a sugestão automática de categoria, etiquetas e sinopse em JSON estruturado foi implementada, validada e depois retirada do aplicativo, e o código correspondente foi removido.
+* **Alternativas consideradas:** manter o botão em Criar Livro e Editar Livro (descartado: a categoria é uma escolha rápida de três opções e a sugestão não tornava o app melhor, contra o teste do enunciado de que a IA precisa ser útil no fluxo); manter o código sem interface (descartado: código morto).
+* **Consequências assumidas:** categorias e etiquetas passam a ser sempre manuais. A IA fica concentrada no resumo de capítulo e na transcrição de fotos, os dois usos em que ela faz algo trabalhoso para código convencional.
 
 ### DA15 (Nova Decisão) — Tema Claro e Escuro por Contexto
 
@@ -135,18 +133,18 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ## 4. Requisitos Funcionais Contemplados nesta Etapa
 
-* **RF03 (Estante):** Listagem em grade de 2 colunas com capas táteis personalizadas, busca em tempo real e menu de opções por livro.
-* **RF04 / RF05 (Criação & Personalização):** Seleção interativa de cores de capa, títulos e folhas com live preview.
-* **RF08 / RF09 / RF10 / RF11 (Ciclo do Baú):** Envio para o baú, visualização dedicada, restauração individual/em massa e exclusão definitiva.
-* **RF12 / RF15 / RF16 (Páginas):** Criação, edição e exclusão de capítulos pelo editor do leitor, além do primeiro capítulo escrito na criação do livro.
-* **RF06 (Edição do livro):** pelo menu `⋮` da estante, é possível alterar título, subtítulo, categoria e cores de capa, título e folha, com pré-visualização da capa.
-* **RF13 (Importação):** Seleção de arquivo real do aparelho e extração do texto em capítulos para PDF (com texto), EPUB, TXT, Markdown e JSON.
-* **RF17 (Ordem dos capítulos):** no sumário do leitor, setas sobem e descem cada capítulo; em livros importados a mudança entra no histórico de alterações.
-* **RF20 (Google Books):** na aba Criar Livro, o cartão "Buscar no Google Books" consulta a API pública (sem chave) e o Project Gutenberg (OPDS, domínio público, com texto completo e formatação em HTML), mescla e ordena por relevância, e lista os resultados; o botão "Catálogo A-Z" navega por letra e idioma de 30 em 30 e preenche título, autor, categoria e número de páginas. Tem estados de carregamento, erro (rede, tempo esgotado, limite de consultas) e lista vazia; o restante do formulário continua funcionando se a consulta falhar.
-* **RF22 (Exportação):** o menu `⋮` do livro exporta em TXT ou JSON. No celular abre a folha de compartilhamento (`expo-sharing`); no navegador baixa o arquivo.
+* **RF-LIV-06 (Estante):** Listagem em grade de 2 colunas com capas táteis personalizadas, busca em tempo real e menu de opções por livro.
+* **RF-LIV-01 / RF-LIV-02 (Criação & Personalização):** Seleção interativa de cores de capa, títulos e folhas com live preview.
+* **RF-BAU-01 a RF-BAU-04 (Ciclo do Baú):** Envio para o baú, visualização dedicada, restauração individual/em massa e exclusão definitiva.
+* **RF-CAP-01 / RF-CAP-02 / RF-CAP-03 (Capítulos):** Criação, edição e exclusão de capítulos pelo editor do leitor, além do primeiro capítulo escrito na criação do livro.
+* **RF-LIV-04 (Edição do livro):** pelo menu `⋮` da estante, é possível alterar título, subtítulo, categoria e cores de capa, título e folha, com pré-visualização da capa.
+* **RF-IMP-01 (Importação):** Seleção de arquivo real do aparelho e extração do texto em capítulos para PDF (com texto), EPUB, TXT, Markdown e JSON.
+* **RF-CAP-04 (Ordem dos capítulos):** no sumário do leitor, setas sobem e descem cada capítulo; em livros importados a mudança entra no histórico de alterações.
+* **RF-IMP-04 a RF-IMP-06 (Busca e catálogo):** na aba Criar Livro, o cartão "Buscar no Google Books" consulta a API pública (sem chave) e o Project Gutenberg (OPDS, domínio público, com texto completo e formatação em HTML), mescla e ordena por relevância, e lista os resultados; o botão "Catálogo A-Z" navega por letra e idioma de 30 em 30 e preenche título, autor, categoria e número de páginas. Tem estados de carregamento, erro (rede, tempo esgotado, limite de consultas) e lista vazia; o restante do formulário continua funcionando se a consulta falhar.
+* **RF-LIV-08 (Exportação):** o menu `⋮` do livro exporta em TXT ou JSON. No celular abre a folha de compartilhamento (`expo-sharing`); no navegador baixa o arquivo.
 * **Câmera (recurso nativo):** no editor de capítulo, o botão "Fotografar" pede permissão de câmera, guarda a foto no aparelho e a mostra acima do texto no leitor. Se a permissão for negada, o app explica e segue funcionando; se estiver bloqueada, oferece abrir os ajustes do aparelho.
-* **RF18 / RF19 (Leitor & Sumário):** Modo leitor com paginação, ajuste de tamanho de fonte, alternância de tema claro/escuro e modal de sumário para salto direto entre capítulos.
-* **RNF02 (Persistência):** Todos os dados manipulados persistem localmente entre fechamentos e aberturas do app.
+* **RF-LEI-01 / RF-LEI-02 (Leitor & Sumário):** Modo leitor com paginação, ajuste de tamanho de fonte, alternância de tema claro/escuro e modal de sumário para salto direto entre capítulos.
+* **RNF-02 (Persistência):** Todos os dados manipulados persistem localmente entre fechamentos e aberturas do app.
 
 ### Funcionalidades adicionadas além do PRD
 
@@ -156,13 +154,13 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### Requisitos da etapa 3 atendidos
 
-* **RF01 / RF02 (Autenticação e sessão):** login e logout somente com a conta Google (Firebase Authentication). A sessão permanece salva e as telas internas só são registradas para usuário autenticado.
-* **RF23 (Nuvem):** livros, capítulos, marcadores e grifos são sincronizados com o Firestore, por usuário, com uso offline. Estrutura e regras em [EstruturaDados.md](EstruturaDados.md).
-* **RF14 (Câmera e OCR):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
-* **RF21 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
+* **RF-AUT-01 / RF-AUT-02 (Autenticação e sessão):** login e logout somente com a conta Google (Firebase Authentication). A sessão permanece salva e as telas internas só são registradas para usuário autenticado.
+* **RF-NUV-01 (Nuvem):** livros, capítulos, marcadores e grifos são sincronizados com o Firestore, por usuário, com uso offline. Estrutura e regras em [EstruturaDados.md](EstruturaDados.md).
+* **RF-CAP-05 (Câmera e transcrição):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
+* **RF-IA-01 (Resumo por IA):** o leitor tem o botão *Resumir capítulo com IA*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
 
 * **Configurações e tema:** tela com tema Automático, Claro ou Escuro, saída da conta e exclusão de todos os dados do aparelho e da nuvem (só apaga o aparelho se a nuvem confirmar).
-* **Etiquetas:** as etiquetas do livro ficam salvas, sincronizam com a nuvem e entram na busca da estante. A sugestão automática de categoria por IA foi removida da interface por não agregar ao fluxo; a IA ficou no resumo de capítulo e na transcrição de fotos.
+* **Etiquetas:** as etiquetas do livro ficam salvas, sincronizam com a nuvem e entram na busca da estante.
 * **Recurso nativo adicional (biometria):** o usuário escolhe quais livros ficam protegidos. Abrir, exportar ou remover a proteção exige a biometria do aparelho (`expo-local-authentication`, com senha do aparelho como alternativa). O app também fecha o livro protegido ao ir para segundo plano.
 
 ### Pendências

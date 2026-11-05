@@ -208,43 +208,8 @@ const createStyles = (colors) => StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 40,
   },
-  group: {
-    marginTop: 4,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    marginTop: 14,
-    marginBottom: 6,
-  },
   input: fieldStyles(colors).input,
   textarea: fieldStyles(colors).textarea,
-  categoryScroll: {
-    flexDirection: 'row',
-  },
-  categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
-  },
-  categoryChipText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  categoryChipTextActive: {
-    color: colors.primary,
-    fontWeight: '700',
-  },
   tagsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -262,30 +227,5 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: colors.primary,
-  },
-  swatchesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  swatchItem: {
-    alignItems: 'center',
-    marginRight: 14,
-    marginBottom: 6,
-  },
-  colorCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  colorCircleSelected: {
-    borderColor: colors.primary,
-    borderWidth: 3,
-  },
-  colorName: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 4,
   },
 });

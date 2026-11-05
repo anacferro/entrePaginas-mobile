@@ -59,7 +59,7 @@ export function Field({ label, children }) {
   );
 }
 
-export function Button({ label, icon, onPress, variant = 'secondary', disabled, accessibilityLabel }) {
+function Button({ label, icon, onPress, variant = 'secondary', disabled, accessibilityLabel }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const tone = {

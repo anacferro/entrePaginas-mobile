@@ -128,38 +128,6 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const createStyles = (colors) => StyleSheet.create({
-  settingsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    padding: 14,
-    marginBottom: 16,
-  },
-  settingsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primaryLight,
-    marginRight: 12,
-  },
-  settingsText: {
-    flex: 1,
-  },
-  settingsTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  settingsSub: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -289,33 +257,6 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.textSecondary,
   },
-  storageStatusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    marginBottom: 14,
-  },
-  greenPulse: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.success,
-    marginRight: 10,
-  },
-  storageStatusTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  storageStatusSubtitle: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
   storageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -332,56 +273,5 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.text,
-  },
-  storageFooterText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    lineHeight: 16,
-    marginTop: 10,
-  },
-  academicTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.primary,
-    marginBottom: 4,
-  },
-  academicDesc: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    marginBottom: 10,
-  },
-  switchLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  switchSub: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  testButtonsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  testBtn: {
-    flex: 1,
-    backgroundColor: colors.card,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    alignItems: 'center',
-  },
-  testBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.secondary,
   },
 });

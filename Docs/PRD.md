@@ -1,344 +1,308 @@
-# PRD — Estante Virtual (porte mobile)
+# PRD — Entre Páginas
 
-> **Revisão da Etapa 3 (novembro/2026):** o login continua **somente com a conta Google** (Firebase Authentication, sem e-mail e senha), a persistência virou **local primeiro com sincronização no Firestore** (um documento por livro e subcoleção de capítulos, ver `EstruturaDados.md`), a IA usa **Firebase AI Logic (Gemini)** sem chave no aplicativo e foram acrescentados **proteção de livros por biometria**, **etiquetas e categoria sugeridas por IA** e **edição de capítulos com reordenação**. As decisões estão registradas em `ExplicaçãoArquiteturaTelas.md`.
+| | |
+| :--- | :--- |
+| **Produto** | Entre Páginas, estante virtual de livros digitais |
+| **Plataforma** | Mobile, em React Native com Expo (JavaScript), executável no Expo Go |
+| **Back-end** | Firebase (Authentication com Google, Firestore, AI Logic com Gemini) |
+| **Versão deste documento** | Etapa 3, novembro de 2026 |
+| **Documentos ligados** | [ExplicaçãoArquiteturaTelas.md](ExplicaçãoArquiteturaTelas.md), [EstruturaDados.md](EstruturaDados.md), [Tutorial.md](Tutorial.md), [diarioIA.md](diarioIA.md) |
 
 ## 1. Visão geral
 
-**Nome do produto:** Estante Virtual
-**Tipo:** Porte para mobile de um projeto já existente — app de estante virtual de livros digitais
-**Plataforma:** Mobile, desenvolvido com Expo/React Native
-**Autenticação e armazenamento:** Firebase (login com conta Google)
+O Entre Páginas é um aplicativo em que cada pessoa monta e mantém a própria estante de livros digitais. É possível escrever um livro do zero, importar PDF, EPUB, texto ou JSON, fotografar páginas físicas e baixar obras de domínio público com o texto completo. Os livros são personalizados (capa, folha e tipo de letra), lidos em páginas, anotados com grifos, marcadores e comentários, e guardados no "baú" quando saem da estante, sem serem apagados. Tudo é salvo primeiro no aparelho e sincronizado com a nuvem.
 
-Este documento descreve o porte para mobile de um projeto já existente. Cada usuário cria e mantém sua própria estante de livros digitais: monta um livro do zero, escolhendo cor da capa e avatar, adiciona páginas de conteúdo (escrevendo direto ou importando de arquivos PDF, EPUB, texto ou JSON, ou fotografando texto físico), organiza por categoria e lê tudo depois com sumário. Livros que o usuário não quer mais na estante não são apagados de vez — vão para um "baú", onde ficam guardados. Tudo fica salvo automaticamente na nuvem via Firebase, com sessão persistente.
-
----
+O projeto nasceu como porte para mobile de uma estante virtual já existente e foi ampliado ao longo do semestre. A seção 17 registra o que mudou em relação ao planejado na Etapa 1.
 
 ## 2. Problema
 
-Muita gente lê e/ou escreve trechos de texto de forma espalhada — fotos de páginas de livros físicos, anotações soltas, rascunhos no celular — sem um lugar único e organizado para guardar isso como se fossem "livros" pessoais, revisáveis e sempre à mão.
+Muita gente lê e escreve trechos de forma espalhada: fotos de páginas de livros físicos, anotações soltas, PDFs e rascunhos no celular. Faltam um lugar único para guardar tudo isso como "livros" pessoais e uma leitura confortável, com marcações que sobrevivam entre sessões e aparelhos.
 
----
+## 3. Público e personas
 
-## 3. Solução proposta
+**Público-alvo:** estudantes e leitores que querem organizar resumos, anotações e pequenos textos próprios em forma de livro, e ler obras de domínio público no celular sem depender de várias ferramentas.
 
-Um app mobile onde cada usuário monta e mantém sua própria estante de livros digitais: cria um livro, adiciona páginas (escrevendo ou fotografando texto físico), organiza por categoria e lê tudo depois, de qualquer lugar, com os dados sincronizados na nuvem.
+| Persona | Necessidade | Como o app atende |
+| :--- | :--- | :--- |
+| **Estudante universitária** | Reunir resumos, PDFs de aula e fotos de páginas de livros, com busca e grifos | Importação de arquivos, câmera com transcrição por IA, grifos, marcadores e busca na estante |
+| **Leitor de clássicos** | Encontrar obras em português ou em outros idiomas e ler com boa formatação | Busca no Gutenberg e Google Books, catálogo de A a Z por letra e idioma, texto completo com negrito e itálico |
+| **Escritor amador** | Escrever capítulos e organizar a obra | Criação e edição de capítulos, reordenação, personalização de capa e folha |
 
-O fluxo principal é:
+## 4. Solução e fluxo principal
 
-1. O usuário entra com sua conta Google.
-2. O usuário acessa sua estante.
-3. O usuário cria um novo livro, escolhendo cor da capa e avatar.
-4. O usuário adiciona páginas: digitando, importando um arquivo (PDF, EPUB, texto ou JSON) ou fotografando uma página física (câmera/OCR).
-5. O usuário organiza os livros por categoria.
-6. O usuário lê o livro de forma organizada, com sumário.
-7. O usuário pode exportar um livro para diferentes formatos de arquivo.
-8. Livros que o usuário não quer mais na estante vão para o "baú", sem exclusão definitiva.
-9. Os dados ficam sincronizados na nuvem (Firebase) e a sessão permanece persistente entre acessos.
-
----
-
-## 4. Público-alvo
-
-Estudantes e leitores que querem organizar anotações, resumos de leitura ou pequenos textos próprios em formato de "livro", sem depender de papel ou de apps de notas genéricos.
-
----
+1. A pessoa entra com a conta Google.
+2. Na estante, vê seus livros em grade e pode buscar por título, categoria ou etiqueta.
+3. Em Novo Livro, cria uma obra (capa, folha, primeiro capítulo), importa um arquivo ou escolhe uma obra do catálogo.
+4. No leitor, lê página a página, grifa, marca páginas, comenta, edita capítulos e pede resumos por IA.
+5. Livros que saem da estante vão para o baú, de onde podem ser restaurados ou excluídos de vez.
+6. Os dados ficam no aparelho e são sincronizados com a nuvem; a sessão persiste entre aberturas.
 
 ## 5. Proposta de valor
 
-- Organização por livro/página, não uma lista plana de notas.
-- Personalização visual de cada livro (cor da capa e avatar).
-- Importação rápida de texto físico via câmera (OCR).
-- Importação de conteúdo já existente em PDF, EPUB, texto ou JSON.
-- Enriquecimento automático (capa, categoria) puxando de uma base pública de livros (Google Books).
-- Resumo automático de trechos longos via IA, para revisão rápida.
-- Exportação dos livros para diferentes formatos de arquivo.
-- "Baú" para livros retirados da estante sem exclusão definitiva.
-- Acesso de qualquer dispositivo (dados na nuvem) com sessão persistente.
-
----
+- Organização por livro e capítulo, em vez de uma lista plana de notas.
+- Texto completo de obras de domínio público, em vários idiomas, com a formatação original.
+- Importação de PDF, EPUB, texto e JSON, e captura de páginas físicas pela câmera.
+- Leitura paginada com grifos, marcadores e posição de leitura salva por livro.
+- Resumo de capítulo e transcrição de fotos por IA generativa.
+- Baú para arquivar sem perder; proteção opcional por biometria.
+- Funciona sem rede, com sincronização quando houver conexão.
 
 ## 6. Objetivos
 
 ### 6.1 Objetivo geral
 
-Portar para mobile (Expo/React Native) o produto já existente, mantendo sua proposta de valor original e entregando um fluxo principal funcional e executável em um celular real via Expo Go.
+Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cubra o ciclo completo de criar, importar, ler, anotar, arquivar e sincronizar livros digitais.
 
-### 6.2 Objetivos específicos
+### 6.2 Objetivos específicos e como serão verificados
 
-- Permitir autenticação somente com conta Google.
-- Manter sessão persistente entre aberturas do aplicativo.
-- Permitir criação e personalização de livros (cor da capa, avatar).
-- Permitir criação, edição, leitura e exclusão de páginas.
-- Permitir organização dos livros por categoria.
-- Permitir importação de conteúdo (arquivo ou câmera/OCR).
-- Integrar a API do Google Books para enriquecimento de dados.
-- Disponibilizar resumo automático de textos via IA.
-- Permitir exportação de livros em diferentes formatos.
-- Manter os dados sincronizados na nuvem via Firebase.
-- Tratar falhas de integrações externas sem comprometer o uso do app.
-
----
+| Objetivo | Verificação |
+| :--- | :--- |
+| Autenticar somente com Google e manter a sessão | Fechar e reabrir o app sem novo login; telas internas inacessíveis sem login |
+| Permitir criar, ler, editar e excluir livros e capítulos | Fluxo completo pela interface (seção 14) |
+| Importar conteúdo de arquivos, da câmera e de catálogos públicos | Um livro de cada origem na estante, com texto legível |
+| Integrar IA de forma útil e tolerante a falhas | Resumo de capítulo funciona; com a IA indisponível o app avisa e segue |
+| Sincronizar com a nuvem sem misturar contas | Duas contas diferentes enxergam apenas os próprios livros |
+| Tratar carregamento, lista vazia e erro | Estados visíveis nas listagens de Estante, Baú e catálogo |
 
 ## 7. Requisitos funcionais
 
-### RF01 — Autenticação com Google
-O sistema deve permitir que o usuário faça login utilizando somente uma conta Google, via Firebase Authentication, sem login por e-mail e senha. As telas internas só ficam acessíveis a usuários autenticados.
+**Convenção:** `RF-<ÁREA>-<NN>`. Áreas: AUT (autenticação), LIV (livros), BAU (baú), CAP (capítulos), LEI (leitura e anotações), IMP (importação e catálogo), IA, NUV (nuvem e dados), SEG (segurança), CFG (perfil e configurações), ERR (falhas e estados). **Prioridade:** E = essencial, I = importante, D = desejável. Todos os itens abaixo estão implementados.
 
-### RF02 — Sessão persistente
-O sistema deve manter a sessão do usuário ativa entre fechamentos e reaberturas do aplicativo, enquanto a sessão for válida.
+### 7.1 Autenticação (AUT)
 
-### RF03 — Estante do usuário
-O sistema deve apresentar uma estante contendo apenas os livros pertencentes ao usuário autenticado.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-AUT-01 | O sistema deve permitir entrar somente com uma conta Google, via Firebase Authentication, sem e-mail e senha. | E |
+| RF-AUT-02 | O sistema deve manter a sessão ativa entre fechamentos e reaberturas do aplicativo. | E |
+| RF-AUT-03 | As telas internas só devem existir para usuário autenticado; sem login, só a tela de entrada é acessível. | E |
+| RF-AUT-04 | O sistema deve permitir sair da conta, com confirmação. | E |
 
-### RF04 — Criação de livro
-O sistema deve permitir criar um novo livro informando ao menos título, cor da capa e avatar.
+### 7.2 Livros (LIV)
 
-### RF05 — Personalização da capa e avatar
-O sistema deve permitir escolher a cor da capa e um avatar para o livro.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-LIV-01 | O sistema deve permitir criar um livro com título obrigatório, subtítulo e categoria. | E |
+| RF-LIV-02 | O sistema deve permitir personalizar a capa: cor da capa, cor do título e foto (galeria ou câmera), com pré-visualização ao vivo. | E |
+| RF-LIV-03 | O sistema deve permitir escolher a cor da folha e o tipo de letra da leitura (serifada, sem serifa, máquina de escrever ou a fonte original do EPUB). | I |
+| RF-LIV-04 | O sistema deve permitir editar título, subtítulo, categoria, etiquetas e aparência de um livro existente. | E |
+| RF-LIV-05 | O sistema deve oferecer três categorias padrão e permitir criar e excluir categorias. | I |
+| RF-LIV-06 | O sistema deve listar os livros ativos em grade, com busca em tempo real por título, subtítulo, categoria e etiquetas, ignorando acentos e maiúsculas, e com ordenação. | E |
+| RF-LIV-07 | O sistema deve permitir selecionar vários livros e excluí-los em lote, com confirmação. | D |
+| RF-LIV-08 | O sistema deve permitir exportar um livro em TXT ou JSON, pelo compartilhamento do aparelho ou por download no navegador. | I |
 
-### RF06 — Edição do livro
-O sistema deve permitir alterar as informações e características visuais de um livro já criado.
+### 7.3 Baú (BAU)
 
-### RF07 — Categorização
-O sistema deve permitir associar um livro a uma categoria, para facilitar sua organização e localização na estante.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-BAU-01 | O sistema deve permitir mover um livro da estante para o baú sem apagá-lo. | E |
+| RF-BAU-02 | O sistema deve listar os livros do baú, com busca. | E |
+| RF-BAU-03 | O sistema deve permitir restaurar um livro ou todos os livros do baú para a estante. | E |
+| RF-BAU-04 | O sistema deve permitir excluir definitivamente um livro do baú ou esvaziar o baú, sempre com confirmação. | E |
 
-### RF08 — Envio para o baú
-O sistema deve permitir retirar um livro da estante sem apagá-lo definitivamente, enviando-o para o "baú".
+### 7.4 Capítulos (CAP)
 
-### RF09 — Visualização do baú
-O sistema deve permitir visualizar os livros armazenados no baú.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-CAP-01 | O sistema deve permitir adicionar capítulos a um livro, escrevendo o texto. | E |
+| RF-CAP-02 | O sistema deve permitir editar título e texto de um capítulo. | E |
+| RF-CAP-03 | O sistema deve permitir excluir um capítulo, com confirmação. | E |
+| RF-CAP-04 | O sistema deve permitir reordenar os capítulos pelo sumário. | I |
+| RF-CAP-05 | O sistema deve permitir fotografar uma página, anexar a foto ao capítulo e transcrever seu texto com IA. | I |
 
-### RF10 — Restauração do baú
-O sistema deve permitir restaurar um livro do baú de volta para a estante.
+### 7.5 Leitura e anotações (LEI)
 
-### RF11 — Exclusão definitiva
-O sistema deve permitir excluir definitivamente um livro que esteja no baú, mediante confirmação do usuário.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-LEI-01 | O sistema deve apresentar o livro em páginas de leitura, navegáveis por arrastar, por Anterior e Próxima. | E |
+| RF-LEI-02 | O sistema deve oferecer um sumário com salto direto para capítulos e a lista de marcadores. | E |
+| RF-LEI-03 | O sistema deve permitir ajustar o tamanho da letra e alternar o tema claro e escuro do leitor. | I |
+| RF-LEI-04 | O sistema deve oferecer um modo de leitura sem menus. | D |
+| RF-LEI-05 | O sistema deve guardar a última página lida de cada livro e voltar a ela ao reabrir. | I |
+| RF-LEI-06 | O sistema deve permitir grifar trechos em 5 cores e aplicar negrito, itálico e sublinhado. | I |
+| RF-LEI-07 | O sistema deve permitir marcar páginas com título e cor do pin. | I |
+| RF-LEI-08 | O sistema deve permitir comentários presos à página, em especial nas obras de terceiros. | D |
+| RF-LEI-09 | O sistema deve registrar em um histórico as alterações feitas em livros que não são de autoria do usuário, com a versão anterior e a nova. | D |
 
-### RF12 — Criação de página
-O sistema deve permitir adicionar novas páginas a um livro, digitando o conteúdo diretamente.
+### 7.6 Importação e catálogo (IMP)
 
-### RF13 — Importação de arquivo
-O sistema deve permitir importar conteúdo de arquivos nos formatos PDF, EPUB, texto (TXT) ou JSON, convertendo-o em páginas do livro.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-IMP-01 | O sistema deve importar PDF com texto, EPUB, TXT, Markdown e JSON, convertendo o conteúdo em capítulos. | E |
+| RF-IMP-02 | O sistema deve avisar quando um PDF não tem texto extraível e criar um livro para transcrição manual. | I |
+| RF-IMP-03 | O sistema deve usar a fonte embutida do EPUB e, em PDF, a família equivalente à identificada. | D |
+| RF-IMP-04 | O sistema deve buscar livros no Project Gutenberg (domínio público) e no Google Books, mesclando e ordenando por relevância, inclusive para termos curtos. | E |
+| RF-IMP-05 | O sistema deve oferecer um catálogo de A a Z, filtrado por letra e idioma, carregando 30 livros por vez. | I |
+| RF-IMP-06 | O sistema deve baixar o texto completo da obra escolhida em segundo plano, com barra de progresso, retomando downloads interrompidos. | I |
+| RF-IMP-07 | O sistema deve preservar negrito e itálico do original quando a obra vier em HTML. | I |
+| RF-IMP-08 | O sistema deve avisar quando a obra escolhida já estiver na estante. | D |
+| RF-IMP-09 | O sistema deve dividir capítulos muito longos em partes para que nenhum texto seja cortado ao sincronizar. | I |
 
-### RF14 — Captura de conteúdo pela câmera (OCR)
-O sistema deve permitir utilizar a câmera do dispositivo para fotografar uma página física e reconhecer seu texto (OCR), quando possível.
+### 7.7 Inteligência artificial (IA)
 
-### RF15 — Edição de página
-O sistema deve permitir editar o conteúdo de uma página existente.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-IA-01 | O sistema deve gerar, sob demanda, um resumo de até 5 linhas do capítulo aberto. | E |
+| RF-IA-02 | O sistema deve transcrever para texto a foto de uma página de livro. | I |
+| RF-IA-03 | Se a IA estiver indisponível, demorar ou responder fora do esperado, o sistema deve avisar a pessoa e continuar funcionando, sem alterar o livro. | E |
 
-### RF16 — Exclusão de página
-O sistema deve permitir excluir uma página, mediante confirmação do usuário.
+### 7.8 Nuvem e dados (NUV)
 
-### RF17 — Ordenação das páginas
-O sistema deve manter as páginas de um livro em uma ordem definida e editável.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-NUV-01 | O sistema deve salvar primeiro no aparelho e sincronizar livros, capítulos, grifos, marcadores e comentários com o Firestore. | E |
+| RF-NUV-02 | O sistema deve permitir uso sem rede e sincronizar quando a conexão voltar. | I |
+| RF-NUV-03 | O sistema deve permitir apagar todos os dados do aparelho e da nuvem, com confirmação. | I |
 
-### RF18 — Leitura do livro
-O sistema deve permitir abrir um livro e navegar por suas páginas em modo de leitura.
+### 7.9 Segurança (SEG)
 
-### RF19 — Sumário
-O sistema deve disponibilizar um sumário que permita visualizar e acessar diretamente as páginas do livro.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-SEG-01 | O sistema deve permitir proteger um livro com a biometria do aparelho, exigindo-a para abrir. | D |
 
-### RF20 — Consulta ao Google Books
-O sistema deve permitir consultar a API do Google Books para enriquecer automaticamente dados do livro (como capa e categoria sugeridas). A consulta é complementada pelo Project Gutenberg (domínio público), que também fornece o texto completo, e por um catálogo navegável de A a Z por letra e idioma.
+### 7.10 Perfil e configurações (CFG)
 
-### RF21 — Resumo por IA
-O sistema deve permitir solicitar um resumo automático de um trecho longo de conteúdo, utilizando um serviço de IA.
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-CFG-01 | O sistema deve oferecer o tema Automático, Claro ou Escuro, lembrado no aparelho. | I |
+| RF-CFG-02 | O sistema deve exibir um perfil com nome, e-mail, quantidade de livros, capítulos, grifos, marcadores e espaço usado. | D |
 
-### RF22 — Exportação de livro
-O sistema deve permitir exportar o conteúdo de um livro para diferentes formatos de arquivo suportados pela aplicação.
+### 7.11 Falhas e estados (ERR)
 
-### RF23 — Armazenamento e sincronização na nuvem
-O sistema deve armazenar e sincronizar os dados dos livros e páginas na nuvem via Firebase, refletindo criações, edições e exclusões.
-
-### RF24 — Tratamento de falhas de integrações externas
-Falhas na câmera/OCR, no Google Books, no serviço de IA, na importação ou na exportação devem ser informadas ao usuário de forma clara, sem interromper o funcionamento do restante do aplicativo.
-
----
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-ERR-01 | As listagens devem tratar os estados de carregamento, vazio e erro, com opção de tentar de novo. | E |
+| RF-ERR-02 | Falhas de rede, Google Books, Gutenberg, IA, importação e exportação devem ser informadas com mensagem clara, sem travar o app. | E |
+| RF-ERR-03 | Se a permissão de câmera for negada, o app deve explicar e continuar funcionando; se estiver bloqueada, oferecer abrir os ajustes do aparelho. | E |
 
 ## 8. Requisitos não funcionais
 
-### RNF01 — Plataforma
-O aplicativo deve ser desenvolvido em Expo/React Native e executável via Expo Go em um celular real.
-
-### RNF02 — Persistência
-Os dados criados pelo usuário devem permanecer disponíveis após o fechamento e reabertura do aplicativo, uma vez sincronizados com a nuvem.
-
-### RNF03 — Segurança de acesso
-Cada usuário deve acessar apenas os livros e páginas associados à sua própria conta.
-
-### RNF04 — Tolerância a falhas
-Falhas em serviços externos (Google Books, IA, OCR) não devem causar o encerramento inesperado do aplicativo.
-
-### RNF05 — Usabilidade
-As operações principais — criar livro, adicionar página, ler conteúdo, editar/excluir página — devem ser acessíveis por navegação simples.
-
-### RNF06 — Responsividade
-As telas devem se adaptar a diferentes tamanhos de tela de dispositivos mobile.
-
----
+| ID | Requisito |
+| :--- | :--- |
+| RNF-01 | **Plataforma:** o app deve ser feito em Expo e rodar no Expo Go em celular real, além do navegador. |
+| RNF-02 | **Persistência:** os dados devem permanecer após fechar e reabrir o app, no aparelho e na nuvem. |
+| RNF-03 | **Isolamento:** cada pessoa acessa só os próprios dados, garantido pelas regras do Firestore e pela separação local por conta. |
+| RNF-04 | **Segredos:** nenhuma chave de API pode ser versionada; a configuração fica em variáveis de ambiente (`.env`, modelo em `.env.example`) e a IA é chamada sem chave no aplicativo. |
+| RNF-05 | **Tolerância a falhas:** nenhuma integração externa pode encerrar o app inesperadamente. |
+| RNF-06 | **Usabilidade:** as operações principais devem ser alcançáveis em até dois toques a partir da estante; botões com área de toque mínima de 44 pontos e rótulos de acessibilidade. |
+| RNF-07 | **Responsividade e tema:** as telas devem se adaptar a diferentes tamanhos e aos temas claro e escuro. |
+| RNF-08 | **Desempenho:** listas e leitura devem permanecer fluidas com livros longos; o catálogo carrega por páginas de 30. |
+| RNF-09 | **Integridade:** operações de gravação local são executadas em fila, e os identificadores são únicos, para que ações rápidas não percam dados. |
 
 ## 9. Estrutura conceitual dos dados
 
-### Usuário
-- Identificador
-- Dados de autenticação (Google/Firebase)
-- Informações básicas de perfil
+Detalhada em [EstruturaDados.md](EstruturaDados.md), com exemplo em [exemplo-dados.json](exemplo-dados.json).
 
-### Livro
-- Identificador
-- Identificador do usuário proprietário
-- Título
-- Cor da capa
-- Avatar
-- Categoria
-- Status (estante ou baú)
-- Data de criação e de atualização
+- **Usuário:** identificador do Firebase, nome e e-mail.
+- **Livro:** identificador, título, subtítulo, categoria, etiquetas, aparência (capas e folha), status (estante ou baú), proteção, marcadores, comentários, histórico, datas.
+- **Capítulo:** identificador, ordem, título, conteúdo, grifos e foto opcional.
 
-### Página
-- Identificador
-- Identificador do livro
-- Ordem da página
-- Conteúdo
-- Data de criação e de atualização
-
-### Resumo (opcional, se persistido)
-- Referência ao conteúdo original
-- Texto do resumo gerado por IA
-
----
+No Firestore: `users/{uid}/books/{bookId}` e a subcoleção `chapters`.
 
 ## 10. Integrações externas
 
-- **Firebase**: autenticação (Google), armazenamento e sincronização dos dados.
-- **Google Books API**: enriquecimento automático de dados do livro (capa, categoria sugerida).
-- **Serviço de IA**: geração de resumos automáticos de trechos longos.
-- **Câmera/OCR**: captura e reconhecimento de texto de páginas físicas.
-
----
+| Serviço | Uso | Se falhar |
+| :--- | :--- | :--- |
+| Firebase Authentication | Login com Google | Mensagem na tela de entrada |
+| Firestore | Sincronização dos livros | O app segue com os dados locais e tenta de novo |
+| Firebase AI Logic (Gemini) | Resumo de capítulo e transcrição de fotos | Aviso na tela; o leitor continua funcionando |
+| Project Gutenberg (OPDS) | Busca, catálogo e texto completo de domínio público | Resultados do Google Books e mensagem de indisponibilidade |
+| Google Books API | Busca complementar de livros | Resultados do Gutenberg e opção de criar o livro à mão |
+| Câmera e galeria | Fotos de capa e de páginas | O app explica e segue sem a foto |
+| Biometria do aparelho | Livros protegidos | Livro continua bloqueado; senha do aparelho como alternativa |
 
 ## 11. Escopo
 
-- Aplicativo mobile (Expo/React Native).
-- Login com conta Google via Firebase.
-- Proteção de livros por biometria do aparelho.
-- Etiquetas e categoria sugeridas por IA, com saída estruturada validada.
-- Sessão persistente.
-- Estante individual por usuário.
-- Criação e personalização de livros (cor da capa, avatar).
-- Categorização de livros.
-- Criação, leitura, edição e exclusão de páginas.
-- Sumário.
-- Importação de conteúdo via arquivo (PDF, EPUB, texto, JSON) e via câmera/OCR.
-- Exportação de livros em formatos suportados.
-- Enriquecimento de dados via Google Books.
-- Resumo de conteúdo via IA.
-- Baú (envio, restauração e exclusão definitiva).
-- Persistência e sincronização na nuvem via Firebase.
-- Tratamento controlado de falhas das integrações externas.
-
----
+**Dentro do escopo:** login com Google, sessão persistente, estante individual, criação e personalização de livros, categorias e etiquetas, capítulos com edição e ordem, leitura paginada com sumário, grifos, marcadores, comentários e histórico, importação (PDF, EPUB, TXT, JSON), câmera com transcrição por IA, busca e catálogo de domínio público, resumo por IA, exportação, baú, biometria, tema, sincronização com o Firestore e tratamento de falhas.
 
 ## 12. Fora do escopo
 
-- Rede social pública entre usuários (seguidores, comentários, avaliações).
+- Rede social pública entre usuários (seguidores, avaliações).
 - Marketplace ou venda de livros.
-- Publicação pública de livros para outros usuários.
-- Edição colaborativa simultânea de um mesmo livro.
-- Biblioteca comercial de livros protegidos por direitos autorais.
+- Publicação de livros para outros usuários e edição colaborativa simultânea.
+- Biblioteca comercial de obras sob direitos autorais.
 - Audiolivros e narração automática.
-- Sistema avançado de diagramação editorial profissional.
-- Impressão física dos livros.
+- Diagramação editorial profissional e impressão física.
 - Treinamento de modelos próprios de IA.
-
----
+- Login por e-mail e senha.
+- Notificações e lembretes de leitura.
 
 ## 13. Decisões de arquitetura
 
-### DA01 — Firebase para autenticação e armazenamento
+As decisões completas, com alternativas e consequências, estão em [ExplicaçãoArquiteturaTelas.md](ExplicaçãoArquiteturaTelas.md) (DA01 a DA15). As quatro que moldam este PRD:
 
-**Decisão:** utilizar Firebase (Authentication + Firestore/Storage) para login e persistência dos dados.
+### DA01 — Firebase para autenticação e dados
 
-**Alternativas consideradas:**
-- Backend próprio com Node.js.
-- Banco PostgreSQL com API própria.
-- Firebase.
+**Decisão:** Firebase Authentication (Google) e Firestore, no plano gratuito.
+**Alternativas:** back-end próprio em Node.js; PostgreSQL com API própria.
+**Consequências:** menos infraestrutura para manter e login Google simples; dependência dos limites do serviço, mitigada com dados locais primeiro.
 
-**Consequências assumidas:**
-- Redução de infraestrutura própria a desenvolver.
-- Integração simplificada com login Google.
-- Dependência de serviços externos do Firebase e de seus limites de uso.
+### DA02 — Expo e React Native
 
-### DA02 — Expo/React Native para o app mobile
+**Decisão:** Expo com React Navigation, testado no Expo Go.
+**Alternativas:** apps nativos separados; Flutter.
+**Consequências:** uma base de código para Android, iOS e web; recursos nativos limitados aos módulos do Expo Go.
 
-**Decisão:** utilizar Expo para o desenvolvimento e execução do aplicativo mobile.
+### DA03 — Modelagem dos dados: usuário → livros → capítulos
 
-**Alternativas consideradas:**
-- Desenvolvimento nativo separado (Android/iOS).
-- Flutter.
-- Expo/React Native.
+**Decisão:** um documento por livro e uma subcoleção de capítulos, por usuário.
+**Alternativas:** todo o livro em um único documento (estoura o limite de 1 MB); cada capítulo como documento solto, sem subcoleção; estrutura plana sem separação por entidade.
+**Consequências:** edição e reordenação de capítulos isoladas e leitura sob demanda; exige manter a ordem explicitamente e dividir capítulos muito longos.
 
-**Consequências assumidas:**
-- Desenvolvimento multiplataforma facilitado e testável em dispositivo real via Expo Go.
-- Algumas funcionalidades nativas (câmera/OCR) podem depender de bibliotecas específicas do ecossistema Expo.
+### DA04 — Integrações isoladas do fluxo principal
 
-### DA03 — Modelagem dos dados: usuário, livro e página como entidades relacionadas
+**Decisão:** câmera, IA, catálogos e exportação são recursos auxiliares, tolerantes a falha.
+**Alternativas:** torná-los obrigatórios para o uso básico.
+**Consequências:** criar, ler e editar livros funciona mesmo sem essas integrações; cada uma precisa de estados de carregamento e mensagens de erro próprios.
 
-**Decisão:** representar usuário, livro e página como entidades separadas e relacionadas (usuário → livros → páginas), em vez de um único documento por livro.
+## 14. Critérios de aceitação
 
-**Alternativas consideradas:**
-- Armazenar todo o conteúdo de um livro (todas as páginas) em um único documento.
-- Armazenar cada página como um documento independente, relacionado ao livro.
-- Estrutura totalmente plana, sem separação por entidade.
+| # | Critério | Requisitos |
+| :--- | :--- | :--- |
+| 1 | Entrar com Google, fechar e reabrir sem novo login; sem login, nenhuma tela interna abre | AUT-01 a AUT-03 |
+| 2 | Duas contas diferentes veem apenas os próprios livros | NUV-01, RNF-03 |
+| 3 | Criar um livro, personalizar capa e folha, editar e categorizar | LIV-01 a LIV-05 |
+| 4 | Enviar ao baú, restaurar e excluir definitivamente | BAU-01 a BAU-04 |
+| 5 | Criar, editar, reordenar e excluir capítulos | CAP-01 a CAP-04 |
+| 6 | Ler em páginas, abrir o sumário e voltar à página lida ao reabrir | LEI-01, LEI-02, LEI-05 |
+| 7 | Grifar, marcar página e comentar | LEI-06 a LEI-08 |
+| 8 | Importar um PDF, um EPUB, um TXT e um JSON | IMP-01, IMP-02 |
+| 9 | Buscar "A" e "dom casmurro" e baixar uma obra pelo catálogo A-Z | IMP-04 a IMP-08 |
+| 10 | Fotografar uma página, transcrever com IA e negar a permissão da câmera sem travar | CAP-05, IA-02, ERR-03 |
+| 11 | Pedir resumo de capítulo; com a IA indisponível o app avisa e continua | IA-01, IA-03 |
+| 12 | Exportar um livro em TXT e em JSON | LIV-08 |
+| 13 | Proteger um livro e abri-lo com a biometria | SEG-01 |
+| 14 | Trocar o tema e apagar todos os dados | CFG-01, NUV-03 |
+| 15 | Ver carregamento, lista vazia e erro nas listagens | ERR-01, ERR-02 |
 
-**Consequências assumidas:**
-- Facilita edição, exclusão e reordenação individual de páginas.
-- Permite que livros tenham quantidade variável de páginas sem custo alto de leitura/escrita.
-- Exige controle explícito da relação usuário → livro → página e da ordenação das páginas.
+## 15. Rastreabilidade
 
-### DA04 — Integrações externas isoladas do fluxo principal
+| Área | Tela principal | Código |
+| :--- | :--- | :--- |
+| AUT | `LoginScreen`, `SettingsScreen` | `services/auth.js`, `context/AuthContext.js`, `navigation/AppNavigator.js` |
+| LIV | `BookshelfScreen`, `CreateBookScreen`, `BookEditModal` | `services/storage.js`, `services/exporter.js`, `services/textSearch.js` |
+| BAU | `ChestScreen` | `services/storage.js` |
+| CAP e LEI | `ReaderScreen`, `ChapterEditor`, `CommentsModal`, `ChangeHistoryModal` | `services/pagination.js`, `services/marks.js` |
+| IMP | `CreateBookScreen`, `CatalogModal`, `GoogleBooksSearch` | `services/importer.js`, `publicDomain.js`, `googleBooks.js`, `googleImport.js`, `htmlText.js`, `pdfParser.js`, `epubParser.js` |
+| IA | `ReaderScreen`, `ChapterEditor` | `services/ai.js` |
+| NUV | todas | `services/cloud.js`, `firestore.rules` |
+| SEG | `BookshelfScreen`, `BookEditModal` | `services/biometrics.js` |
+| CFG | `ProfileScreen`, `SettingsScreen` | `theme/ThemeContext.js` |
 
-**Decisão:** tratar câmera/OCR, Google Books, IA e exportação como funcionalidades auxiliares, tolerantes a falha, que não bloqueiam o fluxo principal (criar/ler/editar livro e página).
+## 16. Riscos e limitações
 
-**Alternativas consideradas:**
-- Tornar essas integrações obrigatórias para o funcionamento básico do app.
-- Tratá-las como recursos complementares, com fallback manual em caso de falha.
+| Risco | Mitigação |
+| :--- | :--- |
+| Serviços externos (Gutenberg, Google Books, Gemini, Firebase) indisponíveis ou com limite de uso | Tratamento de erro, dados locais primeiro e recursos essenciais sem dependência externa |
+| Qualidade da transcrição por IA varia com iluminação e fonte | A pessoa revisa e edita o texto antes de salvar |
+| PDFs escaneados não têm texto extraível | Aviso e livro para transcrição manual |
+| Lista alfabética do Gutenberg tem teto de cerca de 5 mil itens (o inglês passa dele) | Modo "mais baixados" para o inglês |
+| Biometria não existe no navegador | Livros protegidos ficam bloqueados na web; o uso principal é o celular |
+| Modelo de IA descontinuado | Modelo configurável por variável de ambiente |
 
-**Consequências assumidas:**
-- O usuário consegue criar, editar e ler livros mesmo se Google Books, IA ou OCR estiverem indisponíveis.
-- Exige implementar estados de carregamento e mensagens de erro específicas para cada integração.
+## 17. Histórico de revisões
 
----
-
-## 14. Critérios de aceitação do MVP
-
-- É possível entrar com conta Google e a sessão persiste ao reabrir o app.
-- Um usuário não acessa os livros de outra conta.
-- É possível criar, personalizar (cor da capa, avatar), editar e categorizar um livro.
-- É possível enviar um livro para o baú, restaurá-lo e excluí-lo definitivamente do baú.
-- É possível criar, ler, editar e excluir páginas, com ordem preservada.
-- O sumário permite navegar entre páginas do livro.
-- É possível importar conteúdo de arquivo (PDF/EPUB/texto/JSON) e, quando possível, via câmera/OCR.
-- É possível consultar o Google Books e usar o resultado para enriquecer o livro.
-- É possível solicitar um resumo de um trecho via IA.
-- É possível exportar um livro em pelo menos um formato implementado.
-- Falhas em qualquer integração externa são informadas ao usuário sem travar o app.
-- Os dados permanecem persistidos e sincronizados no Firebase.
-
----
-
-## 15. Riscos e limitações
-
-**Dependência de serviços externos:** Google Books, serviço de IA e Firebase podem ficar indisponíveis ou mudar limites de uso.
-*Mitigação:* tratar erros e manter as funcionalidades essenciais (criar/ler/editar livro e página) disponíveis mesmo sem essas integrações.
-
-**Qualidade do OCR:** varia conforme iluminação, qualidade da foto e fonte da página física.
-*Mitigação:* permitir revisão e edição do texto reconhecido antes de salvar.
-
-**Formatos de importação/exportação:** cada formato (PDF, EPUB, texto, JSON) tem particularidades próprias de leitura/escrita.
-*Mitigação:* definir um conjunto inicial controlado de formatos e validar o conteúdo gerado.
-
----
-
-## 16. Resultado esperado
-
-Ao final desta etapa, o Estante Virtual deverá ter, no mínimo, o fluxo principal funcional em um celular real via Expo Go: login, estante, criação/personalização de livro, gerenciamento de páginas (incluindo importação e leitura com sumário) e persistência no Firebase. As integrações complementares — câmera/OCR, Google Books, IA e exportação — devem funcionar quando disponíveis e falhar de forma controlada quando não.
+| Etapa | O que mudou em relação ao planejado |
+| :--- | :--- |
+| 1. Protótipos (28/09) | Primeira versão: estante, baú, páginas, Google Books, resumo por IA, login Google. |
+| 2. Telas (30/10) | Persistência local com AsyncStorage; importação real de arquivos; leitor paginado. |
+| 3. Final (30/11) | Sincronização com o Firestore (local primeiro); IA pelo Firebase AI Logic; biometria; grifos, marcadores, comentários e histórico; Gutenberg com texto completo, catálogo A-Z e formatação preservada; barra inferior com Estante, Novo Livro e Baú, e perfil pelo topo. **Retirado:** a sugestão de categoria e etiquetas por IA, por não agregar ao fluxo; o OCR por biblioteca foi substituído pela transcrição com IA. O nome do produto passou de "Estante Virtual" para "Entre Páginas". |

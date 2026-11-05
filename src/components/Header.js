@@ -121,8 +121,4 @@ const createStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
 });

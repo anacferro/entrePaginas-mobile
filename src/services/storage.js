@@ -21,7 +21,6 @@ const KEYS = {
   get BOOKS() { return userId ? keyFor('books') : '@entre_paginas_books_v1'; },
   get USER() { return userId ? keyFor('user') : '@entre_paginas_user_v1'; },
   get POSITIONS() { return userId ? keyFor('positions') : '@entre_paginas_positions_v1'; },
-  get SIMULATE_ERROR() { return userId ? keyFor('simulate_error') : '@entre_paginas_simulate_error'; },
 };
 
 async function saveBooks(list) {
@@ -111,11 +110,6 @@ export const storage = {
       await new Promise(r => setTimeout(r, delayMs));
     }
 
-    const simError = await this.getSimulateError();
-    if (simError) {
-      throw new Error('Falha simulada na leitura dos dados locais. Tente novamente.');
-    }
-
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : INITIAL_BOOKS;
     return list.filter(b => b.status === 'estante');
@@ -124,11 +118,6 @@ export const storage = {
   async getChestBooks(delayMs = 400) {
     if (delayMs > 0) {
       await new Promise(r => setTimeout(r, delayMs));
-    }
-
-    const simError = await this.getSimulateError();
-    if (simError) {
-      throw new Error('Falha simulada ao carregar o Baú Literário.');
     }
 
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
@@ -474,38 +463,12 @@ export const storage = {
     return json ? JSON.parse(json) : INITIAL_USER;
   },
 
-  async updateUserProfile(updates) {
-    const current = await this.getUserProfile();
-    const updated = { ...current, ...updates };
-    await AsyncStorage.setItem(KEYS.USER, JSON.stringify(updated));
-    return updated;
-  },
-
-  async setSimulateError(flag) {
-    await AsyncStorage.setItem(KEYS.SIMULATE_ERROR, JSON.stringify(!!flag));
-  },
-
-  async getSimulateError() {
-    const val = await AsyncStorage.getItem(KEYS.SIMULATE_ERROR);
-    return val ? JSON.parse(val) : false;
-  },
-
-  async clearAllBooks() {
-    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
-  },
-
   async deleteAllData() {
     const removedFromCloud = await cloud.wipe();
     if (!removedFromCloud) return false;
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
     await AsyncStorage.removeItem(KEYS.POSITIONS);
     return true;
-  },
-
-  async resetToDefaults() {
-    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(INITIAL_BOOKS));
-    await AsyncStorage.setItem(KEYS.USER, JSON.stringify(INITIAL_USER));
-    await AsyncStorage.setItem(KEYS.SIMULATE_ERROR, JSON.stringify(false));
   }
 };
 
@@ -513,7 +476,7 @@ export const storage = {
   'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
   'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
-  'setReadingPosition', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData', 'clearAllBooks', 'resetToDefaults',
+  'setReadingPosition', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',
 ].forEach((name) => {
   const original = storage[name];
   storage[name] = (...args) => exclusive(() => original.apply(storage, args));
