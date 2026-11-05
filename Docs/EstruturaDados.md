@@ -117,7 +117,7 @@ As contas de teste foram removidas ao final.
 
 1. Ao entrar, o app lê os livros da nuvem e mescla com os locais. Para o mesmo livro vence a versão com `updatedAt` mais recente. Livros que só existem num dos lados são mantidos.
 2. A cada alteração, o app grava localmente e agenda o envio dos livros alterados (com pequeno atraso para juntar edições seguidas).
-3. Se o envio falhar (sem internet, por exemplo), o selo do cabeçalho mostra "Offline" ou "Falha ao sincronizar" e o app tenta de novo a cada 20 segundos.
+3. Se o envio falhar (sem internet, por exemplo), os dados continuam no aparelho e o app tenta de novo a cada 20 segundos.
 4. Excluir um livro definitivamente também o remove da nuvem.
 
 **Limitação assumida:** não há resolução de conflito por campo. Se o mesmo livro for editado em dois aparelhos ao mesmo tempo, a versão mais recente substitui a outra.

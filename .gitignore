@@ -42,3 +42,9 @@ yarn-error.*
 
 # firebase / local secrets
 .env
+
+# Local tooling
+.claude/
+.agents/
+.firebase/
+skills-lock.json

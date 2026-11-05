@@ -7,9 +7,9 @@ Passo a passo para usar o aplicativo e para apresentá-lo ao vivo, na ordem suge
 1. Abra o app e toque em **Continuar com o Google**.
 2. Escolha a conta Google. No celular a escolha abre no navegador e volta sozinha para o app; no computador abre uma janela do Google. O primeiro acesso cria sua estante vazia.
 3. Se você fechar a janela do Google, o app avisa que o login foi cancelado e você pode tentar de novo.
-4. Feche e abra o app: a sessão continua ativa. Para sair, vá em **Perfil > Configurações > Sair da conta**.
+4. Feche e abra o app: a sessão continua ativa. Para sair, toque na engrenagem do topo e vá em **Configurações > Sair da conta**.
 
-O selo no topo mostra o estado da sincronização: **Sincronizado**, **Sincronizando**, **Offline** ou **Falha ao sincronizar**.
+Os livros ficam salvos no aparelho e são sincronizados com a nuvem em segundo plano; sem internet, tudo continua funcionando e a sincronização acontece quando a conexão volta.
 
 ## 2. Criar um livro
 
@@ -49,7 +49,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 ## 7. Configurações: tema, conta e dados
 
-Abra **Perfil** e toque em **Configurações**.
+Toque na engrenagem no topo de qualquer tela principal para abrir as **Configurações**.
 
 1. **Aparência:** escolha **Automático** (segue o tema do aparelho), **Claro** ou **Escuro**. A mudança vale para todas as telas e fica salva.
 2. **Conta:** mostra o e-mail e tem o botão **Sair da conta**.
@@ -69,6 +69,6 @@ Abra **Perfil** e toque em **Configurações**.
 3. Importar um PDF ou EPUB e abrir o Histórico de Alterações depois de editar um capítulo.
 4. No leitor: grifar, marcar a página e reordenar capítulos.
 5. Fotografar uma página, transcrever com IA e resumir o capítulo; proteger um livro com biometria.
-6. Desligar a internet do aparelho: mostrar que o app continua funcionando e que o selo muda para **Offline**; religar e mostrar **Sincronizado**.
+6. Desligar a internet do aparelho: mostrar que o app continua funcionando; religar e criar um livro para ver que ele chega à nuvem.
 7. Apagar os dados do app, entrar de novo e mostrar os livros voltando da nuvem.
 8. Mostrar o `firestore.rules`, o `.env.example` (sem chaves) e o `Docs/EstruturaDados.md`.

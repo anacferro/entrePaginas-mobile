@@ -7,7 +7,6 @@ const RETRY_MS = 20000;
 const DEBOUNCE_MS = 800;
 
 const synced = new Map();
-const listeners = new Set();
 let status = 'idle';
 let pending = null;
 let timer = null;
@@ -16,7 +15,6 @@ let epoch = 0;
 
 function setStatus(next) {
   status = next;
-  listeners.forEach(listener => listener(status));
 }
 
 function withTimeout(promise) {
@@ -132,16 +130,6 @@ async function flush() {
 }
 
 export const cloud = {
-  isAvailable: Boolean(db),
-
-  getStatus: () => status,
-
-  subscribe(listener) {
-    listeners.add(listener);
-    listener(status);
-    return () => listeners.delete(listener);
-  },
-
   schedule(list) {
     if (!db || !auth?.currentUser) return;
     pending = list;
