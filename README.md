@@ -34,7 +34,7 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
 
 ### Pré-requisitos
 
-- **Node.js** (versão 18 ou superior recomendada)
+- **Node.js 22.13 ou superior** (o Expo SDK 58 e o React Native 0.88 não funcionam com Node 18 ou 20). Confira com `node -v`; se for mais antigo, instale a versão LTS atual em https://nodejs.org
 - **npm** (incluso com o Node)
 - Aplicativo **Expo Go** instalado no smartphone ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) ou [iOS](https://apps.apple.com/app/expo-go/id982107779)) ou um emulador/simulador configurado.
 
