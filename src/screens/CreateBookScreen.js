@@ -264,13 +264,7 @@ export default function CreateBookScreen({ navigation, route }) {
           </Touchable>
 
           <View style={styles.pageHeaderRow}>
-            <View>
-              <Text style={styles.pageTitle}>Criar Obra</Text>
-              <Text style={styles.pageSubtitle}>Ateliê de encadernação e escrita artesanal</Text>
-            </View>
-            <View style={styles.headerIconBadge}>
-              <Ionicons name="book-outline" size={20} color={colors.primary} />
-            </View>
+            <Text style={styles.pageTitle}>Criar Obra</Text>
           </View>
 
           <View style={styles.tabsSwitcher}>
@@ -497,21 +491,6 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     fontFamily: 'SpaceGrotesk_700Bold',
-  },
-  pageSubtitle: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  headerIconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: colors.surfaceWarm,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
   tabsSwitcher: {
     flexDirection: 'row',
