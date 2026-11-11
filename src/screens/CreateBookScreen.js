@@ -276,7 +276,7 @@ export default function CreateBookScreen({ navigation, route }) {
               <Ionicons
                 name="create-outline"
                 size={16}
-                color={activeTab === 'create' ? colors.onPrimary : colors.textSecondary}
+                color={activeTab === 'create' ? colors.onPrimary : colors.text}
                 style={{ marginRight: 6 }}
               />
               <Text style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}>
@@ -292,7 +292,7 @@ export default function CreateBookScreen({ navigation, route }) {
               <Ionicons
                 name="cloud-upload-outline"
                 size={16}
-                color={activeTab === 'import' ? colors.onPrimary : colors.textSecondary}
+                color={activeTab === 'import' ? colors.onPrimary : colors.text}
                 style={{ marginRight: 6 }}
               />
               <Text style={[styles.tabButtonText, activeTab === 'import' && styles.tabButtonTextActive]}>
@@ -494,9 +494,7 @@ const createStyles = (colors) => StyleSheet.create({
   },
   tabsSwitcher: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 24,
-    padding: 4,
+    gap: 10,
     marginBottom: 20,
   },
   tabButton: {
@@ -504,21 +502,29 @@ const createStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
   },
   tabButtonActive: {
     backgroundColor: colors.primary,
-    shadowColor: '#000',
+    borderColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 2,
   },
   tabButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: colors.text,
   },
   tabButtonTextActive: {
     color: colors.onPrimary,
