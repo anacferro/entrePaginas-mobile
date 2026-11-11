@@ -37,6 +37,8 @@ import Touchable from '../components/Touchable';
 import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
 import ReadingProgressModal from '../components/ReadingProgressModal';
+import RatingSheet from '../components/RatingSheet';
+import { bookWorkId } from '../services/catalog/identity';
 import ProgressBar from '../components/ProgressBar';
 import { useToast } from '../components/Toast';
 import ReaderSettings from '../components/ReaderSettings';
@@ -128,6 +130,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const [showComments, setShowComments] = useState(false);
   const [originalFontReady, setOriginalFontReady] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [personal, setPersonal] = useState(null);
   const [readingLog, setReadingLog] = useState(null);
   const lastPage = useRef(null);
   const lastTick = useRef(0);
@@ -446,6 +450,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         setReadingLog(log);
       })
       .catch(() => {});
+    storage.getPersonal().then(setPersonal).catch(() => {});
   }, [loadState, bookId, totalPages]);
 
   useEffect(() => {
@@ -500,6 +505,18 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
       setReadingLog(log);
       setShowProgress(false);
       toast.show(finished ? 'Livro marcado como lido.' : 'Livro voltou para "lendo".');
+      if (finished) setShowRating(true);
+    } catch {
+      toast.show('Não foi possível atualizar o livro. Tente de novo.', 'error');
+    }
+  };
+
+  const handleToggleAbandoned = async (abandoned) => {
+    try {
+      const log = await storage.setReadingAbandoned(bookId, abandoned);
+      setReadingLog(log);
+      setShowProgress(false);
+      toast.show(abandoned ? 'Leitura marcada como abandonada.' : 'Leitura retomada.');
     } catch {
       toast.show('Não foi possível atualizar o livro. Tente de novo.', 'error');
     }
@@ -1191,6 +1208,16 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         forecast={book && readingLog ? bookForecast({ book: { ...book, totalPages }, entry: readingLog.books[bookId], log: readingLog, now: new Date() }) : null}
         onRegister={handleRegisterPage}
         onToggleFinished={handleToggleFinished}
+        onToggleAbandoned={handleToggleAbandoned}
+        onRate={() => { setShowProgress(false); setShowRating(true); }}
+        stars={book ? personal?.ratings?.[bookWorkId(book)]?.stars || 0 : 0}
+      />
+      <RatingSheet
+        visible={showRating}
+        book={book}
+        totalPages={totalPages}
+        onClose={() => setShowRating(false)}
+        onChanged={setPersonal}
       />
       {focusMode && (
         <Touchable

@@ -6,6 +6,7 @@ import { fonts, radius, space } from '../theme/tokens';
 import Touchable from './Touchable';
 import ProgressBar from './ProgressBar';
 import StatusChip from './StatusChip';
+import StarRating from './StarRating';
 import { STATUS, progressOf, formatDate, formatNumber } from '../services/readingStats';
 
 function InfoRow({ label, value, styles }) {
@@ -26,6 +27,9 @@ export default function ReadingProgressModal({
   forecast,
   onRegister,
   onToggleFinished,
+  onToggleAbandoned,
+  onRate,
+  stars = 0,
 }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -39,6 +43,7 @@ export default function ReadingProgressModal({
 
   const progress = progressOf(book, position, entry);
   const finished = progress.status === STATUS.FINISHED;
+  const abandoned = progress.status === STATUS.ABANDONED;
   const parsed = parseInt(input, 10);
   const valid = Number.isFinite(parsed) && parsed >= 1 && parsed <= progress.total;
 
@@ -126,6 +131,20 @@ export default function ReadingProgressModal({
               />
               <Text style={styles.toggleText}>{finished ? 'Voltar para "lendo"' : 'Marcar como lido'}</Text>
             </Touchable>
+
+            {!finished && onToggleAbandoned && (
+              <Touchable style={styles.toggleBtn} onPress={() => onToggleAbandoned(!abandoned)}>
+                <Ionicons name={abandoned ? 'play-circle-outline' : 'pause-circle-outline'} size={18} color={colors.primary} />
+                <Text style={styles.toggleText}>{abandoned ? 'Retomar leitura' : 'Abandonar leitura'}</Text>
+              </Touchable>
+            )}
+
+            {onRate && (
+              <Touchable style={styles.rateRow} onPress={onRate} accessibilityLabel="Avaliar este livro">
+                <Text style={styles.rateLabel}>{stars ? 'Sua nota' : 'Avaliar este livro'}</Text>
+                <StarRating value={stars} size={20} gap={2} />
+              </Touchable>
+            )}
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>
@@ -275,6 +294,21 @@ const createStyles = (colors) => StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
+  },
+  rateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 46,
+    marginTop: space.md,
+    paddingHorizontal: space.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceSoft,
+  },
+  rateLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
   },
   toggleText: {
     fontSize: 14,

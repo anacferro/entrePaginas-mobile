@@ -15,6 +15,7 @@ import { withPageCounts } from '../services/bookPages';
 import Avatar from '../components/Avatar';
 import ReadingDashboard from '../components/ReadingDashboard';
 import ErrorView from '../components/ErrorView';
+import Touchable from '../components/Touchable';
 import { useToast } from '../components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -126,6 +127,15 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
+        <Touchable style={styles.literaryCard} onPress={() => navigation.navigate('PerfilLiterario')} accessibilityLabel="Abrir meu perfil literário">
+          <Ionicons name="sparkles-outline" size={22} color={colors.primary} />
+          <View style={styles.literaryText}>
+            <Text style={styles.literaryTitle}>Meu perfil literário</Text>
+            <Text style={styles.literaryHint}>Gostos, avaliações e privacidade</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </Touchable>
+
         <Text style={styles.sectionTitle}>Painel de leitura</Text>
 
         {error ? (
@@ -222,6 +232,29 @@ const createStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
     borderColor: colors.card,
+  },
+  literaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: space.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    marginBottom: space.xl,
+  },
+  literaryText: {
+    flex: 1,
+  },
+  literaryTitle: {
+    fontSize: 16,
+    color: colors.text,
+    fontFamily: fonts.heading,
+  },
+  literaryHint: {
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   userInfo: {
     flex: 1,

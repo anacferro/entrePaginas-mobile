@@ -11,6 +11,7 @@ import DiscoverScreen from '../screens/DiscoverScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ReaderScreen from '../screens/ReaderScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import LiteraryProfileScreen from '../screens/LiteraryProfileScreen';
 import CustomTabBar from '../components/CustomTabBar';
 import LoadingView from '../components/LoadingView';
 import { useAuth } from '../context/AuthContext';
@@ -69,6 +70,13 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Settings"
               component={SettingsScreen}
+              options={{
+                animation: 'slide_from_right',
+              }}
+            />
+            <Stack.Screen
+              name="PerfilLiterario"
+              component={LiteraryProfileScreen}
               options={{
                 animation: 'slide_from_right',
               }}
