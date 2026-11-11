@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 import { File } from 'expo-file-system';
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { app } from './firebase';
-import { createAssistant } from './readingAssistant';
+import { createAssistant, parseJson } from './readingAssistant';
 import { createCurator } from './recommend/curator';
 
 const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.5-flash';
@@ -82,6 +82,14 @@ export const ai = {
   ...createAssistant(generate),
 
   ...createCurator(generate),
+
+  async adviseConversion(system, payload) {
+    const raw = await generate([`${system}
+
+DADOS:
+${JSON.stringify(payload)}`], { json: true, timeoutMs: 25000 });
+    return parseJson(raw);
+  },
 
   async transcribePhoto(uri) {
     let image;

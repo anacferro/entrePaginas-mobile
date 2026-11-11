@@ -1,5 +1,5 @@
 import { inflateRaw } from 'pako';
-import { dominantFont } from './fontHints';
+import { dominantFont } from './fontHints.js';
 
 const decoder = new TextDecoder('utf-8');
 

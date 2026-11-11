@@ -7,6 +7,7 @@ import { looksLikeHtml, htmlToText, extractSentinelMarks, stripSentinels } from 
 
 const CHAPTER_SIZE = 1800;
 const MAX_CHAPTER = 150000;
+const MAX_CONVERT_BYTES = 30 * 1024 * 1024;
 
 const PICKER_TYPES = {
   pdf: 'application/pdf',
@@ -291,6 +292,19 @@ export const importer = {
 
     if (result.canceled || !result.assets?.length) return null;
     return importAsset(format, result.assets[0]);
+  },
+
+  async pickDocument() {
+    const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true, base64: false });
+    if (result.canceled || !result.assets?.length) return null;
+    const asset = result.assets[0];
+    if (asset.size && asset.size > MAX_CONVERT_BYTES) throw new Error(`O arquivo passa do limite de ${MAX_CONVERT_BYTES / 1048576} MB.`);
+    return { name: asset.name, size: asset.size, lastModified: asset.lastModified, bytes: await readBytes(asset) };
+  },
+
+  async readDroppedDocument(file) {
+    if (file.size > MAX_CONVERT_BYTES) throw new Error(`O arquivo passa do limite de ${MAX_CONVERT_BYTES / 1048576} MB.`);
+    return { name: file.name, size: file.size, lastModified: file.lastModified, bytes: new Uint8Array(await file.arrayBuffer()) };
   },
 
   importDroppedFile(format, file) {

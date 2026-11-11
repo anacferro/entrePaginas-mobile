@@ -44,7 +44,7 @@ function toJson(book) {
 }
 
 function downloadOnWeb(content, name, mime) {
-  const url = URL.createObjectURL(new Blob([content], { type: `${mime};charset=utf-8` }));
+  const url = URL.createObjectURL(new Blob([content], { type: typeof content === 'string' ? `${mime};charset=utf-8` : mime }));
   const link = document.createElement('a');
   link.href = url;
   link.download = name;
@@ -54,7 +54,22 @@ function downloadOnWeb(content, name, mime) {
   URL.revokeObjectURL(url);
 }
 
+async function shareBytes(bytes, name, mime) {
+  if (Platform.OS === 'web') {
+    downloadOnWeb(bytes, name, mime);
+    return;
+  }
+  if (!(await Sharing.isAvailableAsync())) throw new Error('O compartilhamento não está disponível neste aparelho.');
+  const file = new File(Paths.cache, name);
+  if (file.exists) file.delete();
+  file.create();
+  file.write(bytes);
+  await Sharing.shareAsync(file.uri, { mimeType: mime, dialogTitle: name });
+}
+
 export const exporter = {
+  shareFile: shareBytes,
+
   async exportBook(book, format) {
     const info = FORMATS[format];
     if (!info) throw new Error('Formato de exportação inválido.');

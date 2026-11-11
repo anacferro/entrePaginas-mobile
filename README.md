@@ -231,7 +231,7 @@ Tudo vem do registro real de leitura, das notas e dos metadados dos livros. Indi
 ### Testes
 
 ```bash
-node --test tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
+node --test tests/converter.test.mjs tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
 ```
 
 Cobrem deduplicação, classificação de disponibilidade, perfil e inferência, regras de diversidade, validação da IA contra o catálogo e cálculo das estatísticas com dados conhecidos. `node tests/live-catalog.mjs "dom casmurro"` consulta as fontes reais (precisa de internet; `LANG_FILTER=pt` filtra por idioma). O aviso `MODULE_TYPELESS_PACKAGE_JSON` do Node é inofensivo.
@@ -241,6 +241,24 @@ Cobrem deduplicação, classificação de disponibilidade, perfil e inferência,
 - Só o Project Gutenberg abre o texto dentro do app; as demais fontes abrem na plataforma de origem. No navegador, o download do texto do Gutenberg é barrado por CORS; no celular funciona.
 - A classificação de gênero das fontes é aproximada (assunto da fonte ou título). Livros só do Internet Archive não são recomendados por falta de curadoria.
 - O conteúdo sugerido como "perspectiva diferente" não passa por verificação de mérito.
+
+## 🔄 Converter arquivo em livro
+
+Em **Criar > Importar**, o cartão "Converter arquivo em livro" transforma um documento em EPUB, PDF ou JSON do app e o adiciona à estante. Tudo roda no aparelho (`src/services/converter/`, tela em `src/components/ConvertBookFlow.js`); o arquivo original nunca é alterado nem apagado. Os quatro cartões de importação anteriores continuam iguais.
+
+**Fluxo:** escolher (ou arrastar, na web) → análise → recomendação de formato → ajustes → conversão com conferência → prévia → confirmar.
+
+**Entrada:** DOCX, ODT, RTF, TXT, MD, HTML, XML e PDF (texto). DOC antigo (Word 97-2003) e arquivos protegidos por senha são recusados com orientação. O tipo é detectado pelo conteúdo, não pela extensão.
+
+**Saída:** EPUB 3 (com sumário, capa, capítulos, imagens e CSS conforme os ajustes), PDF (Times, margens, cabeçalho, numeração, sumário, imagens JPEG/PNG) e JSON no padrão do app. A conversão é escrita em JavaScript puro (`pako` para compressão), sem servidor.
+
+**Critérios da recomendação:** regras sobre números reais do documento. EPUB pontua texto longo, capítulos e títulos, parágrafos longos; PDF pontua tabelas (principalmente largas), densidade de imagens, gráficos, cabeçalho/rodapé com notas, origem em PDF e texto digitalizado. A confiança (alta, média, baixa) vem da diferença entre as notas. A IA, quando disponível e ligada pelo usuário, recebe só estatísticas e até 40 títulos de seção (nunca o texto), e só muda o formato quando as regras não têm confiança alta.
+
+**Segurança:** limite de 30 MB, 3000 entradas por ZIP, razão de compressão e tamanho descompactado limitados (zip bomb), macros e scripts ignorados e nunca executados, `<script>`/`<iframe>` removidos do HTML, imagens externas não são baixadas, envio duplicado bloqueado.
+
+**Conferência:** o arquivo gerado é reaberto pelo leitor do próprio app e o texto é comparado com o do documento; qualquer divergência aparece antes de adicionar.
+
+**Limites:** DOC binário, imagens de RTF, gráficos (viram aviso), PDF digitalizado (sem OCR), caracteres fora do alfabeto latino no PDF gerado (a fonte é padrão) e imagens no leitor do app (viram marcação de texto). Não houve teste em aparelho nem validação com epubcheck.
 
 ---
 

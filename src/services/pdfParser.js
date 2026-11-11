@@ -1,5 +1,5 @@
 import { inflate } from 'pako';
-import { dominantFont } from './fontHints';
+import { dominantFont } from './fontHints.js';
 
 const WIN_ANSI = {
   0x80: '€', 0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Header from '../components/Header';
 import GoogleBooksSearch from '../components/GoogleBooksSearch';
 import FormatCard from '../components/FormatCard';
+import ConvertBookFlow from '../components/ConvertBookFlow';
 import { fetchFullTextInBackground } from '../services/googleImport';
 import { importProgress } from '../services/importProgress';
 import { bookFonts } from '../services/bookFonts';
@@ -56,6 +57,7 @@ export default function CreateBookScreen({ navigation, route }) {
 
   const [selectedFormat, setSelectedFormat] = useState('pdf');
   const [importing, setImporting] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   const resetForm = useCallback(() => {
     setTitle('');
@@ -353,6 +355,18 @@ export default function CreateBookScreen({ navigation, route }) {
                 </View>
               </View>
 
+              <Touchable style={styles.convertCard} onPress={() => setConverting(true)} accessibilityLabel="Converter arquivo em livro">
+                <View style={styles.convertIcon}>
+                  <Ionicons name="sparkles-outline" size={24} color={colors.onPrimary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.convertTitle}>Converter arquivo em livro</Text>
+                  <Text style={styles.convertText}>Transforme seus documentos em livros digitais preparados para leitura no aplicativo.</Text>
+                  <Text style={styles.convertFormats}>DOCX, ODT, RTF, TXT, MD, HTML, XML, PDF</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+              </Touchable>
+
               <View style={styles.formatsGrid}>
                 {IMPORT_FORMATS.map((item) => (
                   <FormatCard
@@ -370,6 +384,8 @@ export default function CreateBookScreen({ navigation, route }) {
               </View>
             </View>
           )}
+
+          <ConvertBookFlow visible={converting} onClose={() => setConverting(false)} onImport={saveImported} />
 
           {activeTab === 'create' && (
             <View style={styles.bottomCard}>
@@ -485,6 +501,28 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.heading,
   },
+  convertCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+    marginBottom: 14,
+  },
+  convertIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  convertTitle: { fontSize: 16, fontWeight: '700', color: colors.text },
+  convertText: { fontSize: 12, lineHeight: 17, color: colors.textSecondary, marginTop: 2 },
+  convertFormats: { fontSize: 11, fontWeight: '700', color: colors.primary, marginTop: 6 },
   formatsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
