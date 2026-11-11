@@ -174,7 +174,7 @@ Limites assumidos: as preferências não sincronizam entre aparelhos; a anotaç�
 - **Leitor:** toque em "Página N de M" para ver progresso, início, previsão de término (depois de ler em 2 dias diferentes), conclusão, **registrar a página atual** e marcar como lido ou voltar para lendo. Ao ler a última página, o livro é concluído e o app avisa.
 - **Painel no Perfil:** livros lidos, em andamento e planejados; páginas lidas; tempo de leitura; média de páginas por dia (últimos 30 dias); gráfico de 14 dias e de 6 meses; comparativo com o mês e o ano anteriores; **meta anual** de livros; atividade recente.
 - **Dados reais:** tudo vem do registro de leitura (`services/readingLog.js`), guardado só no aparelho. Páginas lidas contam avanços de 1 ou 2 páginas e o registro manual; saltos pelo sumário e voltas não contam, e o tempo parado acima de 5 minutos é descartado. Detalhes em `Docs/EstruturaDados.md`.
-- **Avisos e carregamento:** confirmações discretas no topo (salvar, excluir, restaurar, meta), *skeleton* na estante, no baú e no painel, e confirmação antes de excluir.
+- **Avisos e carregamento:** confirmações discretas no topo (salvar, excluir, restaurar, meta), *skeleton* na estante, no baú e nas estatísticas, e confirmação antes de excluir.
 - **Limites assumidos:** o registro de leitura e as avaliações não sincronizam com a nuvem. Notas, estatísticas completas e recomendações estão na seção *Descoberta, Avaliações, Recomendações e Estatísticas*.
 
 ---
@@ -271,7 +271,7 @@ entrePaginas-mobile/
 │   │   ├── SpoilerBadge.js    # Selo "Sem spoilers · até a folha N"
 │   │   ├── Avatar.js          # Iniciais do usuário
 │   │   ├── AnnotatedText.js   # Texto do leitor com grifos e seleção de trechos
-│   │   ├── BarChart.js        # Gráfico de barras do painel de leitura
+│   │   ├── BarChart.js        # Gráfico de barras das estatísticas
 │   │   ├── BookCard.js        # Card de livro com menu de ações, status e progresso
 │   │   ├── BookEditModal.js   # Edição de título, categoria e cores do livro
 │   │   ├── BookCover.js       # Capa de livro artesanal tátil
@@ -287,10 +287,10 @@ entrePaginas-mobile/
 │   │   ├── Header.js          # Barra superior institucional
 │   │   ├── LoadingView.js     # Tratamento de estado de carregamento
 │   │   ├── ProgressBar.js     # Barra de progresso animada e acessível
-│   │   ├── ReadingDashboard.js # Painel de leitura do Perfil
+│   │   ├── GoalModal.js       # Edição da meta anual de leitura
 │   │   ├── ReaderSettings.js  # Painel de ajustes do leitor (aparência, tipografia, espaçamento, leitura)
 │   │   ├── ReadingProgressModal.js # Progresso do livro e registro de página no leitor
-│   │   ├── Skeleton.js        # Carregamento em esqueleto (estante, baú e painel)
+│   │   ├── Skeleton.js        # Carregamento em esqueleto (estante, baú e estatísticas)
 │   │   ├── StatusChip.js      # Selo de status do livro
 │   │   ├── Toast.js           # Avisos discretos de sucesso, erro e informação
 │   │   └── Touchable.js       # Botão base com cor ao passar o mouse e ao tocar
@@ -301,7 +301,7 @@ entrePaginas-mobile/
 │   │   ├── ChestScreen.js     # Baú de livros arquivados
 │   │   ├── CreateBookScreen.js# Criação e importação de obras
 │   │   ├── LoginScreen.js     # Tela de login
-│   │   ├── ProfileScreen.js   # Perfil e painel de leitura
+│   │   ├── ProfileScreen.js   # Perfil, perfil literário e dados do acervo
 │   │   ├── ReaderScreen.js    # Leitor de livros com sumário e tipografia
 │   │   └── SettingsScreen.js  # Tema, conta (sair) e apagar dados
 │   ├── services/
@@ -328,7 +328,7 @@ entrePaginas-mobile/
 │   │   ├── bookPages.js       # Contagem de páginas de leitura de cada livro (a mesma do leitor)
 │   │   ├── readerPrefs.js     # Preferências do leitor: padrões, limites e validação
 │   │   ├── readingLog.js      # Registro de leitura: páginas por dia, tempo, início, conclusão e meta
-│   │   ├── readingStats.js    # Estatísticas do painel, status e previsão de término
+│   │   ├── readingStats.js    # Status de leitura e previsão de término
 │   │   ├── pagination.js      # Divide os capítulos em páginas de leitura
 │   │   ├── pdfParser.js       # Extração de texto, páginas e fonte de PDFs
 │   │   ├── publicDomain.js    # Busca e baixa textos do Project Gutenberg

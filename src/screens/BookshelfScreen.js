@@ -38,7 +38,6 @@ export default function BookshelfScreen({ navigation }) {
   const [books, setBooks] = useState([]);
   const [reading, setReading] = useState({ positions: {}, log: { books: {} } });
   const [statusFilter, setStatusFilter] = useState('all');
-  const [chestCount, setChestCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -53,15 +52,13 @@ export default function BookshelfScreen({ navigation }) {
       if (!isPullRefresh) setLoading(true);
       setError(null);
 
-      const [booksData, chestData, readingData] = await Promise.all([
+      const [booksData, readingData] = await Promise.all([
         storage.getBooks(isPullRefresh ? 200 : 350),
-        storage.getChestBooks(0),
         storage.getReadingOverview(),
       ]);
 
       setBooks(withPageCounts(booksData));
       setReading(readingData);
-      setChestCount(chestData.length);
       resumePendingTexts(booksData);
     } catch (err) {
       setError(err.message || 'Falha ao carregar volumes da estante.');
@@ -266,42 +263,6 @@ export default function BookshelfScreen({ navigation }) {
           )}
         </View>
 
-        <View style={styles.bannersRow}>
-          <Touchable
-            style={styles.chestBanner}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('Bau')}
-          >
-            <View style={styles.bannerTopRow}>
-              <View style={styles.chestIconSquare}>
-                <Ionicons name="archive" size={16} color={colors.secondary} />
-              </View>
-              <View style={styles.counterPill}>
-                <Text style={styles.counterPillText}>{chestCount} guardados</Text>
-              </View>
-            </View>
-            <Text style={styles.bannerTitle}>Baú Literário</Text>
-            <Text style={styles.bannerSubtitle}>Volumes em descanso</Text>
-          </Touchable>
-
-          <Touchable
-            style={styles.newBookBanner}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate('CriarObra', { initialTab: 'create' })}
-          >
-            <View style={styles.bannerTopRow}>
-              <View style={styles.newBookIconSquare}>
-                <Ionicons name="book" size={16} color={colors.onDark} />
-              </View>
-              <Ionicons name="add" size={20} color={colors.onDark} opacity={0.8} />
-            </View>
-            <Text style={[styles.bannerTitle, { color: colors.onDark }]}>Novo Livro</Text>
-            <Text style={[styles.bannerSubtitle, { color: colors.onDark }]}>
-              Criar encadernação
-            </Text>
-          </Touchable>
-        </View>
-
         {!selecting && books.length > 0 && (
           <ScrollView
             horizontal
@@ -502,81 +463,6 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: colors.text,
-  },
-  bannersRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  chestBanner: {
-    flex: 1,
-    backgroundColor: colors.surfaceMuted,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  newBookBanner: {
-    flex: 1,
-    backgroundColor: colors.secondary,
-    borderRadius: 16,
-    padding: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  bannerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  chestIconSquare: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  newBookIconSquare: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  counterPill: {
-    backgroundColor: colors.surfaceMuted,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  counterPillText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.textSecondary,
-  },
-  bannerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: fonts.heading,
-    marginBottom: 2,
-  },
-  bannerSubtitle: {
-    fontSize: 11,
-    color: colors.textSecondary,
   },
   sectionHeaderRow: {
     flexDirection: 'row',

@@ -11,42 +11,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
-import { withPageCounts } from '../services/bookPages';
 import Avatar from '../components/Avatar';
-import ReadingDashboard from '../components/ReadingDashboard';
 import ErrorView from '../components/ErrorView';
 import Touchable from '../components/Touchable';
-import { useToast } from '../components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { fonts, layout, radius, space, shadow } from '../theme/tokens';
 
-const EMPTY_OVERVIEW = { positions: {}, log: { books: {}, days: {}, goal: null } };
-
 export default function ProfileScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const toast = useToast();
   const [user, setUser] = useState(null);
-  const [books, setBooks] = useState([]);
-  const [overview, setOverview] = useState(EMPTY_OVERVIEW);
   const [libraryStats, setLibraryStats] = useState({ active: 0, chest: 0, chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const loadUserData = async () => {
     try {
       setError(null);
-      const [u, active, chest, reading] = await Promise.all([
+      const [u, active, chest] = await Promise.all([
         storage.getUserProfile(),
         storage.getBooks(0),
         storage.getChestBooks(0),
-        storage.getReadingOverview(),
       ]);
       setUser(u);
-      setBooks(withPageCounts(active));
-      setOverview(reading);
       const allBooks = [...active, ...chest];
       setLibraryStats({
         active: active.length,
@@ -60,9 +48,8 @@ export default function ProfileScreen({ navigation }) {
         sizeKb: Math.max(1, Math.round(JSON.stringify(allBooks).length / 1024)),
       });
     } catch {
-      setError('Não foi possível carregar seu painel de leitura. Toque em tentar de novo ou puxe a tela para baixo.');
+      setError('Não foi possível carregar seu perfil. Toque em tentar de novo ou puxe a tela para baixo.');
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
@@ -72,25 +59,6 @@ export default function ProfileScreen({ navigation }) {
       loadUserData();
     }, [])
   );
-
-  const saveGoal = async (target) => {
-    try {
-      await storage.setReadingGoal(target);
-      setOverview(await storage.getReadingOverview());
-      toast.show(target > 0 ? 'Meta de leitura salva.' : 'Meta de leitura removida.');
-    } catch {
-      toast.show('Não foi possível salvar a meta. Tente de novo.', 'error');
-    }
-  };
-
-  const openBook = (bookId) => {
-    const book = books.find(b => b.id === bookId);
-    if (!book || book.locked) {
-      navigation.navigate('Estante');
-      return;
-    }
-    navigation.navigate('Reader', { bookId: book.id, bookTitle: book.title });
-  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -136,21 +104,7 @@ export default function ProfileScreen({ navigation }) {
           <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Touchable>
 
-        <Text style={styles.sectionTitle}>Painel de leitura</Text>
-
-        {error ? (
-          <ErrorView title="Falha ao carregar" message={error} onRetry={loadUserData} />
-        ) : (
-          <ReadingDashboard
-            books={books}
-            positions={overview.positions}
-            log={overview.log}
-            loading={loading}
-            onSaveGoal={saveGoal}
-            onCreate={() => navigation.navigate('CriarObra')}
-            onOpenBook={openBook}
-          />
-        )}
+        {error ? <ErrorView title="Falha ao carregar" message={error} onRetry={loadUserData} /> : null}
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionCardHeader}>
@@ -268,13 +222,6 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    lineHeight: 28,
-    color: colors.text,
-    fontFamily: fonts.heading,
-    marginBottom: space.md,
   },
   sectionCard: {
     backgroundColor: colors.card,

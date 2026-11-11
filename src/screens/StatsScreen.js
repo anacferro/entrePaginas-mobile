@@ -8,6 +8,8 @@ import Touchable from '../components/Touchable';
 import BarChart from '../components/BarChart';
 import ErrorView from '../components/ErrorView';
 import LoadingView from '../components/LoadingView';
+import GoalModal from '../components/GoalModal';
+import { useToast } from '../components/Toast';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { fonts, layout, radius, space } from '../theme/tokens';
 import { storage } from '../services/storage';
@@ -96,6 +98,8 @@ function Rows({ rows, styles }) {
 export default function StatsScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const toast = useToast();
+  const [goalOpen, setGoalOpen] = useState(false);
   const [data, setData] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,6 +130,17 @@ export default function StatsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const saveGoal = async (target) => {
+    try {
+      await storage.setReadingGoal(target);
+      setGoalOpen(false);
+      await load();
+      toast.show(target > 0 ? 'Meta de leitura salva.' : 'Meta de leitura removida.');
+    } catch {
+      toast.show('Não foi possível salvar a meta. Tente de novo.', 'error');
+    }
+  };
 
   const { books, positions, log, personal } = data;
   const ind = useMemo(() => indicators({ books, positions, log, personal, now }), [books, positions, log, personal, now]);
@@ -179,13 +194,22 @@ export default function StatsScreen() {
               <Tile styles={styles} label="Dias de leitura" value={ind.streak.readingDays} />
             </View>
 
-            {ind.goal ? (
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Meta de {ind.goal.year}</Text>
-                <View style={styles.goalTrack}><View style={[styles.goalFill, { width: `${ind.goal.percent}%` }]} /></View>
-                <Text style={styles.muted}>{ind.goal.done} de {ind.goal.target} livros ({ind.goal.percent}%)</Text>
+            <View style={styles.card}>
+              <View style={styles.goalHead}>
+                <Text style={styles.cardTitle}>{ind.goal ? `Meta de ${ind.goal.year}` : 'Meta de leitura'}</Text>
+                <Touchable style={styles.goalEdit} onPress={() => setGoalOpen(true)} accessibilityLabel={ind.goal ? 'Editar meta de leitura' : 'Definir meta de leitura'}>
+                  <Text style={styles.goalEditText}>{ind.goal ? 'Editar' : 'Definir meta'}</Text>
+                </Touchable>
               </View>
-            ) : null}
+              {ind.goal ? (
+                <>
+                  <View style={styles.goalTrack}><View style={[styles.goalFill, { width: `${ind.goal.percent}%` }]} /></View>
+                  <Text style={styles.muted}>{ind.goal.done} de {ind.goal.target} livros ({ind.goal.percent}%)</Text>
+                </>
+              ) : (
+                <Text style={styles.muted}>Defina quantos livros quer concluir neste ano e acompanhe o progresso aqui.</Text>
+              )}
+            </View>
 
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Livros concluídos ao longo do tempo</Text>
@@ -265,6 +289,7 @@ export default function StatsScreen() {
           </>
         ) : null}
       </ScrollView>
+      <GoalModal visible={goalOpen} current={ind.goal ? ind.goal.target : 0} onClose={() => setGoalOpen(false)} onSave={saveGoal} />
     </SafeAreaView>
   );
 }
@@ -284,6 +309,9 @@ const createStyles = (colors) => StyleSheet.create({
   tileHint: { fontSize: 10, color: colors.textSecondary },
   card: { padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.borderLight, gap: space.md },
   cardTitle: { fontSize: 16, color: colors.text, fontFamily: fonts.heading },
+  goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.md },
+  goalEdit: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1.5, borderColor: colors.border },
+  goalEditText: { fontSize: 12, fontWeight: '700', color: colors.primary },
   goalTrack: { height: 12, borderRadius: 6, backgroundColor: colors.borderLight, overflow: 'hidden' },
   goalFill: { height: '100%', backgroundColor: colors.primary },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
