@@ -47,19 +47,22 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function ReaderScreen(props) {
   const { isDark: appDark } = useTheme();
+  const prefsBookId = props.route?.params?.bookId;
   const [prefs, setPrefs] = useState(null);
   const latest = useRef(null);
   const dirty = useRef(false);
 
   useEffect(() => {
     let active = true;
-    storage.getReaderPrefs()
+    setPrefs(null);
+    dirty.current = false;
+    storage.getReaderPrefs(prefsBookId)
       .then((loaded) => active && setPrefs(loaded))
       .catch(() => active && setPrefs(normalizePrefs(null)));
     return () => {
       active = false;
     };
-  }, []);
+  }, [prefsBookId]);
 
   const updatePrefs = useCallback((patch) => {
     setPrefs((current) => {
@@ -76,14 +79,14 @@ export default function ReaderScreen(props) {
     if (!dirty.current) return undefined;
     const timer = setTimeout(() => {
       dirty.current = false;
-      storage.setReaderPrefs(latest.current).catch(() => {});
+      storage.setReaderPrefs(prefsBookId, latest.current).catch(() => {});
     }, 400);
     return () => clearTimeout(timer);
-  }, [prefs]);
+  }, [prefs, prefsBookId]);
 
   useEffect(() => () => {
-    if (dirty.current) storage.setReaderPrefs(latest.current).catch(() => {});
-  }, []);
+    if (dirty.current) storage.setReaderPrefs(prefsBookId, latest.current).catch(() => {});
+  }, [prefsBookId]);
 
   if (!prefs) return <View style={{ flex: 1, backgroundColor: appDark ? '#0F1A15' : '#FAF8F1' }} />;
 

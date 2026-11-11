@@ -41,7 +41,8 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
               style={styles.centerButtonWrapper}
             >
               <View style={[styles.centerCircle, isFocused && styles.centerCircleActive]}>
-                <Ionicons name="add" size={28} color={colors.onPrimary} />
+                <View style={styles.plusH} />
+                <View style={styles.plusV} />
               </View>
               <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                 Novo Livro
@@ -121,6 +122,20 @@ const createStyles = (colors) => StyleSheet.create({
     elevation: 6,
     borderWidth: 2,
     borderColor: colors.card,
+  },
+  plusH: {
+    position: 'absolute',
+    width: 20,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.onPrimary,
+  },
+  plusV: {
+    position: 'absolute',
+    width: 3,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: colors.onPrimary,
   },
   centerCircleActive: {
     backgroundColor: colors.primaryDark,

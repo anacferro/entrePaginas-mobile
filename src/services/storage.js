@@ -488,17 +488,35 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.CHARACTERS, JSON.stringify(maps));
   },
 
-  async getReaderPrefs() {
+  async getReaderPrefs(bookId) {
     const json = await AsyncStorage.getItem(KEYS.READER_PREFS);
     try {
-      return normalizePrefs(json ? JSON.parse(json) : null);
+      const data = json ? JSON.parse(json) : null;
+      if (data && data.books) return normalizePrefs(data.books[bookId] || null);
+      return normalizePrefs(data);
     } catch {
       return normalizePrefs(null);
     }
   },
 
-  async setReaderPrefs(prefs) {
-    await AsyncStorage.setItem(KEYS.READER_PREFS, JSON.stringify(normalizePrefs(prefs)));
+  async setReaderPrefs(bookId, prefs) {
+    const json = await AsyncStorage.getItem(KEYS.READER_PREFS);
+    let data = null;
+    try {
+      data = json ? JSON.parse(json) : null;
+    } catch {
+      data = null;
+    }
+    const books = data && data.books ? data.books : {};
+    const legacy = data && !data.books ? data : null;
+    if (legacy) {
+      const all = await storage.getBooks(0);
+      all.forEach((b) => {
+        books[b.id] = normalizePrefs(legacy);
+      });
+    }
+    books[bookId] = normalizePrefs(prefs);
+    await AsyncStorage.setItem(KEYS.READER_PREFS, JSON.stringify({ books }));
   },
 
   async getReadingPosition(bookId) {

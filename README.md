@@ -162,7 +162,7 @@ Toque em **Aa** no topo do leitor para abrir o painel de ajustes, com prévia do
 - **Espaçamento:** entrelinha, margens laterais, espaço entre parágrafos e largura da coluna (efeito visível em telas largas).
 - **Leitura:** ocultar menus automaticamente (somem em 4 s; toque no texto para voltar), manter a tela ativa e **restaurar configurações originais**.
 
-As escolhas valem na hora, não recarregam o livro e **não mudam a página**: a paginação é por quantidade de texto, independente da aparência. São salvas por usuário no aparelho e aplicadas a todos os livros. O Sumário tem a aba **Grifos**, que lista todos os trechos grifados do livro, leva até a folha deles e permite remover cada um.
+As escolhas valem na hora, não recarregam o livro e **não mudam a página**: a paginação é por quantidade de texto, independente da aparência. São salvas **por livro** (fonte, cor da página, brilho e demais ajustes são individuais de cada obra), por usuário, no aparelho; livros ainda sem ajuste próprio começam no padrão. O Sumário tem a aba **Grifos**, que lista todos os trechos grifados do livro, leva até a folha deles e permite remover cada um.
 
 Limites assumidos: as preferências não sincronizam entre aparelhos; a anotação continua sendo o comentário por folha (não há nota presa a um trecho grifado); o "brilho" é uma película escura sobre o leitor; manter a tela ativa depende do suporte do aparelho.
 
