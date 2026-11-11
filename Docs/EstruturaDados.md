@@ -113,6 +113,26 @@ Arquivo: [`firestore.rules`](../firestore.rules), publicado com `firebase deploy
 
 As contas de teste foram removidas ao final.
 
+## 3.1 Registro de leitura (somente no aparelho)
+
+O progresso e o painel usam um registro separado, guardado no AsyncStorage por usuário (`@entre_paginas_reading_v1_<uid>`), no mesmo modelo da última página lida. Ele **não vai para o Firestore**: o banco e as regras de segurança continuam iguais, e os dados dos livros não mudam.
+
+```json
+{
+  "version": 1,
+  "books": {
+    "<bookId>": { "startedAt": "ISO ou null", "lastReadAt": "ISO", "finishedAt": "ISO ou null", "credited": 4, "seconds": 120 }
+  },
+  "days": { "2026-11-11": { "<bookId>": { "pages": 4, "seconds": 120 } } },
+  "goal": { "year": 2026, "target": 12 }
+}
+```
+
+- `credited` é a página mais avançada alcançada lendo. Só avanços de 1 ou 2 páginas e o registro manual de página somam ao dia; saltos pelo sumário e voltas a páginas já lidas não somam.
+- `seconds` soma o tempo com o leitor aberto, limitado a 5 minutos entre uma ação e outra (tempo parado não conta).
+- Livros lidos antes desta versão entram como "lendo" no ponto onde pararam, sem data de início.
+- Excluir um livro remove o registro dele, inclusive do histórico diário. Apagar todos os dados limpa o registro.
+
 ## 4. Como a sincronização funciona
 
 1. Ao entrar, o app lê os livros da nuvem e mescla com os locais. Para o mesmo livro vence a versão com `updatedAt` mais recente. Livros que só existem num dos lados são mantidos.

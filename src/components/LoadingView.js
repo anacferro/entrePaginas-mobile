@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import { fonts } from '../theme/tokens';
 
 export default function LoadingView({ message = 'Folheando os tomos da estante...' }) {
   const { colors } = useTheme();
@@ -35,7 +36,7 @@ const createStyles = (colors) => StyleSheet.create({
   text: {
     fontSize: 14,
     color: colors.textSecondary,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     fontStyle: 'italic',
     textAlign: 'center',
   },

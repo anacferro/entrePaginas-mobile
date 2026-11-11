@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { diffSnippet } from '../services/marks';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import { fonts } from '../theme/tokens';
 
 const typeInfo = (colors) => ({
   edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accent },
@@ -160,7 +161,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   topBarSubtitle: {
     fontSize: 12,
@@ -217,7 +218,7 @@ const createStyles = (colors) => StyleSheet.create({
   entryChapter: {
     fontSize: 12,
     color: colors.textSecondary,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginTop: 1,
   },
   entryDate: {
@@ -253,7 +254,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   removedText: {
     backgroundColor: colors.diffRemove,

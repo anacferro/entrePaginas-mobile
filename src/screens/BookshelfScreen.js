@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,10 @@ import { importProgress } from '../services/importProgress';
 import { resumePendingTexts } from '../services/googleImport';
 import Header from '../components/Header';
 import BookCard from '../components/BookCard';
-import LoadingView from '../components/LoadingView';
+import { SkeletonShelf } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
+import { withPageCounts } from '../services/bookPages';
+import { progressOf, STATUS, STATUS_LABELS } from '../services/readingStats';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
@@ -25,11 +28,16 @@ import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
+import { fonts } from '../theme/tokens';
+import { SHELF_MAX_WIDTH } from '../components/BookCover';
 
 export default function BookshelfScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const toast = useToast();
   const [books, setBooks] = useState([]);
+  const [reading, setReading] = useState({ positions: {}, log: { books: {} } });
+  const [statusFilter, setStatusFilter] = useState('all');
   const [chestCount, setChestCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,12 +53,14 @@ export default function BookshelfScreen({ navigation }) {
       if (!isPullRefresh) setLoading(true);
       setError(null);
 
-      const [booksData, chestData] = await Promise.all([
+      const [booksData, chestData, readingData] = await Promise.all([
         storage.getBooks(isPullRefresh ? 200 : 350),
         storage.getChestBooks(0),
+        storage.getReadingOverview(),
       ]);
 
-      setBooks(booksData);
+      setBooks(withPageCounts(booksData));
+      setReading(readingData);
       setChestCount(chestData.length);
       resumePendingTexts(booksData);
     } catch (err) {
@@ -96,19 +106,20 @@ export default function BookshelfScreen({ navigation }) {
   const handleMoveToChest = async (bookId) => {
     try {
       await storage.moveToChest(bookId);
-      dialog.alert('Volume Guardado', 'O livro foi transferido com segurança para o Baú Literário.');
+      toast.show('Livro guardado no Baú Literário.');
       loadData();
     } catch {
-      dialog.alert('Erro', 'Não foi possível mover o livro para o baú.');
+      toast.show('Não foi possível mover o livro para o baú. Tente de novo.', 'error');
     }
   };
 
   const handleEditBook = async (bookId, updates) => {
     try {
       await storage.updateBook(bookId, updates);
+      toast.show('Alterações salvas.');
       loadData();
     } catch {
-      dialog.alert('Erro', 'Não foi possível salvar as alterações do livro.');
+      toast.show('Não foi possível salvar as alterações. Tente de novo.', 'error');
     }
   };
 
@@ -120,9 +131,10 @@ export default function BookshelfScreen({ navigation }) {
 
     try {
       await storage.setBookLocked(book.id, !book.locked);
+      toast.show(book.locked ? 'Proteção removida.' : 'Livro protegido.');
       loadData();
     } catch {
-      dialog.alert('Erro', 'Não foi possível alterar a proteção do livro.');
+      toast.show('Não foi possível alterar a proteção do livro.', 'error');
     }
   };
 
@@ -131,7 +143,7 @@ export default function BookshelfScreen({ navigation }) {
     try {
       await exporter.exportBook(book, format);
     } catch (e) {
-      dialog.alert('Erro', e.message || 'Não foi possível exportar o livro.');
+      toast.show(e.message || 'Não foi possível exportar o livro. Tente de novo.', 'error');
     }
   };
 
@@ -146,6 +158,7 @@ export default function BookshelfScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await storage.deleteBookPermanently(bookId);
+            toast.show('Livro excluído.');
             loadData();
           },
         },
@@ -169,6 +182,7 @@ export default function BookshelfScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await storage.deleteBooksPermanently(selectedIds);
+            toast.show(count === 1 ? 'Livro excluído.' : `${count} livros excluídos.`);
             setSelectedIds([]);
             loadData();
           },
@@ -183,7 +197,22 @@ export default function BookshelfScreen({ navigation }) {
     else setSortOrder('recent');
   };
 
+  const progressById = useMemo(() => {
+    const map = {};
+    books.forEach((b) => {
+      map[b.id] = progressOf(b, reading.positions[b.id] || 1, reading.log.books[b.id]);
+    });
+    return map;
+  }, [books, reading]);
+
+  const statusCounts = useMemo(() => {
+    const counts = { all: books.length, [STATUS.READING]: 0, [STATUS.PLANNED]: 0, [STATUS.FINISHED]: 0 };
+    books.forEach((b) => { counts[progressById[b.id].status] += 1; });
+    return counts;
+  }, [books, progressById]);
+
   const filteredBooks = books
+    .filter(b => statusFilter === 'all' || progressById[b.id].status === statusFilter)
     .filter(b => matchesQuery(searchQuery, [b.title, b.subtitle, b.category, ...(b.tags || [])]))
     .sort((a, b) => {
       if (sortOrder === 'az') return a.title.localeCompare(b.title);
@@ -273,6 +302,33 @@ export default function BookshelfScreen({ navigation }) {
           </Touchable>
         </View>
 
+        {!selecting && books.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.filterScroll}
+            contentContainerStyle={styles.filterRow}
+          >
+            {[
+              { key: 'all', label: 'Todos' },
+              { key: STATUS.READING, label: STATUS_LABELS[STATUS.READING] },
+              { key: STATUS.PLANNED, label: STATUS_LABELS[STATUS.PLANNED] },
+              { key: STATUS.FINISHED, label: STATUS_LABELS[STATUS.FINISHED] },
+            ].map((item) => (
+              <Touchable
+                key={item.key}
+                style={[styles.filterChip, statusFilter === item.key && styles.filterChipOn]}
+                onPress={() => setStatusFilter(item.key)}
+                accessibilityState={{ selected: statusFilter === item.key }}
+              >
+                <Text style={[styles.filterText, statusFilter === item.key && styles.filterTextOn]}>
+                  {item.label} {statusCounts[item.key]}
+                </Text>
+              </Touchable>
+            ))}
+          </ScrollView>
+        )}
+
         {selecting ? (
           <View style={styles.selectionBar}>
             <Touchable style={styles.selectionIcon} onPress={() => setSelectedIds([])} accessibilityLabel="Cancelar seleção">
@@ -310,7 +366,7 @@ export default function BookshelfScreen({ navigation }) {
         </View>
         )}
 
-        {loading && <LoadingView message="Organizando as prateleiras da estante..." />}
+        {loading && <SkeletonShelf />}
 
         {!loading && error && (
           <ErrorView
@@ -350,6 +406,7 @@ export default function BookshelfScreen({ navigation }) {
                 onToggleLock={handleToggleLock}
                 onDelete={handleDeleteBook}
                 progress={importProgress.get(book.id)}
+                reading={progressById[book.id]}
                 selecting={selecting}
                 selected={selectedIds.includes(book.id)}
                 onLongPress={toggleSelected}
@@ -375,6 +432,39 @@ const createStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 28,
+    width: '100%',
+    maxWidth: SHELF_MAX_WIDTH,
+    alignSelf: 'center',
+  },
+  filterScroll: {
+    flexGrow: 0,
+    marginBottom: 14,
+  },
+  filterRow: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  filterChip: {
+    minHeight: 40,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterChipOn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  filterTextOn: {
+    color: colors.onPrimary,
   },
   collectionHeaderRow: {
     flexDirection: 'row',
@@ -386,7 +476,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -480,7 +570,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginBottom: 2,
   },
   bannerSubtitle: {
@@ -504,7 +594,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   volumeCountText: {
     fontSize: 12,
@@ -581,6 +671,6 @@ const createStyles = (colors) => StyleSheet.create({
   booksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
 });

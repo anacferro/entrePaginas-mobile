@@ -5,35 +5,51 @@ import {
   StyleSheet,
   ScrollView,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
 import { storage } from '../services/storage';
+import { withPageCounts } from '../services/bookPages';
 import Avatar from '../components/Avatar';
+import ReadingDashboard from '../components/ReadingDashboard';
+import ErrorView from '../components/ErrorView';
+import { useToast } from '../components/Toast';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
+import { fonts, layout, radius, space, shadow } from '../theme/tokens';
+
+const EMPTY_OVERVIEW = { positions: {}, log: { books: {}, days: {}, goal: null } };
 
 export default function ProfileScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const toast = useToast();
   const [user, setUser] = useState(null);
-  const [activeBooksCount, setActiveBooksCount] = useState(0);
-  const [chestBooksCount, setChestBooksCount] = useState(0);
-  const [libraryStats, setLibraryStats] = useState({ chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
+  const [books, setBooks] = useState([]);
+  const [overview, setOverview] = useState(EMPTY_OVERVIEW);
+  const [libraryStats, setLibraryStats] = useState({ active: 0, chest: 0, chapters: 0, bookmarks: 0, marks: 0, sizeKb: 0 });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadUserData = async () => {
     try {
-      const [u, books, chest] = await Promise.all([
+      setError(null);
+      const [u, active, chest, reading] = await Promise.all([
         storage.getUserProfile(),
-        storage.getBooks(0).catch(() => []),
-        storage.getChestBooks(0).catch(() => []),
+        storage.getBooks(0),
+        storage.getChestBooks(0),
+        storage.getReadingOverview(),
       ]);
       setUser(u);
-      setActiveBooksCount(books.length);
-      setChestBooksCount(chest.length);
-      const allBooks = [...books, ...chest];
+      setBooks(withPageCounts(active));
+      setOverview(reading);
+      const allBooks = [...active, ...chest];
       setLibraryStats({
+        active: active.length,
+        chest: chest.length,
         chapters: allBooks.reduce((sum, b) => sum + (b.chapters?.length || 0), 0),
         bookmarks: allBooks.reduce((sum, b) => sum + (b.bookmarks?.length || 0), 0),
         marks: allBooks.reduce(
@@ -43,6 +59,10 @@ export default function ProfileScreen({ navigation }) {
         sizeKb: Math.max(1, Math.round(JSON.stringify(allBooks).length / 1024)),
       });
     } catch {
+      setError('Não foi possível carregar seu painel de leitura. Toque em tentar de novo ou puxe a tela para baixo.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -52,12 +72,47 @@ export default function ProfileScreen({ navigation }) {
     }, [])
   );
 
+  const saveGoal = async (target) => {
+    try {
+      await storage.setReadingGoal(target);
+      setOverview(await storage.getReadingOverview());
+      toast.show(target > 0 ? 'Meta de leitura salva.' : 'Meta de leitura removida.');
+    } catch {
+      toast.show('Não foi possível salvar a meta. Tente de novo.', 'error');
+    }
+  };
+
+  const openBook = (bookId) => {
+    const book = books.find(b => b.id === bookId);
+    if (!book || book.locked) {
+      navigation.navigate('Estante');
+      return;
+    }
+    navigation.navigate('Reader', { bookId: book.id, bookTitle: book.title });
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadUserData();
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.surfaceSoft} />
       <Header subtitle="Perfil" />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <View style={styles.userCard}>
           <View style={styles.avatarWrapper}>
             <Avatar size={60} style={styles.avatarImg} />
@@ -71,57 +126,47 @@ export default function ProfileScreen({ navigation }) {
           </View>
         </View>
 
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <View style={styles.statIconCircle}>
-              <Ionicons name="book-outline" size={18} color={colors.primary} />
-            </View>
-            <Text style={styles.statNumber}>{activeBooksCount}</Text>
-            <Text style={styles.statLabel}>Livros na Estante</Text>
-          </View>
+        <Text style={styles.sectionTitle}>Painel de leitura</Text>
 
-          <View style={styles.statBox}>
-            <View style={styles.statIconCircle}>
-              <Ionicons name="archive-outline" size={18} color={colors.secondary} />
-            </View>
-            <Text style={styles.statNumber}>{chestBooksCount}</Text>
-            <Text style={styles.statLabel}>Livros no Baú</Text>
-          </View>
-
-          <View style={styles.statBox}>
-            <View style={styles.statIconCircle}>
-              <Ionicons name="reader-outline" size={18} color={colors.accent} />
-            </View>
-            <Text style={styles.statNumber}>{libraryStats.chapters}</Text>
-            <Text style={styles.statLabel}>Capítulos</Text>
-          </View>
-        </View>
+        {error ? (
+          <ErrorView title="Falha ao carregar" message={error} onRetry={loadUserData} />
+        ) : (
+          <ReadingDashboard
+            books={books}
+            positions={overview.positions}
+            log={overview.log}
+            loading={loading}
+            onSaveGoal={saveGoal}
+            onCreate={() => navigation.navigate('CriarObra')}
+            onOpenBook={openBook}
+          />
+        )}
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionCardHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="phone-portrait-outline" size={18} color={colors.success} style={{ marginRight: 8 }} />
-              <Text style={styles.sectionCardTitle}>Armazenamento</Text>
+            <View style={styles.sectionCardTitleRow}>
+              <Ionicons name="library-outline" size={18} color={colors.primary} style={styles.sectionCardIcon} />
+              <Text style={styles.sectionCardTitle}>Acervo</Text>
             </View>
             <View style={styles.storageTag}>
               <Text style={styles.storageTagText}>Local</Text>
             </View>
           </View>
 
-          <View style={styles.storageRow}>
-            <Text style={styles.storageLabel}>Espaço do acervo</Text>
-            <Text style={styles.storageValue}>{libraryStats.sizeKb.toLocaleString('pt-BR')} KB</Text>
-          </View>
-          <View style={styles.storageRow}>
-            <Text style={styles.storageLabel}>Páginas marcadas</Text>
-            <Text style={styles.storageValue}>{libraryStats.bookmarks}</Text>
-          </View>
-          <View style={styles.storageRow}>
-            <Text style={styles.storageLabel}>Trechos grifados</Text>
-            <Text style={styles.storageValue}>{libraryStats.marks}</Text>
-          </View>
+          {[
+            ['Livros na estante', libraryStats.active],
+            ['Livros no baú', libraryStats.chest],
+            ['Capítulos', libraryStats.chapters],
+            ['Páginas marcadas', libraryStats.bookmarks],
+            ['Trechos grifados', libraryStats.marks],
+            ['Espaço do acervo', `${libraryStats.sizeKb.toLocaleString('pt-BR')} KB`],
+          ].map(([label, value]) => (
+            <View key={label} style={styles.storageRow}>
+              <Text style={styles.storageLabel}>{label}</Text>
+              <Text style={styles.storageValue}>{typeof value === 'number' ? value.toLocaleString('pt-BR') : value}</Text>
+            </View>
+          ))}
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -136,19 +181,23 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
+    paddingHorizontal: space.lg,
+    paddingTop: space.lg,
+    paddingBottom: space.xxl,
+    width: '100%',
+    maxWidth: layout.maxWidth,
+    alignSelf: 'center',
   },
   userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceWarm,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: space.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
-    marginBottom: 16,
+    marginBottom: space.xl,
+    ...shadow.card,
   },
   avatarWrapper: {
     position: 'relative',
@@ -179,72 +228,48 @@ const createStyles = (colors) => StyleSheet.create({
   },
   userName: {
     fontSize: 19,
-    fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   userEmail: {
     fontSize: 13,
     color: colors.textSecondary,
     marginTop: 2,
   },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.surfaceWarm,
-    borderRadius: 14,
-    padding: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  statIconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: '700',
+  sectionTitle: {
+    fontSize: 22,
+    lineHeight: 28,
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
-  },
-  statLabel: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 2,
-    fontWeight: '500',
+    fontFamily: fonts.heading,
+    marginBottom: space.md,
   },
   sectionCard: {
-    backgroundColor: colors.surfaceWarm,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    padding: space.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
-    marginBottom: 16,
+    marginTop: space.sm,
+    marginBottom: space.lg,
+    ...shadow.card,
   },
   sectionCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: space.md,
+  },
+  sectionCardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionCardIcon: {
+    marginRight: space.sm,
   },
   sectionCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 17,
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   storageTag: {
     backgroundColor: colors.surfaceMuted,
@@ -260,17 +285,17 @@ const createStyles = (colors) => StyleSheet.create({
   storageRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
   storageLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     fontWeight: '500',
   },
   storageValue: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.text,
   },

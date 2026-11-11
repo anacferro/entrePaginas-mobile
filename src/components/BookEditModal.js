@@ -14,6 +14,7 @@ import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fiel
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import { fonts } from '../theme/tokens';
 
 export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const { colors } = useTheme();
@@ -186,7 +187,7 @@ const createStyles = (colors) => StyleSheet.create({
   topBarTitle: {
     fontSize: 15,
     fontWeight: '700',
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     color: colors.text,
   },
   saveBtn: {

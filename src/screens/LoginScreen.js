@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authService } from '../services/auth';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
+import { fonts } from '../theme/tokens';
 
 function useEntrance(delay) {
   const [value] = useState(() => new Animated.Value(0));
@@ -238,12 +239,12 @@ const createStyles = (colors) => StyleSheet.create({
     justifyContent: 'center',
   },
   brandName: {
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     fontSize: 20,
     color: colors.heroText,
   },
   headline: {
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     fontSize: 30,
     lineHeight: 34,
     letterSpacing: -1,
@@ -349,7 +350,7 @@ const createStyles = (colors) => StyleSheet.create({
     paddingBottom: 28,
   },
   formTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     fontSize: 26,
     letterSpacing: -0.5,
     color: colors.text,

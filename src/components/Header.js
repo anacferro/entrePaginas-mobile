@@ -5,6 +5,7 @@ import Avatar from './Avatar';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import { fonts } from '../theme/tokens';
 
 export default function Header({ subtitle = 'Estante', onProfilePress, onLogoPress }) {
   const { colors } = useTheme();
@@ -87,7 +88,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.primary,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     letterSpacing: -0.3,
   },
   brandSubtitle: {

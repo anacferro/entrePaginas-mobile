@@ -8,6 +8,7 @@ import { categories as categoryStore } from '../services/categories';
 import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { BOOK_FONTS, fontFamilyFor } from '../theme/bookOptions';
+import { fonts } from '../theme/tokens';
 
 export const METRICS = {
   inputHeight: 48,
@@ -297,7 +298,7 @@ const createStyles = (colors) => StyleSheet.create({
     gap: 8,
   },
   sectionTitle: {
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     fontSize: 16,
     color: colors.text,
   },

@@ -18,6 +18,7 @@ import { ai } from '../services/ai';
 import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import { fonts } from '../theme/tokens';
 
 export default function ChapterEditor({
   visible,
@@ -245,7 +246,7 @@ const createStyles = (colors) => StyleSheet.create({
   topBarTitle: {
     fontSize: 15,
     fontWeight: '700',
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   saveBtn: {
     backgroundColor: colors.primary,
@@ -288,7 +289,7 @@ const createStyles = (colors) => StyleSheet.create({
   titleInput: {
     fontSize: 20,
     fontWeight: '700',
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     paddingVertical: 8,
     borderBottomWidth: 1,
     marginBottom: 14,
@@ -297,7 +298,7 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     fontSize: 17,
     lineHeight: 28,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     paddingBottom: 16,
   },
   footer: {

@@ -166,7 +166,20 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | RF-CFG-01 | O sistema deve oferecer o tema Automático, Claro ou Escuro, lembrado no aparelho. | I |
 | RF-CFG-02 | O sistema deve exibir um perfil com nome, e-mail, quantidade de livros, capítulos, grifos, marcadores e espaço usado. | D |
 
-### 7.11 Falhas e estados (ERR)
+### 7.11 Painel e progresso de leitura (PAI)
+
+| ID | Requisito | Prioridade |
+| :--- | :--- | :--- |
+| RF-PAI-01 | O sistema deve calcular o status de cada livro da estante (Quero ler, Lendo ou Lido) a partir da leitura real e exibi-lo no cartão, com percentual e barra de progresso. | I |
+| RF-PAI-02 | O sistema deve permitir filtrar a estante por status, com a contagem de livros de cada um. | I |
+| RF-PAI-03 | No leitor, o sistema deve mostrar página atual, total, percentual, data de início, previsão de término e data de conclusão, e permitir registrar a página atual. | I |
+| RF-PAI-04 | O sistema deve concluir o livro ao ler a última página, permitir marcar como lido ou voltar para lendo, e avisar a conclusão. | I |
+| RF-PAI-05 | O sistema deve registrar páginas lidas por dia e tempo de leitura, sem contar saltos de capítulo, voltas a páginas já lidas nem tempo parado acima de 5 minutos. | I |
+| RF-PAI-06 | O perfil deve exibir um painel com livros lidos, em andamento e planejados, páginas lidas, tempo de leitura, média de páginas por dia, gráfico dos últimos 14 dias e 6 meses, comparativo com o mês e o ano anteriores e atividade recente, sempre com dados reais. | I |
+| RF-PAI-07 | O usuário deve poder definir uma meta anual de livros concluídos e ver o progresso e quanto falta. | D |
+| RF-PAI-08 | Ao excluir um livro, o sistema deve remover também o seu registro de leitura, mantendo painel e livros coerentes. | I |
+
+### 7.12 Falhas e estados (ERR)
 
 | ID | Requisito | Prioridade |
 | :--- | :--- | :--- |
@@ -286,7 +299,8 @@ As decisões completas, com alternativas e consequências, estão em [Explicaç�
 | IA | `ReaderScreen`, `ChapterEditor` | `services/ai.js` |
 | NUV | todas | `services/cloud.js`, `firestore.rules` |
 | SEG | `BookshelfScreen`, `BookEditModal` | `services/biometrics.js` |
-| CFG | `ProfileScreen`, `SettingsScreen` | `theme/ThemeContext.js` |
+| CFG | `ProfileScreen`, `SettingsScreen` | `theme/ThemeContext.js`, `theme/palettes.js`, `theme/tokens.js` |
+| PAI | `ProfileScreen`, `BookshelfScreen`, `ReaderScreen` | `services/readingLog.js`, `services/readingStats.js`, `services/bookPages.js`, `components/ReadingDashboard.js`, `components/ReadingProgressModal.js` |
 
 ## 16. Riscos e limitações
 

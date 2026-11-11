@@ -11,8 +11,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Header from '../components/Header';
-import BookCover, { useShelfCoverWidth } from '../components/BookCover';
-import LoadingView from '../components/LoadingView';
+import BookCover, { useShelfLayout, SHELF_MAX_WIDTH } from '../components/BookCover';
+import { SkeletonShelf } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 import EmptyView from '../components/EmptyView';
 import ErrorView from '../components/ErrorView';
 import { storage } from '../services/storage';
@@ -21,11 +22,13 @@ import { dialog } from '../services/dialog';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
+import { fonts } from '../theme/tokens';
 
 export default function ChestScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
-  const coverWidth = useShelfCoverWidth();
+  const { coverWidth, cellWidth } = useShelfLayout();
+  const toast = useToast();
   const [chestBooks, setChestBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,10 +63,10 @@ export default function ChestScreen({ navigation }) {
   const handleRestoreOne = async (bookId) => {
     try {
       await storage.restoreFromChest(bookId);
-      dialog.alert('Volume Restaurado', 'O livro retornou com sucesso para a sua estante.');
+      toast.show('Livro restaurado para a estante.');
       loadChestData();
     } catch {
-      dialog.alert('Erro', 'Não foi possível restaurar o livro.');
+      toast.show('Não foi possível restaurar o livro. Tente de novo.', 'error');
     }
   };
 
@@ -78,6 +81,7 @@ export default function ChestScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await storage.deleteBookPermanently(bookId);
+            toast.show('Livro excluído.');
             loadChestData();
           },
         },
@@ -96,7 +100,7 @@ export default function ChestScreen({ navigation }) {
           text: 'Restaurar Todos',
           onPress: async () => {
             await storage.restoreAllFromChest();
-            dialog.alert('Sucesso', 'Todos os livros foram restaurados para a estante.');
+            toast.show('Todos os livros voltaram para a estante.');
             loadChestData();
           },
         },
@@ -116,6 +120,7 @@ export default function ChestScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             await storage.emptyChest();
+            toast.show('Baú esvaziado.');
             loadChestData();
           },
         },
@@ -188,7 +193,7 @@ export default function ChestScreen({ navigation }) {
           </Touchable>
         </View>
 
-        {loading && <LoadingView message="Abrindo o baú literário..." />}
+        {loading && <SkeletonShelf count={4} />}
 
         {!loading && error && (
           <ErrorView
@@ -215,7 +220,7 @@ export default function ChestScreen({ navigation }) {
         {!loading && !error && filteredBooks.length > 0 && (
           <View style={styles.booksGrid}>
             {filteredBooks.map((book) => (
-              <View key={book.id} style={styles.cardContainer}>
+              <View key={book.id} style={[styles.cardContainer, { width: cellWidth }]}>
                 <BookCover
                   title={book.title}
                   coverColor={book.coverColor}
@@ -265,12 +270,15 @@ const createStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 28,
+    width: '100%',
+    maxWidth: SHELF_MAX_WIDTH,
+    alignSelf: 'center',
   },
   screenTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginBottom: 14,
   },
   searchContainer: {
@@ -336,7 +344,7 @@ const createStyles = (colors) => StyleSheet.create({
   booksGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
   },
   cardContainer: {
     width: '48%',

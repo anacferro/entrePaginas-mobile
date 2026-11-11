@@ -3,6 +3,7 @@ import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
 import { relocateMarks } from './marks';
 import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
+import * as readingLog from './readingLog';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 
 let userId = null;
@@ -22,6 +23,7 @@ const KEYS = {
   get BOOKS() { return userId ? keyFor('books') : '@entre_paginas_books_v1'; },
   get USER() { return userId ? keyFor('user') : '@entre_paginas_user_v1'; },
   get POSITIONS() { return userId ? keyFor('positions') : '@entre_paginas_positions_v1'; },
+  get READING() { return userId ? keyFor('reading') : '@entre_paginas_reading_v1'; },
 };
 
 async function saveBooks(list) {
@@ -29,15 +31,30 @@ async function saveBooks(list) {
   cloud.schedule(list);
 }
 
+async function loadReading() {
+  const json = await AsyncStorage.getItem(KEYS.READING);
+  return readingLog.normalizeLog(json ? JSON.parse(json) : null);
+}
+
+async function changeReading(change) {
+  const log = await loadReading();
+  change(log);
+  await AsyncStorage.setItem(KEYS.READING, JSON.stringify(log));
+  return log;
+}
+
 async function dropPositions(ids) {
   const json = await AsyncStorage.getItem(KEYS.POSITIONS);
-  if (!json) return;
-  const positions = JSON.parse(json);
-  const before = Object.keys(positions).length;
-  ids.forEach(id => delete positions[id]);
-  if (Object.keys(positions).length !== before) {
-    await AsyncStorage.setItem(KEYS.POSITIONS, JSON.stringify(positions));
+  if (json) {
+    const positions = JSON.parse(json);
+    const before = Object.keys(positions).length;
+    ids.forEach(id => delete positions[id]);
+    if (Object.keys(positions).length !== before) {
+      await AsyncStorage.setItem(KEYS.POSITIONS, JSON.stringify(positions));
+    }
   }
+  const readingJson = await AsyncStorage.getItem(KEYS.READING);
+  if (readingJson) await changeReading(log => readingLog.dropBooks(log, ids));
 }
 
 const PAGE_SIZE = 1800;
@@ -459,6 +476,37 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.POSITIONS, JSON.stringify(positions));
   },
 
+  async getReadingOverview() {
+    const [positionsJson, log] = await Promise.all([AsyncStorage.getItem(KEYS.POSITIONS), loadReading()]);
+    return { positions: positionsJson ? JSON.parse(positionsJson) : {}, log };
+  },
+
+  async openReading(bookId, total) {
+    const positionsJson = await AsyncStorage.getItem(KEYS.POSITIONS);
+    const position = (positionsJson ? JSON.parse(positionsJson) : {})[bookId] || 1;
+    return changeReading(log => readingLog.openBook(log, { bookId, position, total, now: new Date() }));
+  },
+
+  async recordReadingStep(bookId, from, to, total) {
+    return changeReading(log => readingLog.recordPageChange(log, { bookId, from, to, total, now: new Date() }));
+  },
+
+  async registerReadingPage(bookId, page, total) {
+    return changeReading(log => readingLog.registerPage(log, { bookId, page, total, now: new Date() }));
+  },
+
+  async setReadingFinished(bookId, finished, total) {
+    return changeReading(log => readingLog.setFinished(log, { bookId, finished, total, now: new Date() }));
+  },
+
+  async addReadingTime(bookId, seconds) {
+    return changeReading(log => readingLog.addTime(log, { bookId, seconds, now: new Date() }));
+  },
+
+  async setReadingGoal(target) {
+    return changeReading(log => readingLog.setGoal(log, { year: new Date().getFullYear(), target }));
+  },
+
   async getUserProfile() {
     const json = await AsyncStorage.getItem(KEYS.USER);
     return json ? JSON.parse(json) : INITIAL_USER;
@@ -469,6 +517,7 @@ export const storage = {
     if (!removedFromCloud) return false;
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
     await AsyncStorage.removeItem(KEYS.POSITIONS);
+    await AsyncStorage.removeItem(KEYS.READING);
     return true;
   }
 };
@@ -477,7 +526,8 @@ export const storage = {
   'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
   'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
-  'setReadingPosition', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',
+  'setReadingPosition', 'openReading', 'recordReadingStep', 'registerReadingPage', 'setReadingFinished',
+  'addReadingTime', 'setReadingGoal', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',
 ].forEach((name) => {
   const original = storage[name];
   storage[name] = (...args) => exclusive(() => original.apply(storage, args));

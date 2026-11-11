@@ -254,3 +254,13 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 **O que foi recusado:** remover o resumo de capítulo por IA (mantido, pois atende ao requisito de funcionalidade de IA); a sugestão de categoria por IA, já retirada antes, segue fora e a documentação foi corrigida.
 
 **O que o usuário/grupo ainda precisa revisar:** testar no iPhone (Expo Go) a barra inferior, o leitor e o catálogo; conferir a exclusão de contas de teste no Firebase Authentication.
+
+## 16. Identidade visual, painel e progresso de leitura (Claude Code)
+
+**O que foi pedido:** padronizar a identidade visual na paleta Verde + Creme + Madeira, criar um sistema de design, modernizar o modo escuro, implementar um painel de leitura com dados reais, acompanhar o progresso de cada livro e melhorar carregamento, avisos e responsividade.
+
+**O que veio e o que foi aceito:** paleta e tokens centralizados (`theme/palettes.js`, `theme/tokens.js`), títulos em Lora, modo escuro em verde profundo; registro de leitura local (`services/readingLog.js`) com estatísticas testadas por script; painel no Perfil, status e progresso nos cartões, filtro por status, modal de progresso no leitor, avisos (toast) e skeleton.
+
+**O que foi recusado ou adaptado:** o app não guarda autor nem avaliação por estrelas, então não foram inventados; o registro de leitura não sincroniza com o Firestore para não mudar o modelo de dados nem as regras de segurança; saltos de capítulo e tempo parado não contam como leitura.
+
+**O que o usuário/grupo ainda precisa revisar:** conferir no celular o painel, o leitor com o novo indicador de página e o modo escuro; decidir se quer sincronizar o registro de leitura na nuvem.

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import { fonts } from '../theme/tokens';
 
 export default function EmptyView({
   icon = 'book-outline',
@@ -64,7 +65,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginBottom: 6,
     textAlign: 'center',
   },

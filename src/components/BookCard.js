@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import BookCover, { useShelfCoverWidth } from './BookCover';
+import BookCover, { useShelfLayout } from './BookCover';
 import ChangeHistoryModal from './ChangeHistoryModal';
 import BookEditModal from './BookEditModal';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import StatusChip from './StatusChip';
+import ProgressBar from './ProgressBar';
 
 export default function BookCard({
   book,
@@ -17,6 +19,7 @@ export default function BookCard({
   onToggleLock,
   onDelete,
   progress = null,
+  reading = null,
   selecting = false,
   selected = false,
   onLongPress,
@@ -28,7 +31,7 @@ export default function BookCard({
   const [menuVisible, setMenuVisible] = useState(false);
   const [historyVisible, setHistoryVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
-  const coverWidth = useShelfCoverWidth();
+  const { coverWidth, cellWidth } = useShelfLayout();
   const isOwn = book.isOwn !== false;
   const changeCount = book.changeLog?.length || 0;
   const press = () => (selecting ? onToggle && onToggle(book.id) : onPress && onPress(book));
@@ -37,7 +40,7 @@ export default function BookCard({
   };
 
   return (
-    <View style={styles.cardContainer}>
+    <View style={[styles.cardContainer, { width: cellWidth }]}>
       <Touchable
         activeOpacity={0.85}
         onPress={press}
@@ -111,6 +114,18 @@ export default function BookCard({
           </Touchable>
         )}
       </View>
+
+      {reading && (
+        <View style={[styles.readingBox, { width: coverWidth }]}>
+          <View style={styles.readingTop}>
+            <StatusChip status={reading.status} compact />
+            {reading.status !== 'planejado' && <Text style={styles.readingPercent}>{reading.percent}%</Text>}
+          </View>
+          {reading.status === 'lendo' && (
+            <ProgressBar value={reading.percent / 100} height={4} style={styles.readingBar} label={`Progresso de ${book.title}`} />
+          )}
+        </View>
+      )}
 
       <Modal
         visible={menuVisible}
@@ -274,6 +289,22 @@ export default function BookCard({
 }
 
 const createStyles = (colors) => StyleSheet.create({
+  readingBox: {
+    marginTop: 6,
+  },
+  readingTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  readingPercent: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  readingBar: {
+    marginTop: 6,
+  },
   cardContainer: {
     width: '48%',
     marginBottom: 20,

@@ -7,6 +7,7 @@ import { letterKey } from '../services/publicDomain';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 import BookResultRow from './BookResultRow';
+import { fonts } from '../theme/tokens';
 
 const LETTERS = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
@@ -182,7 +183,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: colors.primary,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginTop: 16,
   },
   footer: { alignItems: 'center', paddingVertical: 20 },

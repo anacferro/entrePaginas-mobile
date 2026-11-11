@@ -30,6 +30,10 @@ import { useTheme, useThemedStyles, ThemeScope } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
 import LoadingView from '../components/LoadingView';
 import EmptyView from '../components/EmptyView';
+import ReadingProgressModal from '../components/ReadingProgressModal';
+import ProgressBar from '../components/ProgressBar';
+import { useToast } from '../components/Toast';
+import { bookForecast } from '../services/readingStats';
 
 export default function ReaderScreen(props) {
   const { isDark: appDark } = useTheme();
@@ -46,6 +50,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { bookId, bookTitle } = route.params || {};
+  const toast = useToast();
 
   const [book, setBook] = useState(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -62,6 +67,12 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [focusMode, setFocusMode] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [originalFontReady, setOriginalFontReady] = useState(false);
+  const [showProgress, setShowProgress] = useState(false);
+  const [readingLog, setReadingLog] = useState(null);
+  const lastPage = useRef(null);
+  const lastTick = useRef(0);
+  const opened = useRef(false);
+  const wasFinished = useRef(false);
   const scrollRef = useRef(null);
 
   const [loadState, setLoadState] = useState(bookId ? 'loading' : 'missing');
@@ -267,6 +278,84 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     }, 500);
     return () => clearTimeout(timer);
   }, [loadState, bookId, currentPageNumber]);
+
+  const flushTime = useCallback(() => {
+    if (lastTick.current === 0) return;
+    const now = Date.now();
+    const seconds = (now - lastTick.current) / 1000;
+    lastTick.current = now;
+    if (bookId && seconds >= 1) storage.addReadingTime(bookId, seconds).catch(() => {});
+  }, [bookId]);
+
+  useEffect(() => {
+    if (loadState !== 'ready' || !bookId || opened.current) return;
+    opened.current = true;
+    storage.openReading(bookId, totalPages)
+      .then((log) => {
+        wasFinished.current = !!log.books[bookId]?.finishedAt;
+        lastPage.current = savedPage.current;
+        lastTick.current = Date.now();
+        setReadingLog(log);
+      })
+      .catch(() => {});
+  }, [loadState, bookId, totalPages]);
+
+  useEffect(() => {
+    if (loadState !== 'ready' || !bookId || lastPage.current === null || lastPage.current === currentPageNumber) return;
+    const from = lastPage.current;
+    lastPage.current = currentPageNumber;
+    flushTime();
+    storage.recordReadingStep(bookId, from, currentPageNumber, totalPages)
+      .then((log) => {
+        setReadingLog(log);
+        if (!wasFinished.current && log.books[bookId]?.finishedAt) {
+          wasFinished.current = true;
+          toast.show('Leitura concluída. Parabéns!');
+        }
+      })
+      .catch(() => {});
+  }, [loadState, bookId, currentPageNumber, totalPages, flushTime, toast]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') lastTick.current = lastTick.current === 0 ? 0 : Date.now();
+      else flushTime();
+    });
+    return () => {
+      subscription.remove();
+      flushTime();
+    };
+  }, [flushTime]);
+
+  const handleRegisterPage = async (target) => {
+    try {
+      setCurrentPageIndex(target - 1);
+      lastPage.current = target;
+      const log = await storage.registerReadingPage(bookId, target, totalPages);
+      setReadingLog(log);
+      setShowProgress(false);
+      if (!wasFinished.current && log.books[bookId]?.finishedAt) {
+        wasFinished.current = true;
+        toast.show('Leitura concluída. Parabéns!');
+      } else {
+        toast.show(`Página ${target} registrada.`);
+      }
+    } catch {
+      toast.show('Não foi possível registrar a página. Tente de novo.', 'error');
+    }
+  };
+
+  const handleToggleFinished = async (finished) => {
+    try {
+      const log = await storage.setReadingFinished(bookId, finished, totalPages);
+      wasFinished.current = finished;
+      setReadingLog(log);
+      setShowProgress(false);
+      toast.show(finished ? 'Livro marcado como lido.' : 'Livro voltou para "lendo".');
+    } catch {
+      toast.show('Não foi possível atualizar o livro. Tente de novo.', 'error');
+    }
+  };
 
   const usesPaper = !isDark && !!book?.paperColor;
   const paperIsDark = usesPaper && isDarkColor(book.paperColor);
@@ -508,14 +597,19 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Anterior</Text>
             </Touchable>
 
-            <View style={styles.pageIndicatorBox}>
+            <Touchable
+              style={styles.pageIndicatorBox}
+              onPress={() => setShowProgress(true)}
+              accessibilityLabel={`Página ${currentPageNumber} de ${totalPages}. Abrir progresso de leitura`}
+            >
               <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
                 Página {currentPageNumber}
               </Text>
               <Text style={[styles.pageTotalText, { color: colors.textSecondary }]}>
-                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'}
+                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'} · {Math.round((currentPageNumber / totalPages) * 100)}%
               </Text>
-            </View>
+              <ProgressBar value={currentPageNumber / totalPages} height={4} style={styles.footerProgress} label="Progresso do livro" />
+            </Touchable>
 
             <Touchable
               style={[styles.pageNavBtn, isLastPage && { opacity: 0.3 }]}
@@ -810,6 +904,16 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         onAdd={handleAddComment}
         onRemove={handleRemoveComment}
         onClose={() => setShowComments(false)}
+      />
+      <ReadingProgressModal
+        visible={showProgress}
+        onClose={() => setShowProgress(false)}
+        book={book ? { ...book, totalPages } : null}
+        position={currentPageNumber}
+        entry={readingLog?.books[bookId]}
+        forecast={book && readingLog ? bookForecast({ book: { ...book, totalPages }, entry: readingLog.books[bookId], log: readingLog, now: new Date() }) : null}
+        onRegister={handleRegisterPage}
+        onToggleFinished={handleToggleFinished}
       />
       {focusMode && (
         <Touchable
@@ -1178,6 +1282,12 @@ const createStyles = (colors) => StyleSheet.create({
   },
   pageIndicatorBox: {
     alignItems: 'center',
+    minWidth: 120,
+    paddingVertical: 4,
+  },
+  footerProgress: {
+    marginTop: 6,
+    width: 110,
   },
   pageCurrentText: {
     fontSize: 13,

@@ -1,10 +1,11 @@
 import React from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useFonts, SpaceGrotesk_500Medium, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
+import { useFonts, Lora_600SemiBold, Lora_700Bold } from '@expo-google-fonts/lora';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { ToastProvider } from './src/components/Toast';
 
 function ThemedStatusBar() {
   const { isDark } = useTheme();
@@ -12,7 +13,7 @@ function ThemedStatusBar() {
 }
 
 export default function App() {
-  const [fontsLoaded, fontError] = useFonts({ SpaceGrotesk_500Medium, SpaceGrotesk_700Bold });
+  const [fontsLoaded, fontError] = useFonts({ Lora_600SemiBold, Lora_700Bold });
 
   if (!fontsLoaded && !fontError) return null;
 
@@ -21,7 +22,9 @@ export default function App() {
       <ThemeProvider>
         <ThemedStatusBar />
         <AuthProvider>
-          <AppNavigator />
+          <ToastProvider>
+            <AppNavigator />
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

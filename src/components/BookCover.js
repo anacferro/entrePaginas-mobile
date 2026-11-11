@@ -2,9 +2,21 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR } from '../theme/bookOptions';
 
-export function useShelfCoverWidth() {
+export const SHELF_MAX_WIDTH = 1100;
+
+export function useShelfLayout() {
   const { width } = useWindowDimensions();
-  return Math.min(155, Math.floor((width - 32) * 0.46));
+  const available = Math.min(width, SHELF_MAX_WIDTH) - 32;
+  const columns = Math.max(2, Math.floor(available / 175));
+  return {
+    columns,
+    cellWidth: `${100 / columns}%`,
+    coverWidth: Math.min(155, Math.floor((available / columns) * 0.92)),
+  };
+}
+
+export function useShelfCoverWidth() {
+  return useShelfLayout().coverWidth;
 }
 
 export default function BookCover({

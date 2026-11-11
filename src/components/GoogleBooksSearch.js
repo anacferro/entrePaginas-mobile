@@ -13,6 +13,7 @@ import Touchable from './Touchable';
 import BookResultRow from './BookResultRow';
 import CatalogModal from './CatalogModal';
 import { fieldStyles } from './FormBlocks';
+import { fonts } from '../theme/tokens';
 
 export default function GoogleBooksSearch({ onSelect }) {
   const { colors } = useTheme();
@@ -153,7 +154,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
     marginLeft: 8,
   },
   catalogLink: {

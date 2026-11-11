@@ -116,6 +116,17 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ---
 
+### DA16 (Nova Decisão) — Painel de leitura com registro local
+
+* **Decisão:** guardar o progresso em um registro de leitura separado dos livros (`services/readingLog.js`), calculado por funções puras (`services/readingStats.js`) e exibido no painel do Perfil.
+* **Alternativas consideradas:** gravar os campos dentro de cada livro (descartado: mudaria o modelo sincronizado e as regras do Firestore); sincronizar o registro (descartado por ora: exigiria nova coleção e novas regras).
+* **Consequências assumidas:** o painel é por aparelho, como a última página lida. O app não guarda autor nem avaliação, então o painel e os cartões não os exibem. Todos os números vêm de eventos reais de leitura.
+
+### DA17 (Nova Decisão) — Sistema de design em tokens
+
+* **Decisão:** paleta, espaçamento, raios, sombras e tipografia centralizados em `theme/palettes.js` e `theme/tokens.js`. Títulos em Lora; texto corrido na fonte do sistema.
+* **Consequências assumidas:** telas novas e componentes novos usam os tokens; telas antigas foram migradas nas cores e fontes, mas parte dos tamanhos e margens ainda são valores locais.
+
 ## 3. Mapeamento das Telas do Figma para a Implementação
 
 | Tela Figma | Componente Implementado | Rota de Navegação | Parâmetros Recebidos |

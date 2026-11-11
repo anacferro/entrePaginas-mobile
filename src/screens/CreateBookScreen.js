@@ -24,6 +24,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES, DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 import Touchable from '../components/Touchable';
+import { useToast } from '../components/Toast';
+import { fonts } from '../theme/tokens';
 
 const IMPORT_FORMATS = [
   { format: 'pdf', icon: 'document-text', name: 'PDF', description: 'Livro diagramado' },
@@ -33,6 +35,7 @@ const IMPORT_FORMATS = [
 ];
 
 export default function CreateBookScreen({ navigation, route }) {
+  const toast = useToast();
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const initialTab = route?.params?.initialTab || 'create';
@@ -222,16 +225,8 @@ export default function CreateBookScreen({ navigation, route }) {
 
       resetForm();
 
-      dialog.alert(
-        'Obra Encadernada!',
-        `"${newBook.title}" foi adicionado com sucesso à sua estante digital.`,
-        [
-          {
-            text: 'Ver na Estante',
-            onPress: () => navigation.navigate('Estante'),
-          },
-        ]
-      );
+      toast.show(`"${newBook.title}" foi adicionado à sua estante.`);
+      navigation.navigate('Estante');
     } catch {
       dialog.alert('Erro ao Salvar', 'Não foi possível gravar a obra no armazenamento local.');
     } finally {
@@ -490,7 +485,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 26,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   tabsSwitcher: {
     flexDirection: 'row',
@@ -540,7 +535,7 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: colors.text,
-    fontFamily: 'SpaceGrotesk_700Bold',
+    fontFamily: fonts.heading,
   },
   formatsGrid: {
     flexDirection: 'row',
