@@ -22,7 +22,7 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
    - **Modo foco:** botão que esconde os menus para ler sem distração.
    - **Escrita:** editor em tela cheia para editar, criar e excluir capítulos (somente em livros de autoria própria).
    - **Comentários:** em obras de terceiros (Google Books ou importadas) o texto não pode ser alterado; o botão de comentários registra anotações presas à página, mostradas abaixo do texto.
-   - **Marcadores:** marcação da página com título e cor do pin, listados na aba *Marcadores* do sumário.
+   - **Marcadores:** marcação da página com título e cor do pin, e também **pino em trecho**: com o marca-texto ligado, selecione um texto, toque no ícone de marcador, dê um nome e escolha a cor. O trecho fica sublinhado em pontilhado na cor do pino e aparece, com a citação, na aba *Marcadores* do sumário (toque para ir até a folha; a lixeira remove).
    - **Marca-texto:** grifos em 5 cores, negrito, itálico e sublinhado sobre trechos selecionados.
    - **Histórico de alterações:** registro das edições feitas em livros que não são de autoria do usuário (versão anterior e nova), visível no menu `⋮` do livro.
    - **Buscas e downloads:** a busca da Estante e do Baú ignora acentos e maiúsculas; downloads de texto completo interrompidos (Project Gutenberg) são retomados uma vez por sessão; as gravações locais são serializadas e os IDs são únicos para não perder dados em operações rápidas.
@@ -162,7 +162,7 @@ Toque em **Aa** no topo do leitor para abrir o painel de ajustes, com prévia do
 - **Espaçamento:** entrelinha, margens laterais, espaço entre parágrafos e largura da coluna (efeito visível em telas largas).
 - **Leitura:** ocultar menus automaticamente (somem em 4 s; toque no texto para voltar), manter a tela ativa e **restaurar configurações originais**.
 
-As escolhas valem na hora, não recarregam o livro e **não mudam a página**: a paginação é por quantidade de texto, independente da aparência. São salvas por usuário no aparelho e aplicadas a todos os livros. O Sumário tem a aba **Destaques**, que lista todos os trechos grifados do livro e leva até a folha deles.
+As escolhas valem na hora, não recarregam o livro e **não mudam a página**: a paginação é por quantidade de texto, independente da aparência. São salvas por usuário no aparelho e aplicadas a todos os livros. O Sumário tem a aba **Grifos**, que lista todos os trechos grifados do livro, leva até a folha deles e permite remover cada um.
 
 Limites assumidos: as preferências não sincronizam entre aparelhos; a anotação continua sendo o comentário por folha (não há nota presa a um trecho grifado); o "brilho" é uma película escura sobre o leitor; manter a tela ativa depende do suporte do aparelho.
 

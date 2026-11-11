@@ -120,6 +120,7 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | RF-LEI-05 | O sistema deve guardar a última página lida de cada livro e voltar a ela ao reabrir. | I |
 | RF-LEI-06 | O sistema deve permitir grifar trechos em 5 cores e aplicar negrito, itálico e sublinhado. | I |
 | RF-LEI-07 | O sistema deve permitir marcar páginas com título e cor do pin. | I |
+| RF-LEI-09 | O sistema deve permitir marcar um trecho selecionado com pino (nome e cor), listar grifos e pinos no sumário e permitir removê-los. | I |
 | RF-LEI-08 | O sistema deve permitir comentários presos à página, em especial nas obras de terceiros. | D |
 | RF-LEI-09 | O sistema deve registrar em um histórico as alterações feitas em livros que não são de autoria do usuário, com a versão anterior e a nova. | D |
 

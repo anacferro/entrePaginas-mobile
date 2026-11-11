@@ -22,6 +22,7 @@ import AiMenu from '../components/AiMenu';
 import AskBook from '../components/AskBook';
 import CharacterMapModal from '../components/CharacterMapModal';
 import ExplainPassage from '../components/ExplainPassage';
+import PinExcerptSheet from '../components/PinExcerptSheet';
 import { ai } from '../services/ai';
 import CommentsModal from '../components/CommentsModal';
 import { paginate } from '../services/pagination';
@@ -96,6 +97,8 @@ export default function ReaderScreen(props) {
   );
 }
 
+const NO_BOOKMARKS = [];
+
 function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPrefs }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -115,6 +118,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const [showAiMenu, setShowAiMenu] = useState(false);
   const [aiPanel, setAiPanel] = useState(null);
   const [explainFor, setExplainFor] = useState(null);
+  const [pinFor, setPinFor] = useState(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [editorMode, setEditorMode] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
@@ -254,22 +258,28 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   };
 
   const isOwnBook = book?.isOwn !== false;
-  const bookmarks = book?.bookmarks || [];
+  const bookmarks = book?.bookmarks ?? NO_BOOKMARKS;
   const currentBookmark = bookmarks.find(bm => bm.chapterId === currentChapter.id && bm.page === currentPageNumber);
 
-  const highlights = useMemo(() => {
+  const excerptMarks = useMemo(() => {
     const list = [];
     chapters.forEach((chap) => {
-      (chap.marks || []).filter((m) => m.type === 'highlight').forEach((m) => {
+      (chap.marks || []).filter((m) => m.type === 'highlight' || m.type === 'pin').forEach((m) => {
         let at = 0;
         pages.forEach((pg, i) => {
           if (pg.chapterId === chap.id && pg.start <= m.start) at = i;
         });
-        list.push({ ...m, chapterTitle: chap.title, pageIndex: at });
+        list.push({ ...m, chapterId: chap.id, chapterTitle: chap.title, pageIndex: at });
       });
     });
     return list.sort((a, b) => a.pageIndex - b.pageIndex || a.start - b.start);
   }, [chapters, pages]);
+  const highlights = useMemo(() => excerptMarks.filter((m) => m.type === 'highlight'), [excerptMarks]);
+  const savedPins = useMemo(() => excerptMarks.filter((m) => m.type === 'pin'), [excerptMarks]);
+  const markerItems = useMemo(() => [
+    ...bookmarks.map((bm) => ({ kind: 'page', key: bm.id, bm, pageIndex: Math.max(0, bm.page - 1) })),
+    ...savedPins.map((pin) => ({ kind: 'pin', key: pin.id, pin, pageIndex: pin.pageIndex })),
+  ].sort((a, b) => a.pageIndex - b.pageIndex), [bookmarks, savedPins]);
 
   const pageComments = (book?.comments || []).filter(cm => cm.page === currentPageNumber);
 
@@ -297,6 +307,41 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   };
 
   const goToPageIndex = (idx) => setCurrentPageIndex(Math.max(0, Math.min(pages.length - 1, idx)));
+
+  const openPin = () => {
+    if (!selection) return;
+    const text = page.content.slice(selection.start, selection.end).trim();
+    if (!text) return;
+    setPinFor({ text: text.length > 600 ? `${text.slice(0, 600)}...` : text, start: selection.start, end: selection.end });
+  };
+
+  const savePin = async ({ title, color }) => {
+    if (!book || !pinFor) return;
+    const content = currentChapter.content;
+    const start = pinFor.start + page.start;
+    const end = pinFor.end + page.start;
+    const marks = applyMark(currentChapter.marks, content, start, end, 'pin', color, title);
+    setBook(prev => ({
+      ...prev,
+      chapters: prev.chapters.map(c => (c.id === currentChapter.id ? { ...c, marks } : c)),
+    }));
+    setPinFor(null);
+    setSelection(null);
+    if (Platform.OS === 'web') window.getSelection()?.removeAllRanges();
+    await storage.updateChapterMarks(book.id, currentChapter.id, marks);
+    toast.show('Trecho marcado.');
+  };
+
+  const removeMarkById = async (chapterId, markId) => {
+    const chapter = chapters.find((c) => c.id === chapterId);
+    if (!chapter || !book) return;
+    const marks = (chapter.marks || []).filter((m) => m.id !== markId);
+    setBook(prev => ({
+      ...prev,
+      chapters: prev.chapters.map(c => (c.id === chapterId ? { ...c, marks } : c)),
+    }));
+    await storage.updateChapterMarks(book.id, chapterId, marks);
+  };
 
   const applyFormat = async (type, color) => {
     if (!book || !selection) return;
@@ -765,6 +810,9 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
 
               <View style={styles.toolDivider} />
 
+              <Touchable style={styles.toolBtn} onPress={openPin} disabled={!selection} accessibilityLabel="Marcar trecho com pino">
+                <Ionicons name="bookmark-outline" size={19} color={readerTextColor} />
+              </Touchable>
               <Touchable style={styles.toolBtn} onPress={() => applyFormat('bold')} disabled={!selection} accessibilityLabel="Negrito">
                 <Text style={[styles.toolText, { color: readerTextColor, fontWeight: '800' }]}>B</Text>
               </Touchable>
@@ -823,8 +871,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               <View style={styles.summaryTabs}>
                 {[
                   { key: 'chapters', label: 'Capítulos' },
-                  { key: 'bookmarks', label: `Marcadores (${bookmarks.length})` },
-                  { key: 'highlights', label: `Destaques (${highlights.length})` },
+                  { key: 'bookmarks', label: `Marcadores (${markerItems.length})` },
+                  { key: 'highlights', label: `Grifos (${highlights.length})` },
                 ].map(tab => (
                   <Touchable
                     key={tab.key}
@@ -843,51 +891,88 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               <ScrollView style={styles.tocList}>
                 {highlights.length === 0 && (
                   <Text style={styles.emptyBookmarks}>
-                    Nenhum trecho destacado. Use o marca-texto no topo do leitor para selecionar e destacar trechos.
+                    Nenhum trecho grifado. Use o marca-texto no topo do leitor para selecionar e grifar trechos.
                   </Text>
                 )}
                 {highlights.map((h) => (
-                  <Touchable
-                    key={h.id}
-                    style={styles.tocItem}
-                    onPress={() => {
-                      setCurrentPageIndex(h.pageIndex);
-                      setShowSummary(false);
-                    }}
-                  >
-                    <View style={[styles.highlightBar, { backgroundColor: h.color }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.tocItemTitle} numberOfLines={3}>{h.text}</Text>
-                      <Text style={styles.tocItemMeta} numberOfLines={1}>{h.chapterTitle} • Folha {h.pageIndex + 1}</Text>
-                    </View>
-                  </Touchable>
-                ))}
-              </ScrollView>
-            ) : summaryTab === 'bookmarks' ? (
-              <ScrollView style={styles.tocList}>
-                {bookmarks.length === 0 && (
-                  <Text style={styles.emptyBookmarks}>
-                    Nenhuma página marcada. Toque no ícone de marcador no topo do leitor para marcar a página atual.
-                  </Text>
-                )}
-                {bookmarks.map(bm => (
-                  <View key={bm.id} style={styles.tocItem}>
-                    <Touchable style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => goToBookmark(bm)}>
-                      <Ionicons name="bookmark" size={18} color={bm.color} style={{ width: 32 }} />
+                  <View key={h.id} style={styles.tocItem}>
+                    <Touchable
+                      style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                      onPress={() => {
+                        setCurrentPageIndex(h.pageIndex);
+                        setShowSummary(false);
+                      }}
+                    >
+                      <View style={[styles.highlightBar, { backgroundColor: h.color }]} />
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.tocItemTitle} numberOfLines={1}>{bm.title}</Text>
-                        <Text style={styles.tocItemMeta} numberOfLines={1}>
-                          {chapters.find(c => c.id === bm.chapterId)?.title} • Folha {bm.page}
-                        </Text>
+                        <Text style={styles.tocItemTitle} numberOfLines={3}>{h.text}</Text>
+                        <Text style={styles.tocItemMeta} numberOfLines={1}>{h.chapterTitle} • Folha {h.pageIndex + 1}</Text>
                       </View>
                     </Touchable>
                     <Touchable
-                      onPress={() => handleRemoveBookmark(bm.id)}
+                      onPress={() => removeMarkById(h.chapterId, h.id)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      accessibilityLabel="Remover grifo"
                     >
                       <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
                     </Touchable>
                   </View>
+                ))}
+              </ScrollView>
+            ) : summaryTab === 'bookmarks' ? (
+              <ScrollView style={styles.tocList}>
+                {markerItems.length === 0 && (
+                  <Text style={styles.emptyBookmarks}>
+                    Nada marcado ainda. Toque no marcador no topo para marcar a página, ou selecione um trecho com o marca-texto e use o marcador para fixar um pino nele.
+                  </Text>
+                )}
+                {markerItems.map((item) => (
+                  item.kind === 'page' ? (
+                    <View key={item.key} style={styles.tocItem}>
+                      <Touchable style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => goToBookmark(item.bm)}>
+                        <Ionicons name="bookmark" size={18} color={item.bm.color} style={{ width: 32 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.tocItemTitle} numberOfLines={1}>{item.bm.title}</Text>
+                          <Text style={styles.tocItemMeta} numberOfLines={1}>
+                            Página • {chapters.find(c => c.id === item.bm.chapterId)?.title} • Folha {item.bm.page}
+                          </Text>
+                        </View>
+                      </Touchable>
+                      <Touchable
+                        onPress={() => handleRemoveBookmark(item.bm.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityLabel="Remover marcador"
+                      >
+                        <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
+                      </Touchable>
+                    </View>
+                  ) : (
+                    <View key={item.key} style={styles.tocItem}>
+                      <Touchable
+                        style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                        onPress={() => {
+                          setCurrentPageIndex(item.pin.pageIndex);
+                          setShowSummary(false);
+                        }}
+                      >
+                        <Ionicons name="bookmark" size={18} color={item.pin.color} style={{ width: 32 }} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.tocItemTitle} numberOfLines={1}>{item.pin.title}</Text>
+                          <Text style={styles.pinQuote} numberOfLines={2}>“{item.pin.text}”</Text>
+                          <Text style={styles.tocItemMeta} numberOfLines={1}>
+                            Trecho • {item.pin.chapterTitle} • Folha {item.pin.pageIndex + 1}
+                          </Text>
+                        </View>
+                      </Touchable>
+                      <Touchable
+                        onPress={() => removeMarkById(item.pin.chapterId, item.pin.id)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        accessibilityLabel="Remover pino do trecho"
+                      >
+                        <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
+                      </Touchable>
+                    </View>
+                  )
                 ))}
               </ScrollView>
             ) : (
@@ -1036,6 +1121,13 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </KeyboardAvoidingView>
       </Modal>
 
+      <PinExcerptSheet
+        visible={pinFor !== null}
+        excerpt={pinFor?.text || ''}
+        label={`${currentChapter.title} • Folha ${currentPageNumber}`}
+        onSave={savePin}
+        onClose={() => setPinFor(null)}
+      />
       <AiMenu
         visible={showAiMenu}
         onClose={() => setShowAiMenu(false)}
@@ -1536,6 +1628,13 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
     fontFamily: 'serif',
+  },
+  pinQuote: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontStyle: 'italic',
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   highlightBar: {
     width: 5,

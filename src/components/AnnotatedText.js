@@ -21,6 +21,7 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
     <Text
       key={i}
       style={[
+        s.pin && { backgroundColor: `${s.pin}30`, textDecorationLine: 'underline', textDecorationStyle: 'dotted', textDecorationColor: s.pin },
         s.highlight && { backgroundColor: s.highlight, color: '#2B2523' },
         s.bold && styles.bold,
         s.italic && styles.italic,

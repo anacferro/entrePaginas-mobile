@@ -8,8 +8,9 @@ export const HIGHLIGHT_COLORS = [
 
 export const PIN_COLORS = ['#B5473F', '#244C3A', '#527A5B', '#7A5233', '#1F3347'];
 
-function createMark(content, start, end, type, color) {
+function createMark(content, start, end, type, color, extra = {}) {
   return {
+    ...extra,
     id: `mark-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     start,
     end,
@@ -26,8 +27,8 @@ function subtract(marks, content, start, end, predicate) {
       result.push(m);
       return;
     }
-    if (m.start < start) result.push(createMark(content, m.start, start, m.type, m.color));
-    if (m.end > end) result.push(createMark(content, end, m.end, m.type, m.color));
+    if (m.start < start) result.push(createMark(content, m.start, start, m.type, m.color, m.title ? { title: m.title } : {}));
+    if (m.end > end) result.push(createMark(content, end, m.end, m.type, m.color, m.title ? { title: m.title } : {}));
   });
   return result;
 }
@@ -40,8 +41,15 @@ function isCovered(marks, start, end) {
   return pos >= end;
 }
 
-export function applyMark(marks = [], content, start, end, type, color) {
+export function applyMark(marks = [], content, start, end, type, color, title) {
   if (start >= end) return marks;
+
+  if (type === 'pin') {
+    return [
+      ...subtract(marks, content, start, end, m => m.type === 'pin'),
+      createMark(content, start, end, type, color, { title: title || 'Trecho marcado' }),
+    ];
+  }
 
   if (type === 'highlight') {
     return [
@@ -88,6 +96,7 @@ export function buildSegments(content, marks = []) {
     segments.push({
       text: content.slice(start, end),
       highlight: active.filter(m => m.type === 'highlight').pop()?.color || null,
+      pin: active.filter(m => m.type === 'pin').pop()?.color || null,
       bold: active.some(m => m.type === 'bold'),
       italic: active.some(m => m.type === 'italic'),
       underline: active.some(m => m.type === 'underline'),
