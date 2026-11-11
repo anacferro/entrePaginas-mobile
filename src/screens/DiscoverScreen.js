@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import Touchable from '../components/Touchable';
 import WorkRow from '../components/WorkRow';
 import WorkDetail from '../components/WorkDetail';
+import ForYouView from '../components/ForYouView';
 import DiscoverFilters, { EMPTY_FILTERS, countFilters } from '../components/DiscoverFilters';
 import { useToast } from '../components/Toast';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
@@ -19,6 +20,7 @@ import { normalize } from '../services/catalog/text';
 import { dialog } from '../services/dialog';
 
 const MODES = [
+  { key: 'paravoce', label: 'Para você' },
   { key: 'buscar', label: 'Buscar' },
   { key: 'explorar', label: 'Explorar' },
 ];
@@ -38,7 +40,7 @@ export default function DiscoverScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const toast = useToast();
-  const [mode, setMode] = useState('buscar');
+  const [mode, setMode] = useState('paravoce');
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [showFilters, setShowFilters] = useState(false);
@@ -145,36 +147,39 @@ export default function DiscoverScreen({ navigation }) {
 
   const loadMore = () => (exploring ? explore(exploring.preset, page + 1, exploring.seed) : search(filters, page + 1));
 
-  const handleAdd = async () => {
-    if (!selected) return;
+  const addWork = async (work) => {
     setAdding(true);
     try {
-      const result = await addWorkToLibrary(selected);
+      const result = await addWorkToLibrary(work);
       if (result.status === 'exists') {
         toast.show('Este livro já está na sua estante.');
       } else {
-        setOwned((prev) => ({ ids: new Set(prev.ids).add(selected.id), titles: new Set(prev.titles).add(normalize(selected.title)) }));
+        setOwned((prev) => ({ ids: new Set(prev.ids).add(work.id), titles: new Set(prev.titles).add(normalize(work.title)) }));
         toast.show(result.text === 'downloading' ? 'Livro adicionado. Baixando o texto completo...' : 'Livro adicionado à estante.');
         result.download?.then((outcome) => {
           if (outcome === 'failed') {
             setOwned((prev) => {
               const titles = new Set(prev.titles);
-              titles.delete(normalize(selected.title));
+              titles.delete(normalize(work.title));
               const ids = new Set(prev.ids);
-              ids.delete(selected.id);
+              ids.delete(work.id);
               return { ids, titles };
             });
-            dialog.alert('Livro não adicionado', `Não foi possível baixar o texto de "${selected.title}" agora. Tente de novo mais tarde.`);
+            dialog.alert('Livro não adicionado', `Não foi possível baixar o texto de "${work.title}" agora. Tente de novo mais tarde.`);
           }
         });
       }
       setSelected(null);
+      return true;
     } catch {
       toast.show('Não foi possível adicionar o livro.', 'error');
+      return false;
     } finally {
       setAdding(false);
     }
   };
+
+  const handleAdd = () => (selected ? addWork(selected) : null);
 
   const filterCount = countFilters(filters);
   const notice = failureLine(statuses);
@@ -203,6 +208,10 @@ export default function DiscoverScreen({ navigation }) {
           ))}
         </View>
 
+        {mode === 'paravoce' ? (
+          <ForYouView onOpenWork={setSelected} onAddWork={addWork} isOwned={isOwned} />
+        ) : (
+          <>
         {mode === 'buscar' ? (
           <View style={styles.searchRow}>
             <View style={styles.searchBox}>
@@ -311,6 +320,8 @@ export default function DiscoverScreen({ navigation }) {
               </Text>
             ) : null}
           </View>
+        )}
+          </>
         )}
       </ScrollView>
 

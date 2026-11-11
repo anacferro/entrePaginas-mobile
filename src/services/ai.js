@@ -3,6 +3,7 @@ import { File } from 'expo-file-system';
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { app } from './firebase';
 import { createAssistant } from './readingAssistant';
+import { createCurator } from './recommend/curator';
 
 const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.5-flash';
 const TIMEOUT_MS = 40000;
@@ -79,6 +80,8 @@ export const ai = {
   isAvailable: Boolean(app),
 
   ...createAssistant(generate),
+
+  ...createCurator(generate),
 
   async transcribePhoto(uri) {
     let image;

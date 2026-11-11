@@ -627,6 +627,42 @@ export const storage = {
     });
   },
 
+  async recordRecsShown(ids) {
+    return changePersonal((p) => {
+      const now = new Date().toISOString();
+      ids.forEach((id) => {
+        p.recs[id] = { count: (p.recs[id]?.count || 0) + 1, lastShown: now };
+      });
+      const keys = Object.keys(p.recs);
+      if (keys.length > 400) {
+        keys.sort((a, b) => (p.recs[a].lastShown || '').localeCompare(p.recs[b].lastShown || ''));
+        keys.slice(0, keys.length - 400).forEach((k) => { delete p.recs[k]; });
+      }
+    });
+  },
+
+  async setRecFeedback(work, action) {
+    return changePersonal((p) => {
+      p.recFeedback[work.id] = {
+        action,
+        at: new Date().toISOString(),
+        work: { id: work.id, title: work.title, authors: (work.authors || []).slice(0, 3), genres: (work.genres || []).slice(0, 3) },
+      };
+    });
+  },
+
+  async clearRecFeedback(workId) {
+    return changePersonal((p) => {
+      delete p.recFeedback[workId];
+    });
+  },
+
+  async saveCuratorChat(messages) {
+    return changePersonal((p) => {
+      p.chat = messages.slice(-60);
+    });
+  },
+
   async clearPersonal(part) {
     return changePersonal((p) => {
       const fresh = personalData.emptyPersonal();
@@ -682,7 +718,7 @@ export const storage = {
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
   'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
   'setReadingPosition', 'setCharacterMap', 'openReading', 'recordReadingStep', 'registerReadingPage', 'setReadingFinished', 'setReadingAbandoned',
-  'updatePersonal', 'rateWork', 'rateDetails', 'unrateWork', 'saveDeclared', 'setPersonalSettings', 'clearPersonal',
+  'updatePersonal', 'recordRecsShown', 'setRecFeedback', 'clearRecFeedback', 'saveCuratorChat', 'rateWork', 'rateDetails', 'unrateWork', 'saveDeclared', 'setPersonalSettings', 'clearPersonal',
   'addReadingTime', 'setReadingGoal', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',
 ].forEach((name) => {
   const original = storage[name];
