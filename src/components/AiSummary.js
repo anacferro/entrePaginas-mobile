@@ -46,7 +46,7 @@ export default function AiSummary({ chapter }) {
         activeOpacity={0.8}
         accessibilityLabel="Resumir capítulo com IA"
       >
-        <Ionicons name="sparkles" size={15} color={colors.accentGold} />
+        <Ionicons name="sparkles" size={15} color={colors.accent} />
         <Text style={[styles.pillText, { color: textColor }]}>Resumir capítulo com IA</Text>
       </Touchable>
     );
@@ -55,7 +55,7 @@ export default function AiSummary({ chapter }) {
   return (
     <View style={[styles.card, { backgroundColor: cardColor }]}>
       <View style={styles.header}>
-        <Ionicons name="sparkles" size={15} color={colors.accentGold} />
+        <Ionicons name="sparkles" size={15} color={colors.accent} />
         <Text style={[styles.title, { color: textColor }]}>Resumo por IA</Text>
         {!loading && (
           <Touchable

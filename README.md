@@ -123,6 +123,23 @@ O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio pr
 
 O arquivo `.env` está no `.gitignore` e nunca deve ser commitado. A chave de API do Firebase para apps clientes identifica o projeto e não é um segredo; quem protege os dados são as regras do Firestore e a autenticação.
 
+## 🎨 Identidade Visual
+
+Paleta **Verde + Creme + Madeira**, definida em um só lugar (`src/theme/palettes.js`) e usada por todas as telas pelos tokens do tema, sem cores soltas nos componentes.
+
+| Cor | Valor | Uso |
+|---|---|---|
+| Verde floresta | `#244C3A` | Botões primários, navegação, ações importantes |
+| Verde oliva | `#527A5B` | Elementos secundários e variações |
+| Verde sálvia | `#A8B99A` | Destaques suaves, indicadores, seleção |
+| Bege areia | `#E9E2D0` | Superfícies secundárias, divisórias, contraste sutil |
+| Off-white | `#FAF8F1` | Fundo das telas no modo claro |
+| Madeira | `#7A5233` | Acentos e ações secundárias |
+
+O modo escuro usa superfícies verde-escuras (`#0F1A15` e `#16241D`) com verde claro como cor de ação, e não uma simples inversão do claro. Vermelho, amarelo e verde de estados (erro, aviso, sucesso) têm tons ajustados à paleta. Novos componentes devem usar `useThemedStyles` e as chaves de `colors`, sem escrever cores diretamente.
+
+---
+
 ## 📁 Estrutura do Projeto
 
 ```
@@ -196,7 +213,7 @@ entrePaginas-mobile/
 │   │   └── textSearch.js      # Busca sem acentos e sem diferença de maiúsculas
 │   └── theme/
 │       ├── bookOptions.js     # Cores de capa, folha, categorias e tipos de letra
-│       ├── palettes.js        # Paletas Claro e Escuro
+│       ├── palettes.js        # Identidade visual: cores da marca e paletas Claro e Escuro
 │       └── ThemeContext.js    # Tema do app (provedor, hooks e escopo do leitor)
 ├── App.js                     # Ponto de entrada do aplicativo
 ├── .env.example               # Variáveis do Firebase (copiar para .env)

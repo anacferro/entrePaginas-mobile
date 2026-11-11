@@ -2,18 +2,18 @@ import { Platform } from 'react-native';
 
 export const COVER_COLORS = [
   { label: 'Clean', color: '#D9C8B5' },
-  { label: 'Floresta', color: '#215C50' },
-  { label: 'Musgo', color: '#4C6044' },
+  { label: 'Floresta', color: '#244C3A' },
+  { label: 'Oliva', color: '#527A5B' },
   { label: 'Vinho', color: '#7A2E26' },
   { label: 'Marinho', color: '#1F3347' },
-  { label: 'Âmbar', color: '#9E6219' },
+  { label: 'Madeira', color: '#6B4A32' },
 ];
 
 export const TITLE_COLORS = [
   { label: 'Castanho', color: '#332722' },
   { label: 'Bege', color: '#EFE7DC' },
-  { label: 'Céu', color: '#97B5D5' },
-  { label: 'Branco', color: '#FFFFFF' },
+  { label: 'Sálvia', color: '#A8B99A' },
+  { label: 'Off-white', color: '#FAF8F1' },
 ];
 
 export const PAPER_COLORS = [
@@ -22,6 +22,10 @@ export const PAPER_COLORS = [
   { label: 'Mofo', color: '#DCD4C5' },
   { label: 'Pergaminho', color: '#EFE2C4' },
 ];
+
+export const DEFAULT_COVER_COLOR = '#244C3A';
+export const DEFAULT_TITLE_COLOR = '#FAF8F1';
+export const DEFAULT_PAPER_COLOR = '#F4EAE0';
 
 export const BOOK_FONTS = [
   { id: 'serif', label: 'Serifada' },

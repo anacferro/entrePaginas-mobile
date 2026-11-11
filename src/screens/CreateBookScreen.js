@@ -22,7 +22,7 @@ import { dialog } from '../services/dialog';
 import { importer } from '../services/importer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
-import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES } from '../theme/bookOptions';
+import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES, DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 import Touchable from '../components/Touchable';
 
 const IMPORT_FORMATS = [
@@ -41,9 +41,9 @@ export default function CreateBookScreen({ navigation, route }) {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [category, setCategory] = useState('Literatura');
-  const [coverColor, setCoverColor] = useState('#215C50');
-  const [titleColor, setTitleColor] = useState('#FFFFFF');
-  const [paperColor, setPaperColor] = useState('#F4EAE0');
+  const [coverColor, setCoverColor] = useState(DEFAULT_COVER_COLOR);
+  const [titleColor, setTitleColor] = useState(DEFAULT_TITLE_COLOR);
+  const [paperColor, setPaperColor] = useState(DEFAULT_PAPER_COLOR);
   const [fontFamily, setFontFamily] = useState('serif');
   const [firstChapterTitle, setFirstChapterTitle] = useState('');
   const [firstChapterContent, setFirstChapterContent] = useState('');
@@ -62,9 +62,9 @@ export default function CreateBookScreen({ navigation, route }) {
     setSubtitle('');
     setCategory('Literatura');
     setTags([]);
-    setCoverColor('#215C50');
-    setTitleColor('#FFFFFF');
-    setPaperColor('#F4EAE0');
+    setCoverColor(DEFAULT_COVER_COLOR);
+    setTitleColor(DEFAULT_TITLE_COLOR);
+    setPaperColor(DEFAULT_PAPER_COLOR);
     setFontFamily('serif');
     setFirstChapterTitle('');
     setFirstChapterContent('');

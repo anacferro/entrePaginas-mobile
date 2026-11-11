@@ -6,7 +6,7 @@ export const HIGHLIGHT_COLORS = [
   { label: 'Laranja', color: '#FFD3A5' },
 ];
 
-export const PIN_COLORS = ['#C05C46', '#215C50', '#C9933B', '#1F3347', '#7A2E26'];
+export const PIN_COLORS = ['#B5473F', '#244C3A', '#527A5B', '#7A5233', '#1F3347'];
 
 function createMark(content, start, end, type, color) {
   return {

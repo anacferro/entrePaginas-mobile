@@ -213,7 +213,7 @@ const createStyles = (colors) => StyleSheet.create({
     borderRadius: 130,
     top: -90,
     right: -80,
-    backgroundColor: 'rgba(242,182,50,0.16)',
+    backgroundColor: colors.heroGlowWarm,
   },
   blobB: {
     position: 'absolute',
@@ -222,7 +222,7 @@ const createStyles = (colors) => StyleSheet.create({
     borderRadius: 110,
     bottom: -70,
     left: -60,
-    backgroundColor: 'rgba(120,220,170,0.14)',
+    backgroundColor: colors.heroGlowCool,
   },
   brandRow: {
     flexDirection: 'row',
@@ -251,7 +251,7 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 28,
   },
   headlineGold: {
-    color: '#F2B632',
+    color: colors.heroAccent,
   },
   art: {
     marginTop: 28,
@@ -276,7 +276,7 @@ const createStyles = (colors) => StyleSheet.create({
     width: 44,
     height: 60,
     borderRadius: 6,
-    backgroundColor: colors.covers.vinho,
+    backgroundColor: colors.covers.madeira,
     alignItems: 'center',
     justifyContent: 'center',
   },

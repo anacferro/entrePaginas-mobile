@@ -3,6 +3,7 @@ import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
 import { relocateMarks } from './marks';
 import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
+import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 
 let userId = null;
 let queue = Promise.resolve();
@@ -141,9 +142,9 @@ export const storage = {
       subtitle: bookData.subtitle?.trim() || 'Obra artesanal recém-encadernada',
       category: bookData.category || 'Geral',
       tags: bookData.tags || [],
-      coverColor: bookData.coverColor || '#215C50',
-      titleColor: bookData.titleColor || '#FFFFFF',
-      paperColor: bookData.paperColor || '#F4EAE0',
+      coverColor: bookData.coverColor || DEFAULT_COVER_COLOR,
+      titleColor: bookData.titleColor || DEFAULT_TITLE_COLOR,
+      paperColor: bookData.paperColor || DEFAULT_PAPER_COLOR,
       fontFamily: bookData.fontFamily || 'serif',
       fontFallback: bookData.fontFallback || null,
       coverImage: bookData.coverImage || null,

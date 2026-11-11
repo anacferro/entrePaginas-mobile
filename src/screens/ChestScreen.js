@@ -356,7 +356,7 @@ const createStyles = (colors) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6A372E',
+    backgroundColor: colors.secondary,
     height: 34,
     borderRadius: 8,
     paddingHorizontal: 8,

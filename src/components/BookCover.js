@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
+import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR } from '../theme/bookOptions';
 
 export function useShelfCoverWidth() {
   const { width } = useWindowDimensions();
@@ -8,8 +9,8 @@ export function useShelfCoverWidth() {
 
 export default function BookCover({
   title = 'Sem Título',
-  coverColor = '#215C50',
-  titleColor = '#FFFFFF',
+  coverColor = DEFAULT_COVER_COLOR,
+  titleColor = DEFAULT_TITLE_COLOR,
   totalPages = 0,
   coverImage = null,
   width,

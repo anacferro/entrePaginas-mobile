@@ -7,7 +7,7 @@ import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 
 const typeInfo = (colors) => ({
-  edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accentGold },
+  edit: { label: 'Trecho alterado', icon: 'create-outline', color: colors.accent },
   add: { label: 'Capítulo adicionado', icon: 'add-circle-outline', color: colors.success },
   move: { label: 'Capítulo reordenado', icon: 'swap-vertical-outline', color: colors.secondary },
   delete: { label: 'Capítulo removido', icon: 'remove-circle-outline', color: colors.danger },

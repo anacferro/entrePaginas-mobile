@@ -32,7 +32,7 @@ users/{uid}
   "subtitle": "Por Fulana de Tal",
   "category": "Literatura",
   "tags": ["infância", "rio"],
-  "coverColor": "#215C50",
+  "coverColor": "#244C3A",
   "titleColor": "#FFFFFF",
   "paperColor": "#F4EAE0",
   "totalPages": 82,

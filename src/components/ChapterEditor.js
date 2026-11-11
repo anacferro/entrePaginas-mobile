@@ -120,7 +120,7 @@ export default function ChapterEditor({
 
           {notice && (
             <View style={styles.notice}>
-              <Ionicons name="git-compare-outline" size={15} color={colors.accentGold} />
+              <Ionicons name="git-compare-outline" size={15} color={colors.accent} />
               <Text style={styles.noticeText}>{notice}</Text>
             </View>
           )}

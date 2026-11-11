@@ -90,7 +90,7 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.statBox}>
             <View style={styles.statIconCircle}>
-              <Ionicons name="reader-outline" size={18} color={colors.accentGold} />
+              <Ionicons name="reader-outline" size={18} color={colors.accent} />
             </View>
             <Text style={styles.statNumber}>{libraryStats.chapters}</Text>
             <Text style={styles.statLabel}>Capítulos</Text>
@@ -159,7 +159,7 @@ const createStyles = (colors) => StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 2,
-    borderColor: colors.accentPeach,
+    borderColor: colors.secondary,
   },
   avatarBadge: {
     position: 'absolute',

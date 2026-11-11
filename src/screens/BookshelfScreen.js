@@ -289,7 +289,7 @@ export default function BookshelfScreen({ navigation }) {
               <Text style={styles.selectionAllText}>Todos</Text>
             </Touchable>
             <Touchable style={styles.selectionDelete} onPress={handleDeleteSelected} accessibilityLabel="Excluir selecionados">
-              <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+              <Ionicons name="trash-outline" size={18} color="#FAF8F1" />
               <Text style={styles.selectionDeleteText}>Excluir</Text>
             </Touchable>
           </View>
@@ -432,7 +432,7 @@ const createStyles = (colors) => StyleSheet.create({
   },
   newBookBanner: {
     flex: 1,
-    backgroundColor: '#82745B',
+    backgroundColor: colors.secondary,
     borderRadius: 16,
     padding: 14,
     shadowColor: '#000',
@@ -574,7 +574,7 @@ const createStyles = (colors) => StyleSheet.create({
     gap: 6,
   },
   selectionDeleteText: {
-    color: '#FFFFFF',
+    color: '#FAF8F1',
     fontSize: 13,
     fontWeight: '700',
   },

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from './FormBlocks';
-import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS } from '../theme/bookOptions';
+import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
 
@@ -21,9 +21,9 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
   const [title, setTitle] = useState('');
   const [subtitle, setSubtitle] = useState('');
   const [category, setCategory] = useState('Literatura');
-  const [coverColor, setCoverColor] = useState('#215C50');
-  const [titleColor, setTitleColor] = useState('#FFFFFF');
-  const [paperColor, setPaperColor] = useState('#F4EAE0');
+  const [coverColor, setCoverColor] = useState(DEFAULT_COVER_COLOR);
+  const [titleColor, setTitleColor] = useState(DEFAULT_TITLE_COLOR);
+  const [paperColor, setPaperColor] = useState(DEFAULT_PAPER_COLOR);
   const [fontFamily, setFontFamily] = useState('serif');
   const [tags, setTags] = useState([]);
   const [coverImage, setCoverImage] = useState(null);
@@ -36,7 +36,7 @@ export default function BookEditModal({ visible, book, onCancel, onSave }) {
       setCategory(book.category || 'Literatura');
       setCoverColor(book.coverColor);
       setTitleColor(book.titleColor);
-      setPaperColor(book.paperColor || '#F4EAE0');
+      setPaperColor(book.paperColor || DEFAULT_PAPER_COLOR);
       setFontFamily(book.fontFamily || 'serif');
       setTags(book.tags || []);
       setCoverImage(book.coverImage || null);

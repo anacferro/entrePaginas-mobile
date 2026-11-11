@@ -75,7 +75,7 @@ export default function BookCard({
         )}
         {book.locked && (
           <View style={styles.lockBadge} accessibilityLabel="Livro protegido">
-            <Ionicons name="lock-closed" size={13} color="#FFFFFF" />
+            <Ionicons name="lock-closed" size={13} color="#FAF8F1" />
           </View>
         )}
       </Touchable>
@@ -204,7 +204,7 @@ export default function BookCard({
                   setHistoryVisible(true);
                 }}
               >
-                <Ionicons name="git-compare-outline" size={20} color={colors.accentGold} />
+                <Ionicons name="git-compare-outline" size={20} color={colors.accent} />
                 <Text style={styles.menuItemText}>Histórico de Alterações</Text>
                 {changeCount > 0 && (
                   <View style={styles.menuBadge}>
@@ -295,7 +295,7 @@ const createStyles = (colors) => StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.55)',
   },
   progressLabel: {
-    color: '#FFFFFF',
+    color: '#FAF8F1',
     fontSize: 11,
     fontWeight: '600',
     marginBottom: 6,
@@ -309,7 +309,7 @@ const createStyles = (colors) => StyleSheet.create({
   progressFill: {
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FAF8F1',
   },
   selectOverlay: {
     position: 'absolute',
@@ -331,7 +331,7 @@ const createStyles = (colors) => StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#FAF8F1',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -415,7 +415,7 @@ const createStyles = (colors) => StyleSheet.create({
   },
   menuBadge: {
     marginLeft: 'auto',
-    backgroundColor: colors.accentGold,
+    backgroundColor: colors.accent,
     borderRadius: 10,
     minWidth: 20,
     paddingHorizontal: 6,
@@ -425,7 +425,7 @@ const createStyles = (colors) => StyleSheet.create({
   menuBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#FAF8F1',
   },
   menuItemDanger: {
     marginTop: 4,
