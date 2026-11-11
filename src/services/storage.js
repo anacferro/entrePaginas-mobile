@@ -197,6 +197,7 @@ export const storage = {
       isOwn: bookData.isOwn !== false,
       textPending: bookData.textPending || null,
       catalog: bookData.catalog || null,
+      normalization: bookData.normalization || null,
       bookmarks: [],
       changeLog: [],
       createdAt: new Date().toISOString(),

@@ -26,6 +26,7 @@ export function paginate(chapters) {
     const content = chapter.content || '';
     let start = 0;
     let first = true;
+    let previousEnd = 0;
 
     do {
       while (start < content.length && /\s/.test(content[start])) start += 1;
@@ -33,12 +34,15 @@ export function paginate(chapters) {
       pages.push({
         chapterIndex,
         chapterId: chapter.id,
+        opensChapter: first,
+        continues: !first && !/\n\s*\n/.test(content.slice(previousEnd, start)),
         start,
         content: content.slice(start, end),
         marks: marksFor(chapter.marks, start, end),
         photo: first ? chapter.photo : null,
       });
       first = false;
+      previousEnd = end;
       start = end;
     } while (start < content.length);
   });

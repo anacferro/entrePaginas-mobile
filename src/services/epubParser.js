@@ -220,13 +220,28 @@ function resolvePath(base, href) {
 }
 
 function htmlToText(html) {
-  const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] || html;
-  const text = body
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, '')
-    .replace(/<\/(p|div|h[1-6]|li|blockquote|tr|section)>/gi, '\n\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '');
-  return decodeEntities(text)
+  const body = (html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] || html)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<(script|style|head)[\s\S]*?<\/\1>/gi, '');
+  let out = '';
+  let pre = 0;
+  body.split(/(<[^>]+>)/).forEach((token) => {
+    if (!token) return;
+    if (token[0] !== '<') {
+      out += pre ? decodeEntities(token) : decodeEntities(token.replace(/\s+/g, ' '));
+      return;
+    }
+    const match = token.match(/^<(\/?)\s*([a-z0-9]+)/i);
+    if (!match) return;
+    const name = match[2].toLowerCase();
+    const closing = match[1] === '/';
+    if (name === 'pre') {
+      pre = Math.max(0, pre + (closing ? -1 : 1));
+      out += '\n\n';
+    } else if (name === 'br') out += '\n';
+    else if (/^(p|div|h[1-6]|li|blockquote|tr|section|ul|ol|table|hr)$/.test(name)) out += '\n\n';
+  });
+  return out
     .replace(/[ \t]+/g, ' ')
     .replace(/ ?\n ?/g, '\n')
     .replace(/\n{3,}/g, '\n\n')

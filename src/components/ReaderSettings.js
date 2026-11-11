@@ -179,6 +179,19 @@ export default function ReaderSettings({ prefs, onChange, onReset, onClose, prev
               onChange={(v) => onChange({ align: v })}
               styles={styles}
             />
+
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <Text style={styles.rowLabel}>Recuo na primeira linha</Text>
+                <Text style={styles.hint}>Como nos livros impressos. O primeiro parágrafo de cada capítulo não tem recuo.</Text>
+              </View>
+              <Switch
+                value={prefs.indent}
+                onValueChange={(v) => onChange({ indent: v })}
+                trackColor={{ true: colors.primary, false: colors.border }}
+                accessibilityLabel="Recuo na primeira linha"
+              />
+            </View>
           </>
         )}
 

@@ -4,6 +4,7 @@ import { File } from 'expo-file-system';
 import { parsePdf } from './pdfParser';
 import { parseEpub } from './epubParser';
 import { looksLikeHtml, htmlToText, extractSentinelMarks, stripSentinels } from './htmlText';
+import { rebuildChapters } from './textRebuild/index.js';
 
 const CHAPTER_SIZE = 1800;
 const MAX_CHAPTER = 150000;
@@ -162,7 +163,7 @@ function isReadable(text) {
 }
 
 async function importPdf(asset) {
-  const { pages, title, text, fontHint } = parsePdf(await readBytes(asset));
+  const { pages, title, text, fontHint, rebuild } = parsePdf(await readBytes(asset), { rebuild: false });
   const bookTitle = title || titleFromFileName(asset.name);
 
   if (!isReadable(text)) {
@@ -182,18 +183,21 @@ async function importPdf(asset) {
     };
   }
 
+  const { chapters, summary } = rebuildChapters(splitByHeadings(text), { source: 'pdf' });
   return {
     title: bookTitle,
     subtitle: 'Importado de PDF',
-    pages,
+    pages: Math.max(pages, estimatePages(chapters.map(c => c.content).join(''))),
     fontHint,
-    chapters: splitByHeadings(text),
+    chapters,
+    normalization: { ...summary, removed: rebuild?.removed || null },
   };
 }
 
 async function importEpub(asset) {
   const { title, author, chapters, font, fontHint } = parseEpub(await readBytes(asset));
-  const fullText = chapters.map(c => c.content).join(' ');
+  const rebuilt = rebuildChapters(chapters, { source: 'epub' });
+  const fullText = rebuilt.chapters.map(c => c.content).join(' ');
 
   return {
     title: title || titleFromFileName(asset.name),
@@ -201,19 +205,23 @@ async function importEpub(asset) {
     pages: estimatePages(fullText),
     font,
     fontHint,
-    chapters: capChapters(chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` }))),
+    chapters: capChapters(rebuilt.chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` }))),
+    normalization: rebuilt.summary,
   };
 }
 
 async function importText(asset) {
   const text = (await readText(asset)).trim();
   if (!text) throw new Error('O arquivo de texto está vazio.');
+  const markdown = /\.(md|markdown)$/i.test(asset.name);
+  const { chapters, summary } = rebuildChapters(splitByHeadings(text), { source: markdown ? 'plain' : 'txt' });
 
   return {
     title: titleFromFileName(asset.name),
     subtitle: 'Importado de arquivo de texto',
-    pages: estimatePages(text),
-    chapters: splitByHeadings(text),
+    pages: estimatePages(chapters.map(c => c.content).join('')),
+    chapters,
+    normalization: summary,
   };
 }
 

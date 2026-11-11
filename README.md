@@ -231,7 +231,7 @@ Tudo vem do registro real de leitura, das notas e dos metadados dos livros. Indi
 ### Testes
 
 ```bash
-node --test tests/converter.test.mjs tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
+node --test tests/rebuild.test.mjs tests/converter.test.mjs tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
 ```
 
 Cobrem deduplicação, classificação de disponibilidade, perfil e inferência, regras de diversidade, validação da IA contra o catálogo e cálculo das estatísticas com dados conhecidos. `node tests/live-catalog.mjs "dom casmurro"` consulta as fontes reais (precisa de internet; `LANG_FILTER=pt` filtra por idioma). O aviso `MODULE_TYPELESS_PACKAGE_JSON` do Node é inofensivo.
@@ -259,6 +259,26 @@ Em **Criar > Importar**, o cartão "Converter arquivo em livro" transforma um do
 **Conferência:** o arquivo gerado é reaberto pelo leitor do próprio app e o texto é comparado com o do documento; qualquer divergência aparece antes de adicionar.
 
 **Limites:** DOC binário, imagens de RTF, gráficos (viram aviso), PDF digitalizado (sem OCR), caracteres fora do alfabeto latino no PDF gerado (a fonte é padrão) e imagens no leitor do app (viram marcação de texto). Não houve teste em aparelho nem validação com epubcheck.
+
+## ✍️ Reconstrução do texto importado
+
+Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a importação (`src/services/textRebuild/`), antes de chegar ao leitor. O leitor só apresenta bem um texto que já está bem formado.
+
+**Onde o problema nascia:** a extração de PDF descartava as coordenadas e juntava linhas só pela pontuação final; TXT com quebra em largura fixa chegava ao leitor com as quebras originais; EPUB mantinha as quebras de linha do código-fonte dentro dos parágrafos; o leitor aplicava espaçamento artificial entre letras e não tinha recuo nem hifenização.
+
+**Etapas:** extração com posições (PDF) → remoção de cabeçalhos, rodapés e números de página repetidos → limpeza (hífen suave, caracteres invisíveis, ligaduras, separadores Unicode, mojibake, espaços duplos) → parágrafos (recuo, intervalo vertical, linha curta com ponto final, falas, títulos, listas, versos preservados) → hifenização de fim de linha → palavras fragmentadas → validação → armazenamento.
+
+**Palavras fragmentadas:** só são unidas quando a junção aparece no próprio livro e uma das partes não funciona como palavra. Pares em que as duas partes são palavras válidas ("de mais", "por que", "a gente") ficam como estão e entram na lista de dúvidas. Palavra fora do dicionário nunca é alterada. Não há dicionário externo: a evidência vem do texto do próprio livro.
+
+**Invariante de conservação:** depois de cada etapa, a sequência de letras e dígitos (ignorando espaços, quebras, hífens de fim de linha e caracteres invisíveis, com ligaduras decompostas) precisa ser idêntica à anterior. Se não for, a etapa é descartada e o texto volta ao da etapa anterior. A IA não participa da reconstrução, então nenhuma letra pode ser alterada por ela.
+
+**Armazenamento:** o capítulo guarda o texto reconstruído em `content` e o texto extraído em `raw` (livros de até 1,2 milhão de caracteres; `raw` não vai para a nuvem). O livro guarda `normalization` com a versão do algoritmo e um resumo. `restoreRaw` devolve o texto original e remapeia as marcações.
+
+**Marcações:** ficam ancoradas por deslocamento de caractere dentro do capítulo. `remapMarks` converte as posições antigas nas novas pela posição das letras e dígitos, e descarta (contando) a marcação se o texto de fato mudou. Marcadores de página e progresso usam o número da folha.
+
+**Leitor:** sem espaçamento entre letras, recuo na primeira linha (opção em Ajustes de leitura; sem recuo no primeiro parágrafo do capítulo nem em continuação de página), hifenização automática no idioma do livro (web e Android), justificado ou à esquerda.
+
+**Limites:** sem OCR (PDF digitalizado continua sem texto), colunas múltiplas são lidas na ordem do arquivo, notas de rodapé de PDF não são separadas, o recuo e a hifenização dependem da plataforma, e livros já importados não são reprocessados automaticamente (a função existe, mas não há botão). Não houve teste visual em aparelho.
 
 ---
 

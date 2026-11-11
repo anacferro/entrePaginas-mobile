@@ -92,6 +92,7 @@ export default function CreateBookScreen({ navigation, route }) {
       fontFamily: file.fontHint || 'serif',
       fontFallback: file.fontHint || null,
       totalPages: file.pages,
+      normalization: file.normalization || null,
       isOwn: false,
       chapters: file.chapters,
     });

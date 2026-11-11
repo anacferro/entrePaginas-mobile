@@ -1,5 +1,7 @@
 import { inflate } from 'pako';
 import { dominantFont } from './fontHints.js';
+import { assemblePages } from './textRebuild/pdfLayout.js';
+import { rebuildText } from './textRebuild/index.js';
 
 const WIN_ANSI = {
   0x80: '€', 0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',
@@ -232,6 +234,89 @@ function extractPageText(content, fonts) {
   return text;
 }
 
+function extractPageLines(content, fonts) {
+  const tokenRe = /\/([^\s/<>[\]()]+)\s+(-?[\d.]+)\s+Tf|\[((?:\((?:\\[\s\S]|[^\\)])*\)|<[0-9a-fA-F\s]*>|[^\]])*)\]\s*TJ|(\((?:\\[\s\S]|[^\\)])*\)|<[0-9a-fA-F\s]*>)\s*(Tj|'|")|(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+Tm\b|(-?[\d.]+)\s+(-?[\d.]+)\s+T([dD])|(-?[\d.]+)\s+TL\b|T\*|\bBT\b/g;
+  const lines = [];
+  let font = null;
+  let size = 12;
+  let scale = 1;
+  let x = 0;
+  let y = 0;
+  let leading = 0;
+  let line = null;
+  let moved = false;
+  let token;
+
+  const effective = () => Math.max(1, Math.abs(size * scale));
+  const show = (text) => {
+    if (!text) return;
+    if (!line || Math.abs(line.y - y) > effective() * 0.3) {
+      line = { x, y, size: effective(), text: '' };
+      lines.push(line);
+    } else if (moved && x > line.x && !/\s$/.test(line.text) && !/^\s/.test(text)) {
+      line.text += ' ';
+    }
+    moved = false;
+    line.text += text;
+  };
+  const nextLine = (dx, dy) => {
+    x += dx;
+    y += dy;
+    moved = true;
+  };
+
+  while ((token = tokenRe.exec(content))) {
+    if (token[1] !== undefined) {
+      font = fonts.get(token[1]) || null;
+      size = Number(token[2]) || size;
+    } else if (token[3] !== undefined) {
+      let text = '';
+      (token[3].match(/\((?:\\[\s\S]|[^\\)])*\)|<[0-9a-fA-F\s]*>|-?[\d.]+/g) || []).forEach((part) => {
+        if (part.startsWith('(') || part.startsWith('<')) text += decodeString(part, font);
+        else if (Number(part) < -180) text += ' ';
+      });
+      show(text);
+    } else if (token[4] !== undefined) {
+      if (token[5] !== 'Tj') nextLine(0, -(leading || effective() * 1.2));
+      show(decodeString(token[4], font));
+    } else if (token[6] !== undefined) {
+      scale = Math.abs(Number(token[9])) || 1;
+      x = Number(token[10]);
+      y = Number(token[11]);
+      moved = true;
+    } else if (token[12] !== undefined) {
+      const dy = Number(token[13]);
+      if (token[14] === 'D') leading = -dy;
+      nextLine(Number(token[12]), dy);
+    } else if (token[15] !== undefined) {
+      leading = Number(token[15]);
+    } else if (/^T\*/.test(token[0])) {
+      nextLine(0, -(leading || effective() * 1.2));
+    } else {
+      x = 0;
+      y = 0;
+      scale = 1;
+      line = null;
+    }
+  }
+
+  return lines.filter(l => l.text.trim());
+}
+
+function summarizeRemoved(removed) {
+  const counts = { 'numero-de-pagina': 0, cabecalho: 0, rodape: 0 };
+  removed.forEach((r) => {
+    counts[r.kind] = (counts[r.kind] || 0) + 1;
+  });
+  return counts;
+}
+
+function mediaHeight(page, resolve) {
+  const box = resolve(dictValue(page.dict, 'MediaBox'));
+  const nums = String(box || '').match(/-?[\d.]+/g)?.map(Number);
+  return nums && nums.length >= 4 ? nums[3] - nums[1] : null;
+}
+
 function normalizeText(text) {
   const lines = text
     .replace(/[^\S\n]+/g, ' ')
@@ -271,7 +356,7 @@ function decodeInfoTitle(raw) {
   return literal.trim();
 }
 
-export function parsePdf(bytes) {
+export function parsePdf(bytes, { rebuild = true } = {}) {
   const raw = bytesToLatin1(bytes);
   if (!raw.startsWith('%PDF')) {
     throw new Error('O arquivo selecionado não é um PDF válido.');
@@ -308,15 +393,24 @@ export function parsePdf(bytes) {
       ? (/\/Length/.test(objects.get(contents.ref)?.dict || '') ? [contents.ref] : refsIn(objects.get(contents.ref)?.dict))
       : refsIn(contents);
 
-    return extractPageText(streamNums.map(n => streamText(objects.get(n))).join('\n'), fonts);
+    const stream = streamNums.map(n => streamText(objects.get(n))).join('\n');
+    return { text: extractPageText(stream, fonts), lines: extractPageLines(stream, fonts), height: mediaHeight(page, resolve) };
   });
 
   const infoTitle = decodeInfoTitle(raw);
+  const positioned = pageTexts.some(p => p.lines.length > 0);
+  const layout = positioned ? assemblePages(pageTexts.map(p => ({ lines: p.lines, height: p.height }))) : null;
+
+  const baseText = layout ? layout.text : normalizeText(pageTexts.map(p => p.text).join('\n'));
+  const rebuilt = rebuild
+    ? rebuildText(baseText, { source: layout ? 'pdf' : 'plain' })
+    : { content: baseText, report: { version: 0, source: 'pdf', raw: true } };
 
   return {
     pages: pages.length || 1,
     title: /^[\x20-\x7EÀ-ÿ‘’“”–—…]{3,}$/.test(infoTitle) ? infoTitle : null,
-    text: normalizeText(pageTexts.join('\n')),
+    text: rebuilt.content,
+    rebuild: { ...rebuilt.report, layout: Boolean(layout), removed: summarizeRemoved(layout?.removed || []) },
     fontHint: dominantFont([...raw.matchAll(/\/BaseFont\s*\/(?:[A-Z]{6}\+)?([A-Za-z0-9,\-]+)/g)].map(m => m[1])),
   };
 }

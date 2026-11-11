@@ -13,11 +13,19 @@ function splitParagraphs(segments) {
   return paragraphs.filter((p) => p.length > 0);
 }
 
-export default function AnnotatedText({ content, marks, style, annotating, onSelect, paragraphGap = null }) {
+const INDENT = '\u2003\u2002';
+const HYPHENS = Platform.OS === 'web' ? { hyphens: 'auto', overflowWrap: 'break-word' } : null;
+
+function isHeadingLike(list) {
+  const text = list.map((s) => s.text).join('').trim();
+  return text.length > 0 && text.length <= 60 && !/[.!?…,;:]$/.test(text) && text === text.toUpperCase() && /[A-ZÀ-Þ]{3}/.test(text);
+}
+
+export default function AnnotatedText({ content, marks, style, annotating, onSelect, paragraphGap = null, indent = false, skipFirstIndent = false, lang }) {
   const webRef = useRef(null);
   const segments = buildSegments(content, marks);
 
-  const render = (list) => list.map((s, i) => (
+  const render = (list, prefix = '') => list.map((s, i) => (
     <Text
       key={i}
       style={[
@@ -28,7 +36,7 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
         s.underline && styles.underline,
       ]}
     >
-      {s.text}
+      {i === 0 ? `${prefix}${s.text}` : s.text}
     </Text>
   ));
   const children = render(segments);
@@ -78,8 +86,13 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
     return (
       <View>
         {paragraphs.map((list, i) => (
-          <Text key={i} style={[style, i < paragraphs.length - 1 && { marginBottom: paragraphGap }]}>
-            {render(list)}
+          <Text
+            key={i}
+            lang={lang}
+            android_hyphenationFrequency="normal"
+            style={[style, HYPHENS, i < paragraphs.length - 1 && { marginBottom: paragraphGap }]}
+          >
+            {render(list, indent && !(i === 0 && skipFirstIndent) && !list.some((s) => /\n/.test(s.text)) && !isHeadingLike(list) ? INDENT : '')}
           </Text>
         ))}
       </View>

@@ -728,6 +728,9 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
             annotating={annotating}
             onSelect={handleSelect}
             paragraphGap={fontSize * gapEm}
+            indent={prefs.indent}
+            skipFirstIndent={page.opensChapter || page.continues}
+            lang={book?.catalog?.language || 'pt-BR'}
             style={[
               styles.bookParagraphs,
               {
@@ -1596,7 +1599,6 @@ const createStyles = (colors) => StyleSheet.create({
   },
   bookParagraphs: {
     fontFamily: 'serif',
-    letterSpacing: 0.2,
     textAlign: 'justify',
   },
   addChapterBtn: {
