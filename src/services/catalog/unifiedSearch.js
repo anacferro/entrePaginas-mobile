@@ -22,9 +22,15 @@ export function relevance(work, query) {
   return 0;
 }
 
+export function languageList(input) {
+  const list = Array.isArray(input.languages) ? input.languages : [];
+  const all = input.language ? [input.language, ...list] : list;
+  return [...new Set(all.filter(Boolean))];
+}
+
 function matchesFilters(work, filters) {
-  const { language, yearFrom, yearTo, genre, author, availability } = filters;
-  if (language && work.languages.length && !work.languages.includes(language)) return false;
+  const { languages = [], yearFrom, yearTo, genre, author, availability } = filters;
+  if (languages.length && work.languages.length && !work.languages.some((l) => languages.includes(l))) return false;
   if (yearFrom || yearTo) {
     const years = [work.firstYear, ...work.editions.map((e) => e.year)].filter(Boolean);
     if (!years.length) return false;
@@ -82,27 +88,39 @@ export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Da
     return flight;
   }
 
-  async function gather(params, only) {
+  async function gather(params, only, languages = []) {
     const active = sources.filter((s) => !only || only.includes(s.id));
-    const settled = await Promise.allSettled(active.map((s) => runSource(s, params)));
-    const statuses = settled.map((result, i) => {
-      const id = active[i].id;
-      if (result.status === 'fulfilled') {
-        return { source: id, label: SOURCE_LABELS[id], ok: true, count: result.value.records.length, ms: result.value.ms, cached: result.value.cached, error: null };
+    const variants = languages.length ? languages.map((language) => ({ ...params, language })) : [{ ...params, language: null }];
+    const jobs = active.flatMap((s) => variants.map((p) => ({ source: s, params: p })));
+    const settled = await Promise.allSettled(jobs.map((j) => runSource(j.source, j.params)));
+    const statuses = active.map((s) => {
+      const mine = settled.filter((_, i) => jobs[i].source.id === s.id);
+      const done = mine.filter((r) => r.status === 'fulfilled');
+      if (done.length) {
+        return {
+          source: s.id,
+          label: SOURCE_LABELS[s.id],
+          ok: true,
+          count: done.reduce((n, r) => n + r.value.records.length, 0),
+          ms: Math.max(...done.map((r) => r.value.ms)),
+          cached: done.every((r) => r.value.cached),
+          error: null,
+        };
       }
-      return { source: id, label: SOURCE_LABELS[id], ok: false, count: 0, ms: 0, cached: false, error: describeError(result.reason) };
+      return { source: s.id, label: SOURCE_LABELS[s.id], ok: false, count: 0, ms: 0, cached: false, error: describeError(mine[0].reason) };
     });
     const records = settled.flatMap((r) => (r.status === 'fulfilled' ? r.value.records : []));
     return { records, statuses };
   }
 
   async function search(input = {}) {
-    const { query = '', title, author, genre, language, yearFrom, yearTo, availability = 'any', page = 1, sources: only } = input;
+    const { query = '', title, author, genre, yearFrom, yearTo, availability = 'any', page = 1, sources: only } = input;
+    const languages = languageList(input);
     const text = [query, title].filter(Boolean).join(' ').trim();
-    const params = { query: text, language: language || null, author: author || null, subject: !text && genre ? GENRES.find((g) => g.key === genre)?.words[0] || genre : null, page, limit: 20 };
-    const { records, statuses } = await gather(params, only);
+    const params = { query: text, author: author || null, subject: !text && genre ? GENRES.find((g) => g.key === genre)?.words[0] || genre : null, page, limit: 20 };
+    const { records, statuses } = await gather(params, only, languages);
     const works = rankWorks(groupWorks(records), text).filter((w) =>
-      matchesFilters(w, { language, yearFrom, yearTo, genre, author, availability })
+      matchesFilters(w, { languages, yearFrom, yearTo, genre, author, availability })
     );
     const outcome = {
       works,
@@ -111,18 +129,19 @@ export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Da
       allFailed: statuses.length > 0 && statuses.every((s) => !s.ok),
       page,
     };
-    history?.record({ at: new Date(now()).toISOString(), kind: 'search', query: text, filters: { language, genre, author, yearFrom, yearTo, availability }, statuses: statuses.map(({ source, ok, count, ms, cached, error }) => ({ source, ok, count, ms, cached, error })) });
+    history?.record({ at: new Date(now()).toISOString(), kind: 'search', query: text, filters: { languages, genre, author, yearFrom, yearTo, availability }, statuses: statuses.map(({ source, ok, count, ms, cached, error }) => ({ source, ok, count, ms, cached, error })) });
     return outcome;
   }
 
   async function browse(input = {}) {
-    const { subject, language, query = '', page = 1, offset = 0, only } = input;
-    const params = { query, language: language || null, subject: subject || null, page, offset, limit: 20, freeOnly: true };
-    const { records, statuses } = await gather(params, only);
+    const { subject, query = '', page = 1, offset = 0, only } = input;
+    const languages = languageList(input);
+    const params = { query, subject: subject || null, page, offset, limit: 20, freeOnly: true };
+    const { records, statuses } = await gather(params, only, languages);
     const works = rankWorks(groupWorks(records), query).filter((w) =>
-      w.editions.some((e) => isFree(e.best.access.level)) && matchesFilters(w, { language })
+      w.editions.some((e) => isFree(e.best.access.level)) && matchesFilters(w, { languages })
     );
-    history?.record({ at: new Date(now()).toISOString(), kind: 'browse', query: subject || query, filters: { language }, statuses: statuses.map(({ source, ok, count, ms, cached, error }) => ({ source, ok, count, ms, cached, error })) });
+    history?.record({ at: new Date(now()).toISOString(), kind: 'browse', query: subject || query, filters: { languages }, statuses: statuses.map(({ source, ok, count, ms, cached, error }) => ({ source, ok, count, ms, cached, error })) });
     return { works, statuses, failed: statuses.filter((s) => !s.ok), allFailed: statuses.length > 0 && statuses.every((s) => !s.ok) };
   }
 

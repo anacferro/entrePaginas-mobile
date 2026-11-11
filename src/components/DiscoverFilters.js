@@ -7,10 +7,10 @@ import { LANGUAGE_OPTIONS } from '../services/catalog/languages';
 import { GENRES } from '../services/catalog/genres';
 import Touchable from './Touchable';
 
-export const EMPTY_FILTERS = { language: null, availability: 'any', genre: null, author: '', yearFrom: '', yearTo: '' };
+export const EMPTY_FILTERS = { languages: [], availability: 'any', genre: null, author: '', yearFrom: '', yearTo: '' };
 
 export function countFilters(filters) {
-  return [filters.language, filters.availability !== 'any', filters.genre, filters.author.trim(), filters.yearFrom, filters.yearTo].filter(Boolean).length;
+  return [filters.languages.length, filters.availability !== 'any', filters.genre, filters.author.trim(), filters.yearFrom, filters.yearTo].filter(Boolean).length;
 }
 
 function Chip({ label, active, onPress, styles }) {
@@ -57,13 +57,20 @@ export default function DiscoverFilters({ visible, filters, onApply, onClose }) 
               <Chip styles={styles} label="Lê no app" active={draft.availability === 'inapp'} onPress={() => set({ availability: 'inapp' })} />
             </View>
 
-            <Text style={styles.label}>Idioma</Text>
+            <Text style={styles.label}>Idiomas</Text>
             <View style={styles.chips}>
-              <Chip styles={styles} label="Todos" active={!draft.language} onPress={() => set({ language: null })} />
+              <Chip styles={styles} label="Todos" active={!draft.languages.length} onPress={() => set({ languages: [] })} />
               {LANGUAGE_OPTIONS.map((l) => (
-                <Chip key={l.code} styles={styles} label={l.label} active={draft.language === l.code} onPress={() => set({ language: l.code })} />
+                <Chip
+                  key={l.code}
+                  styles={styles}
+                  label={l.label}
+                  active={draft.languages.includes(l.code)}
+                  onPress={() => set({ languages: draft.languages.includes(l.code) ? draft.languages.filter((c) => c !== l.code) : [...draft.languages, l.code] })}
+                />
               ))}
             </View>
+            <Text style={styles.hint}>Escolha um ou mais. Sem escolha, aparecem todos os idiomas.</Text>
 
             <Text style={styles.label}>Gênero</Text>
             <View style={styles.chips}>
@@ -138,6 +145,7 @@ const createStyles = (colors) => StyleSheet.create({
   close: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSoft },
   body: { paddingBottom: space.md },
   label: { fontSize: 12, fontWeight: '700', color: colors.textSecondary, marginTop: space.lg, marginBottom: space.sm },
+  hint: { fontSize: 11, color: colors.textMuted, marginTop: space.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     minHeight: 36,

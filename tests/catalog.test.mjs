@@ -120,6 +120,18 @@ test('busca unificada: uma fonte cai e as outras continuam', async () => {
   assert.equal(result.allFailed, false);
 });
 
+test('busca unificada: varios idiomas escolhidos consultam cada um e descartam os demais', async () => {
+  const asked = [];
+  const bank = { pt: 'Dom Casmurro', es: 'Cien anos de soledad', en: 'Moby Dick', fr: 'Les Miserables' };
+  const src = { id: 'openlibrary', search: async ({ language }) => { asked.push(language); return [rec({ source: 'openlibrary', title: bank[language] || 'Sem idioma', authors: ['A'], language })]; } };
+  const catalog = createCatalog({ sources: [src, { id: 'gutenberg', search: async () => [rec({ source: 'gutenberg', title: 'Moby Dick', authors: ['A'], language: 'en' })] }] });
+  const result = await catalog.search({ query: 'livro', languages: ['pt', 'es'] });
+  assert.deepEqual(asked.sort(), ['es', 'pt']);
+  assert.deepEqual(result.works.map((w) => w.title).sort(), ['Cien anos de soledad', 'Dom Casmurro']);
+  const all = await createCatalog({ sources: [src] }).search({ query: 'x' });
+  assert.equal(all.works.length, 1);
+});
+
 test('busca unificada: todas caem, e o cache evita nova chamada', async () => {
   let calls = 0;
   const flaky = { id: 'openlibrary', search: async () => { calls += 1; return [rec({ source: 'openlibrary', title: 'Iracema', authors: ['Jose de Alencar'], language: 'pt' })]; } };

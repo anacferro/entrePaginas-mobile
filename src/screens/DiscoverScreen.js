@@ -75,7 +75,7 @@ export default function DiscoverScreen({ navigation }) {
 
   const toSearchInput = (f, nextPage) => ({
     query: query.trim(),
-    language: f.language,
+    languages: f.languages,
     availability: f.availability,
     genre: f.genre,
     author: f.author.trim() || null,

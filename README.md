@@ -183,7 +183,7 @@ Limites assumidos: as preferências não sincronizam entre aparelhos; a anotaç�
 
 ### Descobrir (aba própria)
 
-- **Busca unificada** em cinco fontes ao mesmo tempo, com resultados juntos e sem repetir a mesma obra. Filtros: idioma, gênero, autor, ano, disponibilidade (gratuito, lê no app). Paginação, cache de 10 minutos e histórico de buscas só no aparelho (máximo 60, apagado em *Excluir dados*).
+- **Busca unificada** em cinco fontes ao mesmo tempo, com resultados juntos e sem repetir a mesma obra. Filtros: **idiomas (escolha um ou mais; sem escolha, todos)**, gênero, autor, ano, disponibilidade (gratuito, lê no app). Paginação, cache de 10 minutos e histórico de buscas só no aparelho (máximo 60, apagado em *Excluir dados*).
 - **Explorar:** 14 temas guiados (literatura brasileira, vozes africanas, América Latina, poesia, ciência para leigos, clássicos fora do radar etc.) e *Surpreenda-me*, que sorteia livros reais do catálogo.
 - **Tolerância a falhas:** cada fonte tem tempo limite de 8 s e uma nova tentativa com espera; se uma cair, aparece um aviso discreto e as outras seguem valendo. Só vira erro se todas falharem.
 - **Etiquetas de acesso** (classificação conservadora; na dúvida, "Condição não confirmada"): domínio público, acesso aberto, gratuito, empréstimo digital, só prévia, acesso restrito, sem texto online. Cada livro informa se **lê dentro do app** ou **abre na plataforma de origem**.
