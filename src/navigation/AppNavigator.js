@@ -8,6 +8,7 @@ import BookshelfScreen from '../screens/BookshelfScreen';
 import CreateBookScreen from '../screens/CreateBookScreen';
 import ChestScreen from '../screens/ChestScreen';
 import DiscoverScreen from '../screens/DiscoverScreen';
+import StatsScreen from '../screens/StatsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ReaderScreen from '../screens/ReaderScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -32,6 +33,7 @@ function MainTabNavigator() {
       <Tab.Screen name="Estante" component={BookshelfScreen} />
       <Tab.Screen name="Descobrir" component={DiscoverScreen} />
       <Tab.Screen name="CriarObra" component={CreateBookScreen} />
+      <Tab.Screen name="Estatisticas" component={StatsScreen} />
       <Tab.Screen name="Bau" component={ChestScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>

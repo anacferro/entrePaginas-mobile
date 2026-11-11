@@ -175,7 +175,7 @@ function lengthBucket(pages) {
 
 const CATEGORY_TO_GENRE = Object.fromEntries(GENRES.map((g) => [normalize(g.label), g.key]));
 
-function genresForBook(book, rating) {
+export function genresForBook(book, rating) {
   if (rating?.genres?.length) return rating.genres;
   if (book.catalog?.genres?.length) return book.catalog.genres;
   const direct = CATEGORY_TO_GENRE[normalize(book.category)];
