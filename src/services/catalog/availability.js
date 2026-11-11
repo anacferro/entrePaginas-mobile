@@ -66,7 +66,7 @@ export function classifyInternetArchive(item) {
     return { level: ACCESS.RESTRITO, confirmed: true, inApp: false, formats: [], note: 'Acesso restrito a leitores com deficiência de leitura impressa.' };
   }
   if (license.includes('publicdomain') || license.includes('/zero/')) {
-    return { level: ACCESS.DOMINIO_PUBLICO, confirmed: true, inApp: false, formats: online, note: 'Marcado como domínio público pelo responsável pelo envio.' };
+    return { level: ACCESS.LIVRE, confirmed: false, inApp: false, formats: online, note: 'Marcado como domínio público por quem enviou ao Internet Archive; não verificado de forma independente.' };
   }
   if (license.includes('creativecommons')) {
     return { level: ACCESS.ACESSO_ABERTO, confirmed: true, inApp: false, formats: online, note: 'Licença Creative Commons indicada pelo responsável pelo envio.' };

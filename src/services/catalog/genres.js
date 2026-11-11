@@ -13,7 +13,7 @@ export const GENRES = [
   { key: 'filosofia', label: 'Filosofia', words: ['philosophy', 'filosofia', 'ethics', 'etica', 'metaphysics', 'metafisica', 'logic', 'stoic', 'existential'] },
   { key: 'psicologia', label: 'Psicologia', words: ['psychology', 'psicologia', 'psychoanalysis', 'psicanalise', 'mind', 'behavior'] },
   { key: 'desenvolvimento-pessoal', label: 'Desenvolvimento pessoal', words: ['self-help', 'autoajuda', 'personal development', 'success', 'habits', 'habitos', 'motivation'] },
-  { key: 'biografia', label: 'Biografia', words: ['biography', 'biografia', 'autobiography', 'autobiografia', 'memoir', 'memorias', 'diaries', 'letters'] },
+  { key: 'biografia', label: 'Biografia', words: ['biography', 'biografia', 'autobiography', 'autobiografia', 'memoir', 'diaries'] },
   { key: 'historia', label: 'História', words: ['history', 'historia', 'civilization', 'war', 'guerra', 'empire', 'imperio', 'colonial'] },
   { key: 'classico', label: 'Literatura clássica', words: ['classic', 'classico', 'classics', 'literature', 'literatura', 'fiction', 'ficcao', 'novels', 'romances brasileiros', 'brazilian fiction'] },
   { key: 'poesia', label: 'Poesia', words: ['poetry', 'poesia', 'poems', 'poemas', 'verse', 'sonnets', 'sonetos'] },
@@ -29,7 +29,8 @@ export const GENRES = [
 export const GENRE_LABELS = Object.fromEntries(GENRES.map((g) => [g.key, g.label]));
 
 export function genresOf(subjects = [], title = '') {
-  const text = ` ${normalize([...(subjects || []), title].join(' | '))} `;
+  const source = (subjects || []).length ? subjects : [title];
+  const text = ` ${normalize(source.join(' | '))} `;
   const scores = GENRES.map((genre) => ({
     key: genre.key,
     score: genre.words.reduce((sum, word) => (text.includes(` ${normalize(word)} `) || text.includes(` ${normalize(word)}`) ? sum + 1 : sum), 0),

@@ -1,5 +1,5 @@
 import { getJson, getText } from './http.js';
-import { cleanAuthor, flipName, isbnKey, normalize, stripHtml, yearOf } from './text.js';
+import { cleanAuthor, isbnKey, normalize, stripHtml, yearOf } from './text.js';
 import { languageCode, languageIso3 } from './languages.js';
 import { genresOf } from './genres.js';
 import {

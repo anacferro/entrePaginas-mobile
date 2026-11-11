@@ -57,6 +57,12 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
         if (route.name === 'Estante') {
           iconName = isFocused ? 'library' : 'library-outline';
           label = 'Estante';
+        } else if (route.name === 'Descobrir') {
+          iconName = isFocused ? 'compass' : 'compass-outline';
+          label = 'Descobrir';
+        } else if (route.name === 'Estatisticas') {
+          iconName = isFocused ? 'stats-chart' : 'stats-chart-outline';
+          label = 'Estatísticas';
         } else if (route.name === 'Bau') {
           iconName = isFocused ? 'archive' : 'archive-outline';
           label = 'Baú';

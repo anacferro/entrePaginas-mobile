@@ -27,6 +27,7 @@ const KEYS = {
   get READING() { return userId ? keyFor('reading') : '@entre_paginas_reading_v1'; },
   get CHARACTERS() { return userId ? keyFor('characters') : '@entre_paginas_characters_v1'; },
   get READER_PREFS() { return userId ? keyFor('reader_prefs') : '@entre_paginas_reader_prefs_v1'; },
+  get CATALOG_HISTORY() { return userId ? keyFor('catalog_history') : '@entre_paginas_catalog_history_v1'; },
 };
 
 async function saveBooks(list) {
@@ -177,6 +178,7 @@ export const storage = {
       status: 'estante',
       isOwn: bookData.isOwn !== false,
       textPending: bookData.textPending || null,
+      catalog: bookData.catalog || null,
       bookmarks: [],
       changeLog: [],
       createdAt: new Date().toISOString(),
@@ -519,6 +521,25 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.READER_PREFS, JSON.stringify({ books }));
   },
 
+  async getCatalogHistory() {
+    const json = await AsyncStorage.getItem(KEYS.CATALOG_HISTORY);
+    try {
+      const list = json ? JSON.parse(json) : [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  },
+
+  async addCatalogHistory(entry) {
+    const list = await this.getCatalogHistory();
+    await AsyncStorage.setItem(KEYS.CATALOG_HISTORY, JSON.stringify([entry, ...list].slice(0, 60)));
+  },
+
+  async clearCatalogHistory() {
+    await AsyncStorage.removeItem(KEYS.CATALOG_HISTORY);
+  },
+
   async getReadingPosition(bookId) {
     const json = await AsyncStorage.getItem(KEYS.POSITIONS);
     const positions = json ? JSON.parse(json) : {};
@@ -576,6 +597,7 @@ export const storage = {
     await AsyncStorage.removeItem(KEYS.READING);
     await AsyncStorage.removeItem(KEYS.READER_PREFS);
     await AsyncStorage.removeItem(KEYS.CHARACTERS);
+    await AsyncStorage.removeItem(KEYS.CATALOG_HISTORY);
     return true;
   }
 };

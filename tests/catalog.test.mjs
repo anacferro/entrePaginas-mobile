@@ -74,7 +74,9 @@ test('classificacao conservadora do Open Library', () => {
 test('Internet Archive: emprestimo, licenca e comunidade sem licenca', () => {
   assert.equal(classifyInternetArchive({ collection: ['inlibrary', 'printdisabled'], 'access-restricted-item': 'true' }).level, ACCESS.EMPRESTIMO);
   assert.equal(classifyInternetArchive({ collection: ['opensource'], licenseurl: 'https://creativecommons.org/licenses/by/4.0/' }).level, ACCESS.ACESSO_ABERTO);
-  assert.equal(classifyInternetArchive({ collection: ['opensource'], licenseurl: 'https://creativecommons.org/publicdomain/mark/1.0/' }).level, ACCESS.DOMINIO_PUBLICO);
+  const marked = classifyInternetArchive({ collection: ['opensource'], licenseurl: 'https://creativecommons.org/publicdomain/mark/1.0/' });
+  assert.equal(marked.level, ACCESS.LIVRE);
+  assert.equal(marked.confirmed, false);
   const community = classifyInternetArchive({ collection: ['opensource'], format: ['EPUB', 'Text'] });
   assert.equal(community.level, ACCESS.NAO_CONFIRMADO);
   assert.equal(community.inApp, false);
@@ -147,4 +149,5 @@ test('generos por assunto', () => {
   assert.ok(genresOf(['Fantasy fiction', 'Dragons']).includes('fantasia'));
   assert.ok(genresOf(['Poesia brasileira']).includes('poesia'));
   assert.deepEqual(genresOf([], 'Sem pista alguma'), []);
+  assert.ok(!genresOf([], 'Memorias Postumas de Bras Cubas').includes('biografia'));
 });
