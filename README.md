@@ -140,6 +140,21 @@ O modo escuro usa superfícies verde-escuras (`#0F1A15` e `#16241D`) com verde c
 
 ---
 
+## 📖 Leitor Personalizável
+
+Toque em **Aa** no topo do leitor para abrir o painel de ajustes, com prévia do texto e quatro abas:
+
+- **Aparência:** tema *Auto* (segue o app e o papel do livro), *Claro* (#FAF8F1), *Creme* (#E9E2D0), *Verde* suave e *Escuro* verde profundo; brilho do leitor (escurece só a tela do leitor, sem mexer no brilho do aparelho).
+- **Tipografia:** fonte (a do livro, serifada, sem serifa ou máquina), tamanho de 14 a 30 e alinhamento (esquerda ou justificado).
+- **Espaçamento:** entrelinha, margens laterais, espaço entre parágrafos e largura da coluna (efeito visível em telas largas).
+- **Leitura:** ocultar menus automaticamente (somem em 4 s; toque no texto para voltar), manter a tela ativa e **restaurar configurações originais**.
+
+As escolhas valem na hora, não recarregam o livro e **não mudam a página**: a paginação é por quantidade de texto, independente da aparência. São salvas por usuário no aparelho e aplicadas a todos os livros. O Sumário tem a aba **Destaques**, que lista todos os trechos grifados do livro e leva até a folha deles.
+
+Limites assumidos: as preferências não sincronizam entre aparelhos; a anotação continua sendo o comentário por folha (não há nota presa a um trecho grifado); o "brilho" é uma película escura sobre o leitor; manter a tela ativa depende do suporte do aparelho.
+
+---
+
 ## 📈 Painel e Progresso de Leitura
 
 - **Cartão do livro:** status (*Quero ler*, *Lendo*, *Lido*) e, quando em leitura, percentual e barra de progresso. A estante tem filtros por status com contagem.
@@ -189,6 +204,7 @@ entrePaginas-mobile/
 │   │   ├── LoadingView.js     # Tratamento de estado de carregamento
 │   │   ├── ProgressBar.js     # Barra de progresso animada e acessível
 │   │   ├── ReadingDashboard.js # Painel de leitura do Perfil
+│   │   ├── ReaderSettings.js  # Painel de ajustes do leitor (aparência, tipografia, espaçamento, leitura)
 │   │   ├── ReadingProgressModal.js # Progresso do livro e registro de página no leitor
 │   │   ├── Skeleton.js        # Carregamento em esqueleto (estante, baú e painel)
 │   │   ├── StatusChip.js      # Selo de status do livro
@@ -224,6 +240,7 @@ entrePaginas-mobile/
 │   │   ├── marks.js           # Grifos, marcadores e comparação antes/depois
 │   │   ├── mockData.js        # Dados seminais de livros e usuário
 │   │   ├── bookPages.js       # Contagem de páginas de leitura de cada livro (a mesma do leitor)
+│   │   ├── readerPrefs.js     # Preferências do leitor: padrões, limites e validação
 │   │   ├── readingLog.js      # Registro de leitura: páginas por dia, tempo, início, conclusão e meta
 │   │   ├── readingStats.js    # Estatísticas do painel, status e previsão de término
 │   │   ├── pagination.js      # Divide os capítulos em páginas de leitura
@@ -235,6 +252,7 @@ entrePaginas-mobile/
 │   └── theme/
 │       ├── bookOptions.js     # Cores de capa, folha, categorias e tipos de letra
 │       ├── palettes.js        # Identidade visual: cores da marca e paletas Claro e Escuro
+│       ├── readerThemes.js    # Temas de leitura (claro, creme, verde, escuro)
 │       ├── tokens.js          # Tipografia, espaçamento, raios, sombras e animações
 │       └── ThemeContext.js    # Tema do app (provedor, hooks e escopo do leitor)
 ├── App.js                     # Ponto de entrada do aplicativo

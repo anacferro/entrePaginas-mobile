@@ -264,3 +264,13 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 **O que foi recusado ou adaptado:** o app não guarda autor nem avaliação por estrelas, então não foram inventados; o registro de leitura não sincroniza com o Firestore para não mudar o modelo de dados nem as regras de segurança; saltos de capítulo e tempo parado não contam como leitura.
 
 **O que o usuário/grupo ainda precisa revisar:** conferir no celular o painel, o leitor com o novo indicador de página e o modo escuro; decidir se quer sincronizar o registro de leitura na nuvem.
+
+## 17. Leitor personalizável (Claude Code)
+
+**O que foi pedido:** transformar o leitor em uma experiência de leitura confortável e personalizável, com temas, tipografia, espaçamento, menus que somem, brilho, tela ativa, destaques e preferências salvas.
+
+**O que veio e o que foi aceito:** painel de ajustes com prévia (`components/ReaderSettings.js`), preferências validadas e salvas por usuário (`services/readerPrefs.js`), temas (`theme/readerThemes.js`), menus com ocultação automática, película de brilho, tela ativa por `expo-keep-awake`, espaço entre parágrafos e aba Destaques no sumário. Como a paginação é por quantidade de texto, trocar a aparência nunca muda a página nem o progresso.
+
+**O que foi recusado ou adaptado:** o brilho não altera o brilho do aparelho (só escurece o leitor); as preferências não sincronizam com a nuvem; não foi criada nota presa a trecho grifado, porque exigiria mudar o modelo sincronizado e as regras do Firestore (o app já tem comentários por folha); os formatos EPUB e PDF viram texto na importação, então as mesmas opções valem para todos.
+
+**O que o usuário/grupo ainda precisa revisar:** testar no iPhone o painel, o gesto de tocar para mostrar os menus e a tela ativa; decidir se quer notas por trecho e sincronização das preferências.

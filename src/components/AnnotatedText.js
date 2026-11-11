@@ -1,12 +1,23 @@
 import React, { useEffect, useRef } from 'react';
-import { Text, TextInput, Platform, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Platform, StyleSheet } from 'react-native';
 import { buildSegments } from '../services/marks';
 
-export default function AnnotatedText({ content, marks, style, annotating, onSelect }) {
+function splitParagraphs(segments) {
+  const paragraphs = [[]];
+  segments.forEach((s) => {
+    s.text.split(/\n{2,}/).forEach((part, i) => {
+      if (i > 0) paragraphs.push([]);
+      if (part) paragraphs[paragraphs.length - 1].push({ ...s, text: part });
+    });
+  });
+  return paragraphs.filter((p) => p.length > 0);
+}
+
+export default function AnnotatedText({ content, marks, style, annotating, onSelect, paragraphGap = null }) {
   const webRef = useRef(null);
   const segments = buildSegments(content, marks);
 
-  const children = segments.map((s, i) => (
+  const render = (list) => list.map((s, i) => (
     <Text
       key={i}
       style={[
@@ -19,6 +30,7 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
       {s.text}
     </Text>
   ));
+  const children = render(segments);
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !annotating) return undefined;
@@ -57,6 +69,19 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
       >
         {children}
       </TextInput>
+    );
+  }
+
+  if (!annotating && paragraphGap !== null) {
+    const paragraphs = splitParagraphs(segments);
+    return (
+      <View>
+        {paragraphs.map((list, i) => (
+          <Text key={i} style={[style, i < paragraphs.length - 1 && { marginBottom: paragraphGap }]}>
+            {render(list)}
+          </Text>
+        ))}
+      </View>
     );
   }
 

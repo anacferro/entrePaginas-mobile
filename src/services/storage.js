@@ -4,6 +4,7 @@ import { relocateMarks } from './marks';
 import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
 import * as readingLog from './readingLog';
+import { normalizePrefs } from './readerPrefs';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 
 let userId = null;
@@ -24,6 +25,7 @@ const KEYS = {
   get USER() { return userId ? keyFor('user') : '@entre_paginas_user_v1'; },
   get POSITIONS() { return userId ? keyFor('positions') : '@entre_paginas_positions_v1'; },
   get READING() { return userId ? keyFor('reading') : '@entre_paginas_reading_v1'; },
+  get READER_PREFS() { return userId ? keyFor('reader_prefs') : '@entre_paginas_reader_prefs_v1'; },
 };
 
 async function saveBooks(list) {
@@ -463,6 +465,19 @@ export const storage = {
     return filtered;
   },
 
+  async getReaderPrefs() {
+    const json = await AsyncStorage.getItem(KEYS.READER_PREFS);
+    try {
+      return normalizePrefs(json ? JSON.parse(json) : null);
+    } catch {
+      return normalizePrefs(null);
+    }
+  },
+
+  async setReaderPrefs(prefs) {
+    await AsyncStorage.setItem(KEYS.READER_PREFS, JSON.stringify(normalizePrefs(prefs)));
+  },
+
   async getReadingPosition(bookId) {
     const json = await AsyncStorage.getItem(KEYS.POSITIONS);
     const positions = json ? JSON.parse(json) : {};
@@ -518,6 +533,7 @@ export const storage = {
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
     await AsyncStorage.removeItem(KEYS.POSITIONS);
     await AsyncStorage.removeItem(KEYS.READING);
+    await AsyncStorage.removeItem(KEYS.READER_PREFS);
     return true;
   }
 };

@@ -13,6 +13,7 @@ import {
   AppState,
   Animated,
   PanResponder,
+  Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ChapterEditor from '../components/ChapterEditor';
@@ -33,20 +34,65 @@ import EmptyView from '../components/EmptyView';
 import ReadingProgressModal from '../components/ReadingProgressModal';
 import ProgressBar from '../components/ProgressBar';
 import { useToast } from '../components/Toast';
+import ReaderSettings from '../components/ReaderSettings';
 import { bookForecast } from '../services/readingStats';
+import { readerThemeOf } from '../theme/readerThemes';
+import { DEFAULT_READER_PREFS, WIDTHS, PARAGRAPH_GAPS, normalizePrefs } from '../services/readerPrefs';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 export default function ReaderScreen(props) {
   const { isDark: appDark } = useTheme();
-  const [readerDark, setReaderDark] = useState(appDark);
+  const [prefs, setPrefs] = useState(null);
+  const latest = useRef(null);
+  const dirty = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    storage.getReaderPrefs()
+      .then((loaded) => active && setPrefs(loaded))
+      .catch(() => active && setPrefs(normalizePrefs(null)));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const updatePrefs = useCallback((patch) => {
+    setPrefs((current) => {
+      const next = normalizePrefs({ ...current, ...patch });
+      latest.current = next;
+      dirty.current = true;
+      return next;
+    });
+  }, []);
+
+  const resetPrefs = useCallback(() => updatePrefs({ ...DEFAULT_READER_PREFS }), [updatePrefs]);
+
+  useEffect(() => {
+    if (!dirty.current) return undefined;
+    const timer = setTimeout(() => {
+      dirty.current = false;
+      storage.setReaderPrefs(latest.current).catch(() => {});
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [prefs]);
+
+  useEffect(() => () => {
+    if (dirty.current) storage.setReaderPrefs(latest.current).catch(() => {});
+  }, []);
+
+  if (!prefs) return <View style={{ flex: 1, backgroundColor: appDark ? '#0F1A15' : '#FAF8F1' }} />;
+
+  const chosen = readerThemeOf(prefs.theme);
+  const readerDark = chosen ? chosen.dark : appDark;
 
   return (
     <ThemeScope dark={readerDark}>
-      <ReaderContent {...props} isDark={readerDark} setReaderDark={setReaderDark} />
+      <ReaderContent {...props} isDark={readerDark} prefs={prefs} updatePrefs={updatePrefs} resetPrefs={resetPrefs} />
     </ThemeScope>
   );
 }
 
-function ReaderContent({ route, navigation, isDark, setReaderDark }) {
+function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPrefs }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { bookId, bookTitle } = route.params || {};
@@ -54,7 +100,6 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
   const [book, setBook] = useState(null);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [fontSize, setFontSize] = useState(17);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryTab, setSummaryTab] = useState('chapters');
   const [showBookmarkSheet, setShowBookmarkSheet] = useState(false);
@@ -62,7 +107,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const [bookmarkColor, setBookmarkColor] = useState(PIN_COLORS[0]);
   const [annotating, setAnnotating] = useState(false);
   const [selection, setSelection] = useState(null);
-  const [showTypography, setShowTypography] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [chromeVisible, setChromeVisible] = useState(true);
   const [editorMode, setEditorMode] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -111,6 +157,30 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     fade.setValue(0.25);
     Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
   }, [currentPageIndex, fade]);
+
+  useEffect(() => {
+    if (!prefs.keepAwake) return undefined;
+    activateKeepAwakeAsync('reader').catch(() => {});
+    return () => {
+      deactivateKeepAwake('reader').catch(() => {});
+    };
+  }, [prefs.keepAwake]);
+
+  const [chrome] = useState(() => new Animated.Value(1));
+  const chromeShown = !prefs.autoHide || chromeVisible || showSettings || annotating;
+  useEffect(() => {
+    Animated.timing(chrome, { toValue: chromeShown ? 1 : 0, duration: 200, useNativeDriver: true }).start();
+  }, [chromeShown, chrome]);
+
+  useEffect(() => {
+    if (!prefs.autoHide || !chromeVisible || showSettings || annotating) return undefined;
+    const timer = setTimeout(() => setChromeVisible(false), 4000);
+    return () => clearTimeout(timer);
+  }, [prefs.autoHide, chromeVisible, showSettings, annotating]);
+
+  const handleTapText = () => {
+    if (prefs.autoHide && !annotating) setChromeVisible((v) => !v);
+  };
 
   const handleSelect = useCallback((start, end) => {
     setSelection(end > start ? { start, end } : null);
@@ -180,6 +250,20 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const bookmarks = book?.bookmarks || [];
   const currentBookmark = bookmarks.find(bm => bm.chapterId === currentChapter.id && bm.page === currentPageNumber);
 
+  const highlights = useMemo(() => {
+    const list = [];
+    chapters.forEach((chap) => {
+      (chap.marks || []).filter((m) => m.type === 'highlight').forEach((m) => {
+        let at = 0;
+        pages.forEach((pg, i) => {
+          if (pg.chapterId === chap.id && pg.start <= m.start) at = i;
+        });
+        list.push({ ...m, chapterTitle: chap.title, pageIndex: at });
+      });
+    });
+    return list.sort((a, b) => a.pageIndex - b.pageIndex || a.start - b.start);
+  }, [chapters, pages]);
+
   const pageComments = (book?.comments || []).filter(cm => cm.page === currentPageNumber);
 
   const handleAddComment = async (text) => {
@@ -195,7 +279,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
   const toggleAnnotating = () => {
     setAnnotating(!annotating);
     setSelection(null);
-    setShowTypography(false);
+    setShowSettings(false);
   };
 
   const applyFormat = async (type, color) => {
@@ -357,12 +441,19 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
     }
   };
 
-  const usesPaper = !isDark && !!book?.paperColor;
+  const chosenTheme = readerThemeOf(prefs.theme);
+  const usesPaper = !chosenTheme && !isDark && !!book?.paperColor;
   const paperIsDark = usesPaper && isDarkColor(book.paperColor);
-  const readerBg = usesPaper ? book.paperColor : colors.reader.background;
-  const readerTextColor = paperIsDark ? '#EDE6DA' : colors.reader.text;
+  const readerBg = chosenTheme ? chosenTheme.background : usesPaper ? book.paperColor : colors.reader.background;
+  const readerTextColor = chosenTheme ? chosenTheme.text : paperIsDark ? '#EDE6DA' : colors.reader.text;
+  const mutedColor = chosenTheme ? chosenTheme.muted : colors.textSecondary;
+  const barColor = chosenTheme ? chosenTheme.bar : colors.surfaceWarm;
+  const widthMax = WIDTHS.find((w) => w.id === prefs.width)?.max ?? null;
+  const gapEm = PARAGRAPH_GAPS.find((g) => g.id === prefs.paragraphGap)?.em ?? 0.8;
   const useOriginal = book?.fontFamily === 'original' && originalFontReady;
-  const bodyFont = useOriginal ? book.customFont : fontFamilyFor(book?.fontFamily === 'original' ? book?.fontFallback : book?.fontFamily);
+  const bookFont = useOriginal ? book.customFont : fontFamilyFor(book?.fontFamily === 'original' ? book?.fontFallback : book?.fontFamily);
+  const bodyFont = prefs.fontFamily === 'livro' ? bookFont : fontFamilyFor(prefs.fontFamily);
+  const fontSize = prefs.fontSize;
 
   if (loadState !== 'ready') {
     return (
@@ -387,8 +478,11 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.surfaceSoft} />
       
       {!focusMode && (
-        <>
-        <View style={[styles.readerNavHeader, { backgroundColor: colors.surfaceWarm }]}>
+        <Animated.View
+          style={prefs.autoHide ? [styles.floatHeader, { opacity: chrome }] : undefined}
+          pointerEvents={chromeShown ? 'auto' : 'none'}
+        >
+        <View style={[styles.readerNavHeader, { backgroundColor: barColor }]}>
           <View style={styles.navTitleRow}>
           <Touchable
             style={styles.backBtn}
@@ -403,7 +497,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Text style={[styles.bookHeaderTitle, { color: readerTextColor }]} numberOfLines={1}>
               {book?.title || bookTitle || 'Crônicas do Silêncio'}
             </Text>
-            <Text style={[styles.chapterHeaderSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+            <Text style={[styles.chapterHeaderSubtitle, { color: mutedColor }]} numberOfLines={1}>
               {currentChapter.title}
             </Text>
           </View>
@@ -435,7 +529,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             <Touchable
               style={styles.iconBtn}
               onPress={() => {
-                setShowTypography(false);
+                setShowSettings(false);
                 setFocusMode(true);
               }}
               accessibilityLabel="Leitura sem distrações"
@@ -458,8 +552,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
 
             <Touchable
               style={styles.iconBtn}
-              onPress={() => setShowTypography(!showTypography)}
-              accessibilityLabel="Tamanho do texto"
+              onPress={() => setShowSettings(!showSettings)}
+              accessibilityLabel="Aparência e texto"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="text" size={20} color={readerTextColor} />
@@ -481,43 +575,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             )}
           </View>
         </View>
-        </>
-      )}
-
-      {showTypography && !focusMode && (
-        <View style={[styles.typoBar, { backgroundColor: colors.surfaceMuted }]}>
-          <Text style={[styles.typoLabel, { color: readerTextColor }]}>Tamanho do Texto:</Text>
-          <View style={styles.fontControlsRow}>
-            <Touchable
-              style={styles.fontBtn}
-              onPress={() => setFontSize(Math.max(14, fontSize - 2))}
-              accessibilityLabel="Diminuir texto"
-            >
-              <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A-</Text>
-            </Touchable>
-
-            <Text style={[styles.fontSizeIndicator, { color: readerTextColor }]}>{fontSize}px</Text>
-
-            <Touchable
-              style={styles.fontBtn}
-              onPress={() => setFontSize(Math.min(26, fontSize + 2))}
-              accessibilityLabel="Aumentar texto"
-            >
-              <Text style={[styles.fontBtnText, { color: readerTextColor }]}>A+</Text>
-            </Touchable>
-          </View>
-
-          <Touchable
-            style={[styles.themePill, { backgroundColor: colors.card }]}
-            onPress={() => setReaderDark(!isDark)}
-            accessibilityLabel={isDark ? 'Usar leitor claro' : 'Usar leitor escuro'}
-          >
-            <Ionicons name={isDark ? 'sunny' : 'moon'} size={15} color={readerTextColor} />
-            <Text style={[styles.themePillText, { color: readerTextColor }]}>
-              {isDark ? 'Claro' : 'Escuro'}
-            </Text>
-          </Touchable>
-        </View>
+        </Animated.View>
       )}
 
       <View style={styles.readerScroll} {...pan.panHandlers}>
@@ -525,8 +583,15 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         <ScrollView
           ref={scrollRef}
           style={styles.readerScroll}
-          contentContainerStyle={[styles.readerContentContainer, annotating && { paddingBottom: 170 }, focusMode && { paddingTop: 68 }]}
+          contentContainerStyle={[
+            styles.readerContentContainer,
+            { paddingHorizontal: prefs.margin },
+            prefs.autoHide && !focusMode && { paddingTop: 96 },
+            annotating && { paddingBottom: 170 },
+            focusMode && { paddingTop: 68 },
+          ]}
         >
+          <View style={[styles.column, widthMax && { maxWidth: widthMax }]}>
           {currentBookmark && (
             <Touchable style={styles.bookmarkNote} onPress={openBookmarkSheet} activeOpacity={0.7}>
               <Ionicons name="bookmark" size={13} color={currentBookmark.color} />
@@ -547,21 +612,25 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
             />
           )}
 
+          <Pressable onPress={handleTapText} accessible={false}>
           <AnnotatedText
             content={page.content}
             marks={page.marks}
             annotating={annotating}
             onSelect={handleSelect}
+            paragraphGap={fontSize * gapEm}
             style={[
               styles.bookParagraphs,
               {
                 color: readerTextColor,
                 fontSize: fontSize,
-                lineHeight: fontSize * 1.68,
+                lineHeight: fontSize * prefs.lineHeight,
                 fontFamily: bodyFont,
+                textAlign: prefs.align,
               },
             ]}
           />
+          </Pressable>
 
           {pageComments.length > 0 && (
             <View style={[styles.pageComments, { borderColor: colors.border }]}>
@@ -605,8 +674,8 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
                 Página {currentPageNumber}
               </Text>
-              <Text style={[styles.pageTotalText, { color: colors.textSecondary }]}>
-                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'} · {Math.round((currentPageNumber / totalPages) * 100)}%
+              <Text style={[styles.pageTotalText, { color: mutedColor }]}>
+                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'} · {Math.round((currentPageNumber / totalPages) * 100)}%{totalPages > currentPageNumber ? ` · faltam ${totalPages - currentPageNumber}` : ''}
               </Text>
               <ProgressBar value={currentPageNumber / totalPages} height={4} style={styles.footerProgress} label="Progresso do livro" />
             </Touchable>
@@ -619,6 +688,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               <Text style={[styles.pageNavText, { color: readerTextColor }]}>Próxima</Text>
               <Ionicons name="chevron-forward" size={20} color={readerTextColor} />
             </Touchable>
+          </View>
           </View>
         </ScrollView>
         </Animated.View>
@@ -675,6 +745,21 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
         )}
       </View>
 
+      {prefs.dim > 0 && (
+        <View pointerEvents="none" style={[styles.dim, { backgroundColor: `rgba(0,0,0,${prefs.dim})` }]} />
+      )}
+
+      {showSettings && !focusMode && (
+        <ReaderSettings
+          prefs={prefs}
+          onChange={updatePrefs}
+          onReset={resetPrefs}
+          onClose={() => setShowSettings(false)}
+          preview={{ background: readerBg, text: readerTextColor }}
+          previewFont={bodyFont}
+        />
+      )}
+
       <Modal
         visible={showSummary}
         transparent
@@ -702,6 +787,7 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
                 {[
                   { key: 'chapters', label: 'Capítulos' },
                   { key: 'bookmarks', label: `Marcadores (${bookmarks.length})` },
+                  { key: 'highlights', label: `Destaques (${highlights.length})` },
                 ].map(tab => (
                   <Touchable
                     key={tab.key}
@@ -716,7 +802,31 @@ function ReaderContent({ route, navigation, isDark, setReaderDark }) {
               </View>
             )}
 
-            {summaryTab === 'bookmarks' ? (
+            {summaryTab === 'highlights' ? (
+              <ScrollView style={styles.tocList}>
+                {highlights.length === 0 && (
+                  <Text style={styles.emptyBookmarks}>
+                    Nenhum trecho destacado. Use o marca-texto no topo do leitor para selecionar e destacar trechos.
+                  </Text>
+                )}
+                {highlights.map((h) => (
+                  <Touchable
+                    key={h.id}
+                    style={styles.tocItem}
+                    onPress={() => {
+                      setCurrentPageIndex(h.pageIndex);
+                      setShowSummary(false);
+                    }}
+                  >
+                    <View style={[styles.highlightBar, { backgroundColor: h.color }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.tocItemTitle} numberOfLines={3}>{h.text}</Text>
+                      <Text style={styles.tocItemMeta} numberOfLines={1}>{h.chapterTitle} • Folha {h.pageIndex + 1}</Text>
+                    </View>
+                  </Touchable>
+                ))}
+              </ScrollView>
+            ) : summaryTab === 'bookmarks' ? (
               <ScrollView style={styles.tocList}>
                 {bookmarks.length === 0 && (
                   <Text style={styles.emptyBookmarks}>
@@ -959,6 +1069,21 @@ const createStyles = (colors) => StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+  },
+  floatHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 40,
+  },
+  dim: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 60,
+  },
+  column: {
+    width: '100%',
+    alignSelf: 'center',
   },
   readerNavHeader: {
     paddingHorizontal: 16,
@@ -1323,6 +1448,12 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: '700',
     color: colors.primary,
     fontFamily: 'serif',
+  },
+  highlightBar: {
+    width: 5,
+    alignSelf: 'stretch',
+    borderRadius: 3,
+    marginRight: 12,
   },
   tocList: {
     marginTop: 6,

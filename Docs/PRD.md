@@ -177,6 +177,11 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | RF-PAI-05 | O sistema deve registrar páginas lidas por dia e tempo de leitura, sem contar saltos de capítulo, voltas a páginas já lidas nem tempo parado acima de 5 minutos. | I |
 | RF-PAI-06 | O perfil deve exibir um painel com livros lidos, em andamento e planejados, páginas lidas, tempo de leitura, média de páginas por dia, gráfico dos últimos 14 dias e 6 meses, comparativo com o mês e o ano anteriores e atividade recente, sempre com dados reais. | I |
 | RF-PAI-07 | O usuário deve poder definir uma meta anual de livros concluídos e ver o progresso e quanto falta. | D |
+| RF-LEI-01 | O leitor deve permitir ajustar fonte, tamanho, entrelinha, espaço entre parágrafos, largura, alinhamento e margens, com efeito imediato e sem alterar a página atual. | I |
+| RF-LEI-02 | O leitor deve oferecer os temas Claro, Creme, Verde e Escuro, além do modo automático, e um brilho próprio que escurece apenas o leitor. | I |
+| RF-LEI-03 | O leitor deve permitir ocultar os menus automaticamente, manter a tela ativa (quando houver suporte) e restaurar as configurações originais. | I |
+| RF-LEI-04 | As preferências devem ser salvas por usuário e aplicadas a todos os livros nas próximas leituras. | I |
+| RF-LEI-05 | O sumário deve listar os destaques do livro e levar até a folha de cada um. | I |
 | RF-PAI-08 | Ao excluir um livro, o sistema deve remover também o seu registro de leitura, mantendo painel e livros coerentes. | I |
 
 ### 7.12 Falhas e estados (ERR)
