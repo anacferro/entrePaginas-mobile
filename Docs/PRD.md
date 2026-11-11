@@ -308,7 +308,7 @@ As decisões completas, com alternativas e consequências, estão em [Explicaç�
 | NUV | todas | `services/cloud.js`, `firestore.rules` |
 | SEG | `BookshelfScreen`, `BookEditModal` | `services/biometrics.js` |
 | CFG | `ProfileScreen`, `SettingsScreen` | `theme/ThemeContext.js`, `theme/palettes.js`, `theme/tokens.js` |
-| PAI | `ProfileScreen`, `BookshelfScreen`, `ReaderScreen` | `services/readingLog.js`, `services/readingStats.js`, `services/bookPages.js`, `components/ReadingDashboard.js`, `components/ReadingProgressModal.js` |
+| PAI | `ProfileScreen`, `BookshelfScreen`, `ReaderScreen` | `services/readingLog.js`, `services/readingStats.js`, `services/bookPages.js`, `components/GoalModal.js`, `components/ReadingProgressModal.js` |
 
 ## 16. Riscos e limitações
 

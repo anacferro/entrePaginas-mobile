@@ -118,9 +118,9 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### DA16 (Nova Decisão) — Painel de leitura com registro local
 
-* **Decisão:** guardar o progresso em um registro de leitura separado dos livros (`services/readingLog.js`), calculado por funções puras (`services/readingStats.js`) e exibido no painel do Perfil.
+* **Decisão:** guardar o progresso em um registro de leitura separado dos livros (`services/readingLog.js`), calculado por funções puras (`services/readingStats.js`) e exibido na aba Estatísticas (a meta anual é editada ali).
 * **Alternativas consideradas:** gravar os campos dentro de cada livro (descartado: mudaria o modelo sincronizado e as regras do Firestore); sincronizar o registro (descartado por ora: exigiria nova coleção e novas regras).
-* **Consequências assumidas:** o painel é por aparelho, como a última página lida. O app não guarda autor nem avaliação, então o painel e os cartões não os exibem. Todos os números vêm de eventos reais de leitura.
+* **Consequências assumidas:** as estatísticas são por aparelho, como a última página lida. O app não guarda autor nem avaliação, então só as telas de avaliação e estatísticas posteriores os usam. Todos os números vêm de eventos reais de leitura.
 
 ### DA17 (Nova Decisão) — Sistema de design em tokens
 
