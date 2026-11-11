@@ -274,3 +274,13 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 **O que foi recusado ou adaptado:** o brilho não altera o brilho do aparelho (só escurece o leitor); as preferências não sincronizam com a nuvem; não foi criada nota presa a trecho grifado, porque exigiria mudar o modelo sincronizado e as regras do Firestore (o app já tem comentários por folha); os formatos EPUB e PDF viram texto na importação, então as mesmas opções valem para todos.
 
 **O que o usuário/grupo ainda precisa revisar:** testar no iPhone o painel, o gesto de tocar para mostrar os menus e a tela ativa; decidir se quer notas por trecho e sincronização das preferências.
+
+## 18. Companheira de leitura: sem spoilers, explicação de trecho e mapa de personagens (Claude Code)
+
+**O que foi pedido:** trocar o *Resumir página* pelo *Modo sem spoilers*, adicionar *Explique este trecho* e o *Mapa de personagens*, os três integrados e respeitando a posição de leitura.
+
+**O que veio e o que foi aceito:** o resumo de capítulo (`AiSummary`) foi removido. O texto enviado à IA é montado só até a folha atual (`services/bookContext.js`), então o futuro nunca sai do aparelho. As respostas pedem citações literais, e o app confere cada uma no texto lido (`services/readingAssistant.js`): sem citação confirmada, a resposta é bloqueada. No mapa, o nome precisa aparecer no texto, os acontecimentos precisam de citação conferida e relações sem prova ficam como "não confirmadas". O mapa guardado só é exibido se foi gerado até a folha atual e se o texto não mudou. Testado com 13 verificações automáticas (prompt sem texto futuro, citação do futuro descartada, personagem inventado removido, cache invalidado ao voltar) e, no navegador, com chamadas reais ao Gemini em um livro de teste com um segredo no capítulo final: a IA recusou revelar o parentesco e a sabotagem, respondeu o que já constava com os trechos e gerou um mapa sem o vínculo oculto.
+
+**O que foi recusado ou adaptado:** não é possível impedir que um modelo reconheça um clássico famoso pelo estilo do texto; por isso título e autor não são enviados e o prompt proíbe conhecimento prévio, mas a garantia é "o texto futuro não é enviado", não "o modelo nunca sabe". A explicação de palavras e referências culturais pode usar conhecimento geral da língua, nunca da trama. O interruptor do Modo sem spoilers existe porque o leitor pode querer liberar a IA; vem ligado. O mapa só se atualiza sob demanda. Livros longos são enviados com começo e trecho recente.
+
+**O que o usuário/grupo ainda precisa revisar:** testar no iPhone; avaliar o tempo de resposta do mapa em livros longos e decidir se quer notas presas a trechos.

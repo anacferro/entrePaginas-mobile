@@ -2,21 +2,25 @@ import { Platform } from 'react-native';
 import { File } from 'expo-file-system';
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { app } from './firebase';
+import { createAssistant } from './readingAssistant';
 
 const MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-3.5-flash';
 const TIMEOUT_MS = 40000;
-const MAX_CHARS = 24000;
 
-let model = null;
+const models = {};
 
-function getModel() {
+function getModel(json) {
   if (!app) {
     throw new Error('O recurso de IA precisa do Firebase configurado. Veja o README.');
   }
-  if (!model) {
-    model = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), { model: MODEL });
+  const key = json ? 'json' : 'text';
+  if (!models[key]) {
+    models[key] = getGenerativeModel(getAI(app, { backend: new GoogleAIBackend() }), {
+      model: MODEL,
+      ...(json ? { generationConfig: { responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } } } : {}),
+    });
   }
-  return model;
+  return models[key];
 }
 
 function friendly(error) {
@@ -39,12 +43,12 @@ function friendly(error) {
   return 'Não foi possível usar a IA agora. O restante do app continua funcionando.';
 }
 
-async function generate(parts) {
+async function generate(parts, { json = false, timeoutMs = TIMEOUT_MS } = {}) {
   try {
     const result = await Promise.race([
-      getModel().generateContent(parts),
+      getModel(json).generateContent(parts),
       new Promise((_, reject) =>
-        setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'timeout' })), TIMEOUT_MS)
+        setTimeout(() => reject(Object.assign(new Error('timeout'), { code: 'timeout' })), timeoutMs)
       ),
     ]);
     const text = result.response.text().trim();
@@ -74,15 +78,7 @@ async function readBase64(uri) {
 export const ai = {
   isAvailable: Boolean(app),
 
-  summarizeChapter(title, content) {
-    const text = content.length > MAX_CHARS ? content.slice(0, MAX_CHARS) : content;
-    return generate([
-      'Resuma o capítulo abaixo em português do Brasil, em no máximo 5 linhas, ' +
-        'com linguagem simples e sem inventar informações que não estejam no texto. ' +
-        'Responda apenas com o resumo, sem títulos nem marcadores.\n\n' +
-        `Título: ${title}\n\n${text}`,
-    ]);
-  },
+  ...createAssistant(generate),
 
   async transcribePhoto(uri) {
     let image;

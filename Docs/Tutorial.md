@@ -38,7 +38,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 1. No editor de capítulo, toque em **Fotografar** e permita o uso da câmera. Se negar, o app explica e você segue escrevendo normalmente; se o sistema bloquear, há o atalho para abrir os ajustes.
 2. Com a foto na tela, toque em **Transcrever**: a IA lê a página e coloca o texto no capítulo. Revise antes de salvar.
-3. No leitor, o botão **Resumir capítulo com IA** mostra um resumo curto. Se a IA estiver indisponível, aparece a mensagem e o botão **Tentar novamente**.
+3. No leitor, o selo **Sem spoilers** abre a companheira de leitura: pergunte sobre a história (a IA só usa o que você já leu e mostra os trechos), veja o **Mapa de personagens** e, com o marca-texto, selecione um trecho e toque em **Explicar**. Se a IA estiver indisponível, aparece a mensagem.
 
 ## 6. Gerenciar os livros
 
@@ -68,7 +68,7 @@ Toque na engrenagem no topo de qualquer tela principal para abrir as **Configura
 2. Criar um livro usando a busca do Google Books.
 3. Importar um PDF ou EPUB e abrir o Histórico de Alterações depois de editar um capítulo.
 4. No leitor: grifar, marcar a página e reordenar capítulos.
-5. Fotografar uma página, transcrever com IA e resumir o capítulo; proteger um livro com biometria.
+5. Fotografar uma página, transcrever com IA e usar a companheira de leitura; proteger um livro com biometria.
 6. Desligar a internet do aparelho: mostrar que o app continua funcionando; religar e criar um livro para ver que ele chega à nuvem.
 7. Apagar os dados do app, entrar de novo e mostrar os livros voltando da nuvem.
 8. Mostrar o `firestore.rules`, o `.env.example` (sem chaves) e o `Docs/EstruturaDados.md`.

@@ -18,7 +18,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ChapterEditor from '../components/ChapterEditor';
 import AnnotatedText from '../components/AnnotatedText';
-import AiSummary from '../components/AiSummary';
+import SpoilerPill from '../components/SpoilerPill';
+import ReadingCompanion from '../components/ReadingCompanion';
+import ExplainPassage from '../components/ExplainPassage';
+import { ai } from '../services/ai';
 import CommentsModal from '../components/CommentsModal';
 import { paginate } from '../services/pagination';
 import { bookFonts } from '../services/bookFonts';
@@ -108,6 +111,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const [annotating, setAnnotating] = useState(false);
   const [selection, setSelection] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showCompanion, setShowCompanion] = useState(false);
+  const [explainFor, setExplainFor] = useState(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [editorMode, setEditorMode] = useState(null);
   const [focusMode, setFocusMode] = useState(false);
@@ -281,6 +286,15 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     setSelection(null);
     setShowSettings(false);
   };
+
+  const openExplain = () => {
+    if (!selection) return;
+    const text = page.content.slice(selection.start, selection.end).trim();
+    if (!text) return;
+    setExplainFor({ text: text.length > 1500 ? `${text.slice(0, 1500)}...` : text, pageIndex });
+  };
+
+  const goToPageIndex = (idx) => setCurrentPageIndex(Math.max(0, Math.min(pages.length - 1, idx)));
 
   const applyFormat = async (type, color) => {
     if (!book || !selection) return;
@@ -601,7 +615,12 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
             </Touchable>
           )}
 
-          <AiSummary chapter={currentChapter} />
+          <SpoilerPill
+            spoilerFree={prefs.spoilerFree}
+            upTo={currentPageNumber}
+            total={totalPages}
+            onPress={() => setShowCompanion(true)}
+          />
 
           {page.photo && (
             <Image
@@ -707,9 +726,20 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
                 {selection
                   ? `${selection.end - selection.start} caracteres selecionados`
                   : Platform.OS === 'web'
-                    ? 'Selecione um trecho arrastando o mouse'
+                    ? 'Selecione um trecho arrastando o mouse (grife ou peça uma explicação)'
                     : 'Toque e segure para selecionar um trecho'}
               </Text>
+              {ai.isAvailable && (
+                <Touchable
+                  style={[styles.explainBtn, !selection && { opacity: 0.4 }]}
+                  onPress={openExplain}
+                  disabled={!selection}
+                  accessibilityLabel="Explique este trecho"
+                >
+                  <Ionicons name="sparkles" size={13} color={colors.primary} />
+                  <Text style={styles.explainText}>Explicar</Text>
+                </Touchable>
+              )}
               <Touchable style={styles.annotateDone} onPress={toggleAnnotating}>
                 <Text style={styles.annotateDoneText}>Concluir</Text>
               </Touchable>
@@ -999,6 +1029,27 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </KeyboardAvoidingView>
       </Modal>
 
+      <ReadingCompanion
+        visible={showCompanion}
+        onClose={() => setShowCompanion(false)}
+        bookId={bookId}
+        chapters={chapters}
+        pages={pages}
+        currentIndex={pageIndex}
+        spoilerFree={prefs.spoilerFree}
+        onToggleSpoiler={(value) => updatePrefs({ spoilerFree: value })}
+        onGoToPage={goToPageIndex}
+      />
+      <ExplainPassage
+        visible={explainFor !== null}
+        onClose={() => setExplainFor(null)}
+        passage={explainFor}
+        chapters={chapters}
+        pages={pages}
+        limitIndex={prefs.spoilerFree ? pageIndex : pages.length - 1}
+        spoilerFree={prefs.spoilerFree}
+        currentIndex={pageIndex}
+      />
       <ChapterEditor
         visible={editorMode !== null}
         chapter={editorMode === 'edit' ? currentChapter : null}
@@ -1189,6 +1240,22 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     flex: 1,
+  },
+  explainBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    marginRight: 8,
+  },
+  explainText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
   },
   annotateDone: {
     backgroundColor: colors.primary,

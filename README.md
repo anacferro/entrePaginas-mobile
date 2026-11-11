@@ -83,7 +83,7 @@ Antes de testar, configure o Firebase (seção seguinte). O passo a passo comple
 | **Uso offline** | Desligue a internet: o app continua funcionando com os dados do aparelho; ao religar, sincroniza sozinho. |
 | **API externa com carregamento e erro** | Em **Novo Livro**, use *Buscar no Google Books*. Há estados de carregamento, erro (rede, tempo esgotado, limite) e lista vazia. A busca consulta ao mesmo tempo o catálogo do Project Gutenberg (por título ou autor) e o Google Books, e junta os dois: só aparecem obras com texto completo, ordenadas por relevância (título igual ao digitado primeiro, depois título parecido, depois autor), sem repetidas, com o idioma da edição e a capa e as páginas do Google quando houver. Se o Google Books estiver sem cota (erro 429) ou fora do ar, usa o Open Library e, no limite, só o Gutenberg; a busca só falha se tudo estiver indisponível. Buscas de duas letras ou só com palavras curtas (como "ab" ou "de o") não são enviadas: o app pede um trecho do título ou o nome do autor. Digitar **uma letra** (ou tocar em *Catálogo A-Z*) abre o catálogo em ordem alfabética: mostra as 30 primeiras obras daquela letra e carrega mais 30 a cada vez que a lista chega ao fim, até acabarem as obras da letra. Dá para trocar a letra e o idioma (todos os cerca de 70 idiomas do Gutenberg, com português, inglês, espanhol, francês, alemão e italiano primeiro). O Gutenberg só entrega as primeiras ~5 mil obras de cada listagem, o que cobre o alfabeto inteiro em todos os idiomas, menos o inglês: nele o catálogo mostra as obras **mais baixadas** em vez de A a Z, e para as demais vale a busca por título ou autor. O total de obras depende do próprio Gutenberg (por exemplo, cerca de 650 em português). Os marcadores de página valem por página, não por capítulo. |
 | **Recurso nativo com permissão negada** | No editor de capítulo, toque em **Fotografar**. Se negar a câmera, o app explica e permite continuar; se o sistema bloquear, oferece abrir os ajustes. A biometria (*Proteger com biometria*, menu `⋮`) também explica quando não há biometria cadastrada. |
-| **IA que continua funcionando se falhar** | *Resumir capítulo com IA* (leitor) e *Transcrever* (foto). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
+| **IA que continua funcionando se falhar** | *Modo sem spoilers*, *Explique este trecho* e *Mapa de personagens* (leitor) e *Transcrever* (foto). Sem rede, com erro do serviço ou resposta fora do formato, o app mostra a mensagem e nada é alterado; o resto do app segue normal. |
 | **Regras do Firestore** | `firestore.rules` permite ler e gravar apenas o dono (`request.auth.uid == uid`) que entrou com o Google e nega todo o resto. Teste feito com duas contas: o dono lê e grava; outra conta, dados inválidos e coleções não previstas recebem `403` (tabela em [Docs/EstruturaDados.md](Docs/EstruturaDados.md)). |
 | **Estrutura dos dados** | [Docs/EstruturaDados.md](Docs/EstruturaDados.md) e o arquivo de exemplo [Docs/exemplo-dados.json](Docs/exemplo-dados.json). |
 
@@ -103,7 +103,7 @@ O login, a sincronização e a IA usam o Firebase. Cada pessoa usa o próprio pr
 2. Em **Authentication > Sign-in method**, ative o provedor **Google** e informe um e-mail de suporte. Se existir o provedor **E-mail/senha**, desative.
 3. Em **Firestore Database**, crie o banco em modo produção e publique as regras do arquivo `firestore.rules` (`firebase deploy --only firestore`).
 4. Publique a página de login (`hosting/index.html`), usada pelo celular para abrir o login do Google: `firebase deploy --only hosting`. No navegador o login abre direto, sem essa página.
-5. Em **AI Logic**, ative o provedor **Gemini Developer API** (usado no resumo por IA e na transcrição de fotos).
+5. Em **AI Logic**, ative o provedor **Gemini Developer API** (usado na companheira de leitura e na transcrição de fotos).
 6. Copie `.env.example` para `.env` e preencha com os valores do app Web:
 
 | Variável | Onde encontrar |
@@ -137,6 +137,19 @@ Paleta **Verde + Creme + Madeira**, definida em um só lugar (`src/theme/palette
 | Madeira | `#7A5233` | Acentos e ações secundárias |
 
 O modo escuro usa superfícies verde-escuras (`#0F1A15` e `#16241D`) com verde claro como cor de ação, e não uma simples inversão do claro. Vermelho, amarelo e verde de estados (erro, aviso, sucesso) têm tons ajustados à paleta. Novos componentes devem usar `useThemedStyles` e as chaves de `colors`, sem escrever cores diretamente.
+
+---
+
+## ✨ Companheira de Leitura (IA)
+
+Substitui o antigo *Resumir capítulo*. No leitor, o selo **Sem spoilers · até a folha N** abre a companheira, com duas abas, e o botão **Explicar** aparece ao selecionar um trecho com o marca-texto.
+
+- **Modo sem spoilers (ligado por padrão):** a IA recebe **somente o texto até a folha em que você está**. O texto das folhas seguintes nem sai do aparelho, então não há como a resposta usá-lo. O limite acompanha a folha atual, inclusive se você voltar. O selo mostra quando o modo está ativo e o interruptor o desliga (a IA passa a usar o livro inteiro).
+- **Perguntar:** pergunte sobre a história. A IA cita trechos literais do que você já leu, com capítulo e folha, e o app **confere cada citação no texto**. Se a pergunta exigir algo que vem depois, ou se nenhuma citação puder ser confirmada, a resposta é bloqueada com um aviso em vez de arriscar um spoiler.
+- **Explique este trecho:** selecione uma palavra, frase ou parágrafo (ative o marca-texto, selecione e toque em *Explicar*). A IA explica significados, figuras e referências usando o contexto lido, indica capítulo e folha e aceita perguntas de acompanhamento. O texto do livro não é alterado.
+- **Mapa de personagens:** nós ligados por linhas coloridas por tipo de vínculo (parentesco, amizade, amor, rivalidade, aliança, trabalho). Ao tocar em um personagem: descrição, personalidade, relações e acontecimentos com a folha de origem. Só entram personagens cujo nome aparece no texto lido, acontecimentos com citação conferida e relações cujos dois lados existem; relação sem citação confirmada aparece como **não confirmada** (linha tracejada). Apelidos são fundidos e nomes parecidos não são juntados à força. O mapa fica guardado no aparelho e só é mostrado se foi gerado até a folha atual; se você voltou no livro, é preciso gerar de novo, para não mostrar o que está à frente. Ele é atualizado sob demanda (*Atualizar*).
+
+Limites assumidos: a IA ainda pode reconhecer um clássico famoso pelo estilo do texto; por isso o app não envia título nem autor e proíbe o uso de conhecimento prévio da obra, e a checagem de citações reduz, mas não elimina, esse risco. Livros muito longos são enviados com o começo e o trecho mais recente (o meio é omitido). A geração do mapa leva alguns segundos e precisa de internet.
 
 ---
 
@@ -184,7 +197,11 @@ entrePaginas-mobile/
 │   ├── context/
 │   │   └── AuthContext.js     # Usuário autenticado e sessão persistente
 │   ├── components/            # Componentes reutilizáveis
-│   │   ├── AiSummary.js       # Resumo do capítulo por IA
+│   │   ├── AiChat.js          # Conversa com a IA (respostas, trechos de apoio e entrada)
+│   │   ├── CharacterMap.js    # Mapa de personagens: grafo, detalhes, relações e acontecimentos
+│   │   ├── ExplainPassage.js  # Explique este trecho (painel com conversa)
+│   │   ├── ReadingCompanion.js # Companheira de leitura: perguntas e personagens, com Modo sem spoilers
+│   │   ├── SpoilerPill.js     # Selo do Modo sem spoilers no leitor
 │   │   ├── Avatar.js          # Iniciais do usuário
 │   │   ├── AnnotatedText.js   # Texto do leitor com grifos e seleção de trechos
 │   │   ├── BarChart.js        # Gráfico de barras do painel de leitura
@@ -224,7 +241,9 @@ entrePaginas-mobile/
 │   │   ├── biometrics.js      # Proteção de livros com biometria do aparelho
 │   │   ├── bookFonts.js       # Guarda e carrega a fonte original de livros importados
 │   │   ├── camera.js          # Foto de página com tratamento de permissão
-│   │   ├── ai.js              # Resumo de capítulo e transcrição de fotos por IA (Gemini via Firebase AI Logic)
+│   │   ├── ai.js              # Chamadas ao Gemini via Firebase AI Logic (companheira de leitura e transcrição de fotos)
+│   │   ├── bookContext.js     # Monta o texto enviado à IA só até a folha liberada e confere citações
+│   │   ├── readingAssistant.js # Perguntas, explicação de trecho e mapa de personagens, com validação das respostas
 │   │   ├── auth.js            # Cadastro, login e logout (Firebase Authentication)
 │   │   ├── categories.js      # Categorias editáveis do usuário
 │   │   ├── cloud.js           # Sincronização dos livros com o Firestore

@@ -33,7 +33,7 @@ Muita gente lê e escreve trechos de forma espalhada: fotos de páginas de livro
 1. A pessoa entra com a conta Google.
 2. Na estante, vê seus livros em grade e pode buscar por título, categoria ou etiqueta.
 3. Em Novo Livro, cria uma obra (capa, folha, primeiro capítulo), importa um arquivo ou escolhe uma obra do catálogo.
-4. No leitor, lê página a página, grifa, marca páginas, comenta, edita capítulos e pede resumos por IA.
+4. No leitor, lê página a página, grifa, marca páginas, comenta, edita capítulos e consulta a companheira de leitura por IA.
 5. Livros que saem da estante vão para o baú, de onde podem ser restaurados ou excluídos de vez.
 6. Os dados ficam no aparelho e são sincronizados com a nuvem; a sessão persiste entre aberturas.
 
@@ -43,7 +43,7 @@ Muita gente lê e escreve trechos de forma espalhada: fotos de páginas de livro
 - Texto completo de obras de domínio público, em vários idiomas, com a formatação original.
 - Importação de PDF, EPUB, texto e JSON, e captura de páginas físicas pela câmera.
 - Leitura paginada com grifos, marcadores e posição de leitura salva por livro.
-- Resumo de capítulo e transcrição de fotos por IA generativa.
+- Companheira de leitura por IA (Modo sem spoilers, Explique este trecho e Mapa de personagens) e transcrição de fotos.
 - Baú para arquivar sem perder; proteção opcional por biometria.
 - Funciona sem rede, com sincronização quando houver conexão.
 
@@ -60,7 +60,7 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | Autenticar somente com Google e manter a sessão | Fechar e reabrir o app sem novo login; telas internas inacessíveis sem login |
 | Permitir criar, ler, editar e excluir livros e capítulos | Fluxo completo pela interface (seção 14) |
 | Importar conteúdo de arquivos, da câmera e de catálogos públicos | Um livro de cada origem na estante, com texto legível |
-| Integrar IA de forma útil e tolerante a falhas | Resumo de capítulo funciona; com a IA indisponível o app avisa e segue |
+| Integrar IA de forma útil e tolerante a falhas | Companheira de leitura funciona; com a IA indisponível o app avisa e segue |
 | Sincronizar com a nuvem sem misturar contas | Duas contas diferentes enxergam apenas os próprios livros |
 | Tratar carregamento, lista vazia e erro | Estados visíveis nas listagens de Estante, Baú e catálogo |
 
@@ -141,8 +141,10 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 
 | ID | Requisito | Prioridade |
 | :--- | :--- | :--- |
-| RF-IA-01 | O sistema deve gerar, sob demanda, um resumo de até 5 linhas do capítulo aberto. | E |
+| RF-IA-01 | O sistema deve oferecer o Modo sem spoilers: a IA só recebe o texto até a folha atual do leitor, o limite acompanha a posição (inclusive ao voltar), o modo fica visível e respostas sem citação confirmada no texto lido são bloqueadas. | E |
 | RF-IA-02 | O sistema deve transcrever para texto a foto de uma página de livro. | I |
+| RF-IA-04 | O sistema deve explicar um trecho selecionado, com o contexto lido, a referência de capítulo e folha e perguntas de acompanhamento, sem alterar o texto. | I |
+| RF-IA-05 | O sistema deve montar o mapa de personagens com descrição, relações e acontecimentos, limitado ao texto lido, validando nomes e citações e marcando relações não confirmadas. | I |
 | RF-IA-03 | Se a IA estiver indisponível, demorar ou responder fora do esperado, o sistema deve avisar a pessoa e continuar funcionando, sem alterar o livro. | E |
 
 ### 7.8 Nuvem e dados (NUV)
@@ -222,7 +224,7 @@ No Firestore: `users/{uid}/books/{bookId}` e a subcoleção `chapters`.
 | :--- | :--- | :--- |
 | Firebase Authentication | Login com Google | Mensagem na tela de entrada |
 | Firestore | Sincronização dos livros | O app segue com os dados locais e tenta de novo |
-| Firebase AI Logic (Gemini) | Resumo de capítulo e transcrição de fotos | Aviso na tela; o leitor continua funcionando |
+| Firebase AI Logic (Gemini) | Companheira de leitura e transcrição de fotos | Aviso na tela; o leitor continua funcionando |
 | Project Gutenberg (OPDS) | Busca, catálogo e texto completo de domínio público | Resultados do Google Books e mensagem de indisponibilidade |
 | Google Books API | Busca complementar de livros | Resultados do Gutenberg e opção de criar o livro à mão |
 | Câmera e galeria | Fotos de capa e de páginas | O app explica e segue sem a foto |
@@ -286,7 +288,7 @@ As decisões completas, com alternativas e consequências, estão em [Explicaç�
 | 8 | Importar um PDF, um EPUB, um TXT e um JSON | IMP-01, IMP-02 |
 | 9 | Buscar "A" e "dom casmurro" e baixar uma obra pelo catálogo A-Z | IMP-04 a IMP-08 |
 | 10 | Fotografar uma página, transcrever com IA e negar a permissão da câmera sem travar | CAP-05, IA-02, ERR-03 |
-| 11 | Pedir resumo de capítulo; com a IA indisponível o app avisa e continua | IA-01, IA-03 |
+| 11 | Perguntar à companheira de leitura; com a IA indisponível o app avisa e continua | IA-01, IA-03 |
 | 12 | Exportar um livro em TXT e em JSON | LIV-08 |
 | 13 | Proteger um livro e abri-lo com a biometria | SEG-01 |
 | 14 | Trocar o tema e apagar todos os dados | CFG-01, NUV-03 |
