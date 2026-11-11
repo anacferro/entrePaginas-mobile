@@ -133,6 +133,44 @@ O progresso e o painel usam um registro separado, guardado no AsyncStorage por u
 - Livros lidos antes desta versão entram como "lendo" no ponto onde pararam, sem data de início.
 - Excluir um livro remove o registro dele, inclusive do histórico diário. Apagar todos os dados limpa o registro.
 
+## 3.2 Dados pessoais, catálogo e recomendações (somente no aparelho)
+
+Guardados no AsyncStorage por usuário e **fora do Firestore**: as regras de segurança não mudam e uma conta não lê os dados de outra, pois toda chave leva o `uid`.
+
+- `@entre_paginas_personal_v1_<uid>`: avaliações, perfil declarado, retornos das recomendações, conversa com a curadora e preferências de privacidade.
+- `@entre_paginas_catalog_history_v1_<uid>`: últimas 60 buscas (termo, filtros e situação de cada fonte, sem dados pessoais).
+- Campo opcional `catalog` em cada livro vindo de **Descobrir**: `workId`, `source`, `sourceId`, `url`, `access` (nível e se lê no app), `language`, `year`, `genres`, `subjects`, `isbns`, `addedFrom`.
+- O registro de leitura ganhou `abandonedAt` por livro (status *Abandonado*). Ler de novo páginas novas retoma a leitura.
+
+```json
+{
+  "version": 1,
+  "ratings": {
+    "w:dom-casmurro:assis": {
+      "workId": "w:dom-casmurro:assis", "bookId": "book-1", "title": "Dom Casmurro", "authors": ["Machado de Assis"],
+      "genres": ["classico"], "language": "pt", "year": 1899, "pages": 256,
+      "stars": 4,
+      "aspects": { "characters": true, "plot": false, "surprise": "surpreendente" },
+      "liked": "", "disliked": "", "review": "",
+      "createdAt": "ISO", "updatedAt": "ISO"
+    }
+  },
+  "declared": {
+    "genres": ["fantasia"], "traits": [], "favoriteAuthors": [], "favoriteBooks": [], "wantAuthors": [],
+    "languages": ["pt"], "eras": [], "topics": [], "avoidTopics": [], "length": "medio", "period": "ambos", "notes": ""
+  },
+  "progress": { "step": 2, "skipped": [], "updatedAt": "ISO" },
+  "recs": { "<workId>": { "count": 2, "lastShown": "ISO" } },
+  "recFeedback": { "<workId>": { "action": "not_interested", "at": "ISO", "work": { "id": "...", "title": "...", "authors": [], "genres": [] } } },
+  "chat": [{ "role": "user", "text": "..." }],
+  "settings": { "useRatings": true, "useHistory": true, "useReviews": true }
+}
+```
+
+- **Identidade da obra** (`workId`): `w:<título normalizado>:<sobrenome do autor ou anon>`. É a mesma para o livro da estante e para o resultado do catálogo, e é a chave das notas.
+- **Versionamento:** `normalizePersonal` roda a cada leitura, descarta campos inválidos e preenche os ausentes; não existe migração destrutiva, e nenhum dado anterior foi apagado.
+- **Exportar e apagar:** o perfil literário exporta o JSON acima e apaga por parte (recomendações e conversas, perfil declarado, avaliações). *Excluir dados* da conta remove tudo.
+
 ## 4. Como a sincronização funciona
 
 1. Ao entrar, o app lê os livros da nuvem e mescla com os locais. Para o mesmo livro vence a versão com `updatedAt` mais recente. Livros que só existem num dos lados são mantidos.

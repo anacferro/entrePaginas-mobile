@@ -175,7 +175,70 @@ Limites assumidos: as preferências não sincronizam entre aparelhos; a anotaç�
 - **Painel no Perfil:** livros lidos, em andamento e planejados; páginas lidas; tempo de leitura; média de páginas por dia (últimos 30 dias); gráfico de 14 dias e de 6 meses; comparativo com o mês e o ano anteriores; **meta anual** de livros; atividade recente.
 - **Dados reais:** tudo vem do registro de leitura (`services/readingLog.js`), guardado só no aparelho. Páginas lidas contam avanços de 1 ou 2 páginas e o registro manual; saltos pelo sumário e voltas não contam, e o tempo parado acima de 5 minutos é descartado. Detalhes em `Docs/EstruturaDados.md`.
 - **Avisos e carregamento:** confirmações discretas no topo (salvar, excluir, restaurar, meta), *skeleton* na estante, no baú e no painel, e confirmação antes de excluir.
-- **Limites assumidos:** o app não guarda autor nem avaliação por estrelas, então não são exibidos. O registro de leitura não sincroniza com a nuvem.
+- **Limites assumidos:** o registro de leitura e as avaliações não sincronizam com a nuvem. Notas, estatísticas completas e recomendações estão na seção *Descoberta, Avaliações, Recomendações e Estatísticas*.
+
+---
+
+## 🧭 Descoberta, Avaliações, Recomendações e Estatísticas
+
+### Descobrir (aba própria)
+
+- **Busca unificada** em cinco fontes ao mesmo tempo, com resultados juntos e sem repetir a mesma obra. Filtros: idioma, gênero, autor, ano, disponibilidade (gratuito, lê no app). Paginação, cache de 10 minutos e histórico de buscas só no aparelho (máximo 60, apagado em *Excluir dados*).
+- **Explorar:** 14 temas guiados (literatura brasileira, vozes africanas, América Latina, poesia, ciência para leigos, clássicos fora do radar etc.) e *Surpreenda-me*, que sorteia livros reais do catálogo.
+- **Tolerância a falhas:** cada fonte tem tempo limite de 8 s e uma nova tentativa com espera; se uma cair, aparece um aviso discreto e as outras seguem valendo. Só vira erro se todas falharem.
+- **Etiquetas de acesso** (classificação conservadora; na dúvida, "Condição não confirmada"): domínio público, acesso aberto, gratuito, empréstimo digital, só prévia, acesso restrito, sem texto online. Cada livro informa se **lê dentro do app** ou **abre na plataforma de origem**.
+- **Duplicatas:** agrupa por obra e por edição (ISBN e identificadores primeiro; depois título, autor, idioma e ano) com nível de confiança. Traduções e edições diferentes **não** são fundidas automaticamente: viram edições da mesma obra, ou obras separadas quando não há evidência.
+
+| Fonte | Termos e limites | Formatos e chave | Situação |
+| --- | --- | --- | --- |
+| Project Gutenberg (OPDS) | Domínio público, uso aberto | HTML e texto; sem chave | Integrada. **Única que lê dentro do app.** |
+| Open Library | API aberta, uso moderado | JSON; sem chave | Integrada (metadados, capas, acesso via Internet Archive) |
+| Internet Archive | Acervo misto, parte é envio de usuários | JSON; sem chave | Integrada, **sem** coleções de empréstimo; a marca de domínio público vira só "Gratuito, não confirmado" e nunca lê no app |
+| Wikisource (pt) | Licença aberta | JSON; sem chave | Integrada, filtrando subpáginas |
+| Google Books | Cota compartilhada; sem chave cai com erro 429 | JSON; chave opcional `EXPO_PUBLIC_GOOGLE_BOOKS_API_KEY` | Integrada, falha sem derrubar as demais |
+| DOAB, OAPEN, SciELO Livros | Acesso aberto acadêmico | n/d | **Descartadas por ora:** bloqueio automático (anti-robô) nas consultas diretas |
+| Standard Ebooks | Exige ser apoiador para o feed | OPDS autenticado | Descartada: sem acesso público ao feed |
+| Domínio Público (MEC), Brasiliana Mindlin | Sem API pública estável | n/d | Descartadas: não há interface programática que respeite os termos |
+
+> **Sem backend:** o projeto é só aplicativo. Todas as fontes acima são APIs públicas **sem chave**, chamadas direto do app; a IA passa pelo Firebase AI Logic, então nenhuma chave de IA fica no código. A única chave opcional no cliente é a do Google Books (restrinja-a no console do Google). Fontes que exijam chave pedirão um backend, que não foi criado.
+
+### Avaliações e perfil literário
+
+- **Notas de 1 a 5 estrelas** na ficha de progresso do leitor (*Avaliar este livro*) e logo após *Marcar como lido*. Tocar na mesma estrela remove a nota. A nota fica ligada à **obra** (o mesmo livro na estante e no catálogo compartilha a identidade), e não ao exemplar.
+- **Detalhes opcionais** (um toque cada): personagens, enredo, estilo, leitura envolvente, quer mais do autor, recomendaria, surpreendente ou previsível, o que mais e menos gostou e resenha curta.
+- **Abandonar leitura** é um status à parte (*Abandonado*), com peso fraco contra o gosto.
+- **Meu perfil literário** (Perfil, Meu perfil literário): assistente de 6 passos, todos puláveis, com progresso salvo (gêneros, o que procura, autores e livros, idiomas, épocas e estilo, temas e tamanho). A tela separa **o que você declarou** do **que foi inferido** da leitura. Inferência: livro apenas adicionado pesa 0; lido sem nota +0,6; 5 estrelas +3, 4 estrelas +2, 3 estrelas +0,4, 2 estrelas −1,5, 1 estrela −3; abandonado −0,8 (ou 60% do peso da nota). Confiança baixa (menos de 3 lidos), média (menos de 8) ou alta.
+- **Privacidade:** liga ou desliga o uso de notas, de detalhes e resenhas e do histórico; exporta tudo em JSON; apaga recomendações e conversas, perfil declarado ou avaliações (com confirmação). *Excluir dados* da conta também apaga tudo isto.
+
+### Para você (recomendações)
+
+- **Duas camadas.** (1) O motor determinístico (`services/recommend/engine.js`) busca candidatos reais no catálogo, pontua afinidade e novidade, exclui o que já está na biblioteca, foi recusado, é só do Internet Archive (sem curadoria) ou cai num gênero ou tema evitado, e reordena para limitar autor e gênero repetidos. (2) A IA (`services/recommend/curator.js`) recebe só um perfil **minimizado** (sem nome, e-mail, resenhas ou títulos favoritos) e a lista fechada de candidatos, e devolve motivos em JSON. Toda obra citada é conferida contra a lista e **descartada se não existir**; motivos que prometem gratuidade sem confirmação também são descartados.
+- **Categorias:** *Livros que combinam com você*, *Explore novos horizontes* (nunca repete gêneros que você declarou gostar), *Uma perspectiva diferente* (visual tracejado e aviso de evidência: são pontos de vista, não verdades; baseia-se em uma tabela curada de contrastes), *Autores para conhecer* e recomendações por **objetivo** (aprender, relaxar, pensar, clássico, leitura curta, em português).
+- **Retorno por livro:** tenho interesse, adicionar, já li, sem interesse, não gosto desse tipo, já conheço o autor, mais assim, algo bem diferente. Ignorar não conta como rejeitar; livros já mostrados perdem prioridade para rodar o catálogo.
+- **Conversa com a curadora:** responde com base no perfil e em candidatos reais, explica o raciocínio e pede mais dados quando falta. Precisa do serviço de IA habilitado.
+
+### Estatísticas (aba própria)
+
+Tudo vem do registro real de leitura, das notas e dos metadados dos livros. Indicadores: lidos, lendo, abandonados, adicionados, páginas, média de páginas dos lidos, nota média, horas (só após 10 minutos medidos), maior sequência, dias de leitura e meta anual. Gráficos de livros concluídos por semana, mês, ano ou período personalizado e de páginas por mês; calendário de leitura de 26 semanas, sem cobrança por dia sem leitura; distribuição por gênero, autor, idioma, década e tipo (o recorte por **país não existe**, pois as fontes não informam). O relatório em texto compara meses, aponta o gênero mais frequente, liga notas a características (só com 3 ou mais avaliações) e lista gêneros ainda não lidos, com ressalvas de amostra pequena e dados ausentes.
+
+### Dados e migrações
+
+- Dados novos ficam **só no aparelho**, por conta (`@entre_paginas_personal_v1_<uid>` e `@entre_paginas_catalog_history_v1_<uid>`), sem sincronizar com a nuvem. Por isso **não há mudança em `firestore.rules`** nem índices novos, e uma conta não enxerga os dados de outra.
+- Livros ganham o campo opcional `catalog` (identidade da obra, fonte, acesso, gêneros). Livros antigos continuam intactos e a identidade deles é derivada de título e autor. O armazenamento pessoal é normalizado a cada leitura (`normalizePersonal`, `version: 1`): campos ausentes ou inválidos são descartados sem perder o resto, então nenhuma migração destrutiva é necessária.
+
+### Testes
+
+```bash
+node --test tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
+```
+
+Cobrem deduplicação, classificação de disponibilidade, perfil e inferência, regras de diversidade, validação da IA contra o catálogo e cálculo das estatísticas com dados conhecidos. `node tests/live-catalog.mjs "dom casmurro"` consulta as fontes reais (precisa de internet; `LANG_FILTER=pt` filtra por idioma). O aviso `MODULE_TYPELESS_PACKAGE_JSON` do Node é inofensivo.
+
+### Limites assumidos
+
+- Só o Project Gutenberg abre o texto dentro do app; as demais fontes abrem na plataforma de origem. No navegador, o download do texto do Gutenberg é barrado por CORS; no celular funciona.
+- A classificação de gênero das fontes é aproximada (assunto da fonte ou título). Livros só do Internet Archive não são recomendados por falta de curadoria.
+- O conteúdo sugerido como "perspectiva diferente" não passa por verificação de mérito.
 
 ---
 
