@@ -453,6 +453,17 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     storage.getPersonal().then(setPersonal).catch(() => {});
   }, [loadState, bookId, totalPages]);
 
+  const concludeBook = useCallback(async () => {
+    try {
+      await storage.moveToChest(bookId);
+      const p = await storage.getPersonal();
+      setPersonal(p);
+      if (book && !p.ratings[bookWorkId(book)]) setShowRating(true);
+    } catch {
+      toast.show('Não foi possível guardar o livro no Baú.', 'error');
+    }
+  }, [bookId, book, toast]);
+
   useEffect(() => {
     if (loadState !== 'ready' || !bookId || lastPage.current === null || lastPage.current === currentPageNumber) return;
     const from = lastPage.current;
@@ -463,11 +474,12 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         setReadingLog(log);
         if (!wasFinished.current && log.books[bookId]?.finishedAt) {
           wasFinished.current = true;
-          toast.show('Leitura concluída. Parabéns!');
+          toast.show('Leitura concluída. Parabéns! O livro foi para o Baú.');
+          concludeBook();
         }
       })
       .catch(() => {});
-  }, [loadState, bookId, currentPageNumber, totalPages, flushTime, toast]);
+  }, [loadState, bookId, currentPageNumber, totalPages, flushTime, toast, concludeBook]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
@@ -489,7 +501,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
       setShowProgress(false);
       if (!wasFinished.current && log.books[bookId]?.finishedAt) {
         wasFinished.current = true;
-        toast.show('Leitura concluída. Parabéns!');
+        toast.show('Leitura concluída. Parabéns! O livro foi para o Baú.');
+        concludeBook();
       } else {
         toast.show(`Página ${target} registrada.`);
       }
@@ -504,8 +517,13 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
       wasFinished.current = finished;
       setReadingLog(log);
       setShowProgress(false);
-      toast.show(finished ? 'Livro marcado como lido.' : 'Livro voltou para "lendo".');
-      if (finished) setShowRating(true);
+      if (finished) {
+        toast.show('Livro marcado como lido e guardado no Baú.');
+        concludeBook();
+      } else {
+        await storage.restoreFromChest(bookId);
+        toast.show('Livro voltou para "lendo" e para a estante.');
+      }
     } catch {
       toast.show('Não foi possível atualizar o livro. Tente de novo.', 'error');
     }

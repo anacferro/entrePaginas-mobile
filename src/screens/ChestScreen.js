@@ -23,6 +23,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from '../components/Touchable';
 import { fonts } from '../theme/tokens';
+import StarRating from '../components/StarRating';
+import RatingSheet from '../components/RatingSheet';
+import { bookWorkId } from '../services/catalog/identity';
 
 export default function ChestScreen({ navigation }) {
   const { colors } = useTheme();
@@ -34,13 +37,17 @@ export default function ChestScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [personal, setPersonal] = useState(null);
+  const [onlyUnrated, setOnlyUnrated] = useState(false);
+  const [rating, setRating] = useState(null);
 
   const loadChestData = async (isPull = false) => {
     try {
       if (!isPull) setLoading(true);
       setError(null);
-      const data = await storage.getChestBooks(isPull ? 200 : 350);
+      const [data, p] = await Promise.all([storage.getChestBooks(isPull ? 200 : 350), storage.getPersonal()]);
       setChestBooks(data);
+      setPersonal(p);
     } catch (err) {
       setError(err.message || 'Falha ao acessar os arquivos do baú.');
     } finally {
@@ -128,7 +135,11 @@ export default function ChestScreen({ navigation }) {
     );
   };
 
-  const filteredBooks = chestBooks.filter(b => matchesQuery(searchQuery, [b.title, b.subtitle, b.category]));
+  const starsOf = (book) => personal?.ratings?.[bookWorkId(book)]?.stars || 0;
+  const unratedCount = chestBooks.filter(b => !starsOf(b)).length;
+  const filteredBooks = chestBooks
+    .filter(b => matchesQuery(searchQuery, [b.title, b.subtitle, b.category]))
+    .filter(b => !onlyUnrated || !starsOf(b));
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -173,6 +184,22 @@ export default function ChestScreen({ navigation }) {
           )}
         </View>
 
+        <View style={styles.filterRow}>
+          {[
+            { key: false, label: `Todos ${chestBooks.length}` },
+            { key: true, label: `Sem nota ${unratedCount}` },
+          ].map((f) => (
+            <Touchable
+              key={String(f.key)}
+              style={[styles.filterChip, onlyUnrated === f.key && styles.filterChipOn]}
+              onPress={() => setOnlyUnrated(f.key)}
+              accessibilityState={{ selected: onlyUnrated === f.key }}
+            >
+              <Text style={[styles.filterChipText, onlyUnrated === f.key && styles.filterChipTextOn]}>{f.label}</Text>
+            </Touchable>
+          ))}
+        </View>
+
         <View style={styles.actionRow}>
           <Touchable
             style={[styles.actionBtn, styles.restoreAllBtn, chestBooks.length === 0 && styles.disabledBtn]}
@@ -206,11 +233,13 @@ export default function ChestScreen({ navigation }) {
         {!loading && !error && filteredBooks.length === 0 && (
           <EmptyView
             icon="archive-outline"
-            title={searchQuery ? 'Nenhum livro encontrado no baú' : 'O baú está vazio'}
+            title={searchQuery ? 'Nenhum livro encontrado no baú' : onlyUnrated ? 'Todos os livros do baú têm nota' : 'O baú está vazio'}
             description={
               searchQuery
                 ? `Nenhum volume corresponde a "${searchQuery}".`
-                : 'Quando você retirar livros da estante, eles ficarão guardados em descanso aqui com segurança.'
+                : onlyUnrated
+                  ? 'Não há livros esperando avaliação.'
+                  : 'Quando você retirar livros da estante, eles ficarão guardados em descanso aqui com segurança.'
             }
             actionLabel="Ver Estante"
             onActionPress={() => navigation.navigate('Estante')}
@@ -230,6 +259,18 @@ export default function ChestScreen({ navigation }) {
                   width={coverWidth}
                   size="medium"
                 />
+
+                <Touchable
+                  style={[styles.rateRow, { width: coverWidth }]}
+                  onPress={() => setRating(book)}
+                  accessibilityLabel={starsOf(book) ? `Editar nota de ${book.title}` : `Avaliar ${book.title}`}
+                >
+                  {starsOf(book) ? (
+                    <StarRating value={starsOf(book)} size={16} gap={2} />
+                  ) : (
+                    <Text style={styles.rateText}>Dar nota</Text>
+                  )}
+                </Touchable>
 
                 <View style={[styles.cardButtonsRow, { width: coverWidth }]}>
                   <Touchable
@@ -254,6 +295,14 @@ export default function ChestScreen({ navigation }) {
           </View>
         )}
       </ScrollView>
+
+      <RatingSheet
+        visible={!!rating}
+        book={rating}
+        totalPages={rating?.totalPages}
+        onClose={() => setRating(null)}
+        onChanged={setPersonal}
+      />
     </SafeAreaView>
   );
 }
@@ -304,6 +353,44 @@ const createStyles = (colors) => StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: colors.text,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 14,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  filterChipOn: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  filterChipText: {
+    fontSize: 13,
+    color: colors.text,
+  },
+  filterChipTextOn: {
+    color: colors.onPrimary,
+    fontWeight: '700',
+  },
+  rateRow: {
+    height: 32,
+    marginTop: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceSoft,
+  },
+  rateText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
   },
   actionRow: {
     flexDirection: 'row',

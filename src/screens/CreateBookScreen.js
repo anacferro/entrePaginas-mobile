@@ -48,8 +48,6 @@ export default function CreateBookScreen({ navigation, route }) {
   const [titleColor, setTitleColor] = useState(DEFAULT_TITLE_COLOR);
   const [paperColor, setPaperColor] = useState(DEFAULT_PAPER_COLOR);
   const [fontFamily, setFontFamily] = useState('serif');
-  const [firstChapterTitle, setFirstChapterTitle] = useState('');
-  const [firstChapterContent, setFirstChapterContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [coverImage, setCoverImage] = useState(null);
   const [searchKey, setSearchKey] = useState(0);
@@ -57,7 +55,6 @@ export default function CreateBookScreen({ navigation, route }) {
   const [tags, setTags] = useState([]);
 
   const [selectedFormat, setSelectedFormat] = useState('pdf');
-  const [importedFile, setImportedFile] = useState(null);
   const [importing, setImporting] = useState(false);
 
   const resetForm = useCallback(() => {
@@ -69,9 +66,6 @@ export default function CreateBookScreen({ navigation, route }) {
     setTitleColor(DEFAULT_TITLE_COLOR);
     setPaperColor(DEFAULT_PAPER_COLOR);
     setFontFamily('serif');
-    setFirstChapterTitle('');
-    setFirstChapterContent('');
-    setImportedFile(null);
     setCoverImage(null);
     setSearchKey(key => key + 1);
   }, []);
@@ -84,25 +78,43 @@ export default function CreateBookScreen({ navigation, route }) {
     }
   }, [route?.params?.initialTab]);
 
-  const applyImported = useCallback((format, file) => {
-    setSelectedFormat(format);
-    setImportedFile(file);
-    setTitle(file.title);
-    setSubtitle(file.subtitle);
-  }, []);
+  const saveImported = useCallback(async (file) => {
+    const bookTitle = (file.title || '').trim() || file.name || 'Livro importado';
+    const newBook = await storage.addBook({
+      title: bookTitle,
+      subtitle: file.subtitle,
+      category: 'Literatura',
+      coverColor: DEFAULT_COVER_COLOR,
+      titleColor: DEFAULT_TITLE_COLOR,
+      paperColor: DEFAULT_PAPER_COLOR,
+      fontFamily: file.fontHint || 'serif',
+      fontFallback: file.fontHint || null,
+      totalPages: file.pages,
+      isOwn: false,
+      chapters: file.chapters,
+    });
+    const savedFont = file.font ? await bookFonts.save(newBook.id, file.font).catch(() => null) : null;
+    if (savedFont) await storage.updateBook(newBook.id, { ...savedFont, fontFamily: 'original' });
+    resetForm();
+    toast.show(`"${newBook.title}" foi adicionado à sua estante.`);
+    navigation.navigate('Estante');
+    if (file.warning) {
+      dialog.alert('Livro adicionado', `${file.warning} O livro foi criado com ${file.pages} ${file.pages === 1 ? 'página' : 'páginas'} para você transcrever.`);
+    }
+  }, [navigation, resetForm, toast]);
 
   const runImport = useCallback(async (format, task) => {
     try {
       setImporting(true);
       setSelectedFormat(format);
       const file = await task();
-      if (file) applyImported(format, file);
+      if (file) await saveImported(file);
     } catch (e) {
       dialog.alert('Falha na Importação', e.message || 'Não foi possível ler o arquivo selecionado.');
     } finally {
       setImporting(false);
     }
-  }, [applyImported]);
+  }, [saveImported]);
 
   const handlePickFile = (format) => runImport(format, () => importer.pickAndImport(format));
 
@@ -183,12 +195,8 @@ export default function CreateBookScreen({ navigation, route }) {
   };
 
   const handleSaveBook = async () => {
-    if (activeTab === 'import' && !importedFile) {
-      dialog.alert('Nenhum Arquivo', 'Selecione um arquivo para importar antes de salvar.');
-      return;
-    }
     if (!title.trim()) {
-      dialog.alert('Título Obrigatório', 'Por favor, informe o título da obra antes de salvar.');
+      dialog.alert('Título Obrigatório', 'Por favor, informe o título da obra antes de criar.');
       return;
     }
 
@@ -202,31 +210,13 @@ export default function CreateBookScreen({ navigation, route }) {
         coverColor,
         titleColor,
         paperColor,
-        fontFamily: importedFile?.fontHint || fontFamily,
-        fontFallback: importedFile?.fontHint || null,
+        fontFamily,
         coverImage,
-        totalPages: importedFile ? importedFile.pages : undefined,
-        isOwn: activeTab === 'create',
-        chapters: activeTab === 'import'
-          ? importedFile.chapters
-          : firstChapterContent.trim()
-            ? [
-                {
-                  id: `chap-${Date.now()}-1`,
-                  title: firstChapterTitle.trim() || 'Capítulo 1',
-                  content: firstChapterContent,
-                },
-              ]
-            : undefined,
+        isOwn: true,
       });
 
-      const savedFont = importedFile?.font ? await bookFonts.save(newBook.id, importedFile.font).catch(() => null) : null;
-      if (savedFont) await storage.updateBook(newBook.id, { ...savedFont, fontFamily: 'original' });
-
       resetForm();
-
-      toast.show(`"${newBook.title}" foi adicionado à sua estante.`);
-      navigation.navigate('Estante');
+      navigation.navigate('Reader', { bookId: newBook.id, bookTitle: newBook.title });
     } catch {
       dialog.alert('Erro ao Salvar', 'Não foi possível gravar a obra no armazenamento local.');
     } finally {
@@ -353,29 +343,6 @@ export default function CreateBookScreen({ navigation, route }) {
                   <FontPicker value={fontFamily} onChange={setFontFamily} />
                 </Field>
               </Section>
-
-              <Section icon="reader-outline" title="Primeiro capítulo" hint="Opcional. Você pode escrever depois, direto no leitor.">
-                <Field label="Título do capítulo">
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Capítulo 1"
-                    placeholderTextColor={colors.textMuted}
-                    value={firstChapterTitle}
-                    onChangeText={setFirstChapterTitle}
-                    returnKeyType="next"
-                  />
-                </Field>
-                <Field label="Texto">
-                  <TextInput
-                    style={[styles.input, styles.writingBox]}
-                    placeholder="Comece a escrever seu livro aqui."
-                    placeholderTextColor={colors.textMuted}
-                    value={firstChapterContent}
-                    onChangeText={setFirstChapterContent}
-                    multiline
-                  />
-                </Field>
-              </Section>
             </View>
           ) : (
             <View>
@@ -396,48 +363,29 @@ export default function CreateBookScreen({ navigation, route }) {
                     description={item.description}
                     tone={colors.formats[item.format]}
                     loading={importing && selectedFormat === item.format}
-                    fileName={importedFile && selectedFormat === item.format ? importedFile.name : null}
                     onPick={handlePickFile}
                     onDropFile={handleDropFile}
                   />
                 ))}
               </View>
-
-              {importedFile && !importedFile.warning && (
-                <View style={styles.importSuccessBox}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success} style={{ marginRight: 8 }} />
-                  <Text style={styles.importSuccessText}>
-                    &ldquo;{importedFile.title}&rdquo;: {importedFile.pages} {importedFile.pages === 1 ? 'página' : 'páginas'} e{' '}
-                    {importedFile.chapters.length} {importedFile.chapters.length === 1 ? 'capítulo' : 'capítulos'} prontos para leitura.
-                  </Text>
-                </View>
-              )}
-
-              {importedFile?.warning && (
-                <View style={[styles.importSuccessBox, styles.importWarningBox]}>
-                  <Ionicons name="alert-circle" size={18} color={colors.warning} style={{ marginRight: 8 }} />
-                  <Text style={[styles.importSuccessText, { color: colors.warning }]}>
-                    {importedFile.warning} O livro será criado com {importedFile.pages}{' '}
-                    {importedFile.pages === 1 ? 'página' : 'páginas'} para você transcrever.
-                  </Text>
-                </View>
-              )}
             </View>
           )}
 
-          <View style={styles.bottomCard}>
-            <Touchable
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              activeOpacity={0.85}
-              onPress={handleSaveBook}
-              disabled={saving}
-            >
-              <Ionicons name="library" size={20} color={colors.onPrimary} style={{ marginRight: 8 }} />
-              <Text style={styles.saveButtonText}>
-                {saving ? 'Gravando Volume...' : 'Salvar Livro na Estante'}
-              </Text>
-            </Touchable>
-          </View>
+          {activeTab === 'create' && (
+            <View style={styles.bottomCard}>
+              <Touchable
+                style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                activeOpacity={0.85}
+                onPress={handleSaveBook}
+                disabled={saving}
+              >
+                <Ionicons name="create" size={20} color={colors.onPrimary} style={{ marginRight: 8 }} />
+                <Text style={styles.saveButtonText}>
+                  {saving ? 'Criando o livro...' : 'Criar e começar a escrever'}
+                </Text>
+              </Touchable>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

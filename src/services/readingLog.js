@@ -52,7 +52,7 @@ function credit(log, bookId, upTo, floor, total, now) {
     dayEntry(log, bookId, now).pages += gained;
     entry.abandonedAt = null;
   }
-  if (upTo >= total && total > 0 && !entry.finishedAt) entry.finishedAt = now.toISOString();
+  if (upTo >= total && total > 1 && !entry.finishedAt) entry.finishedAt = now.toISOString();
   return gained;
 }
 
