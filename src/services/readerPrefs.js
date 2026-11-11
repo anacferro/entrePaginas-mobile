@@ -39,7 +39,6 @@ export const DEFAULT_READER_PREFS = {
   dim: 0,
   keepAwake: false,
   autoHide: false,
-  spoilerFree: true,
 };
 
 const clamp = (value, { min, max }, fallback) => {
@@ -65,6 +64,5 @@ export function normalizePrefs(raw) {
     dim: Math.round(clamp(r.dim, READER_LIMITS.dim, d.dim) * 100) / 100,
     keepAwake: r.keepAwake === true,
     autoHide: r.autoHide === true,
-    spoilerFree: r.spoilerFree !== false,
   };
 }

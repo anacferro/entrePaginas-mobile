@@ -168,7 +168,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 * **RF-AUT-01 / RF-AUT-02 (Autenticação e sessão):** login e logout somente com a conta Google (Firebase Authentication). A sessão permanece salva e as telas internas só são registradas para usuário autenticado.
 * **RF-NUV-01 (Nuvem):** livros, capítulos, marcadores e grifos são sincronizados com o Firestore, por usuário, com uso offline. Estrutura e regras em [EstruturaDados.md](EstruturaDados.md).
 * **RF-CAP-05 (Câmera e transcrição):** a foto da página pode ser transcrita para texto com IA, direto no editor de capítulo.
-* **RF-IA-01 (Modo sem spoilers):** o leitor tem o selo *Sem spoilers* que abre a companheira de leitura. A IA só recebe o texto até a folha atual (`services/bookContext.js`), as citações da resposta são conferidas no texto e há *Explique este trecho* e *Mapa de personagens*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
+* **RF-IA-01 (Modo sem spoilers):** o leitor tem um ícone de IA que abre um menu com *Perguntar sobre a história* (sempre sem spoilers) e *Mapa de personagens*, em telas separadas. A IA só recebe o texto até a folha atual (`services/bookContext.js`), as citações da resposta são conferidas no texto e há *Explique este trecho* e *Mapa de personagens*. Se a IA falhar (sem rede, limite, modelo indisponível), o app mostra a mensagem e o leitor continua funcionando.
 
 * **Configurações e tema:** tela com tema Automático, Claro ou Escuro, saída da conta e exclusão de todos os dados do aparelho e da nuvem (só apaga o aparelho se a nuvem confirmar).
 * **Etiquetas:** as etiquetas do livro ficam salvas, sincronizam com a nuvem e entram na busca da estante.

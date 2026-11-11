@@ -38,7 +38,7 @@ Livros importados são considerados de terceiros: toda edição fica registrada 
 
 1. No editor de capítulo, toque em **Fotografar** e permita o uso da câmera. Se negar, o app explica e você segue escrevendo normalmente; se o sistema bloquear, há o atalho para abrir os ajustes.
 2. Com a foto na tela, toque em **Transcrever**: a IA lê a página e coloca o texto no capítulo. Revise antes de salvar.
-3. No leitor, o selo **Sem spoilers** abre a companheira de leitura: pergunte sobre a história (a IA só usa o que você já leu e mostra os trechos), veja o **Mapa de personagens** e, com o marca-texto, selecione um trecho e toque em **Explicar**. Se a IA estiver indisponível, aparece a mensagem.
+3. No leitor, o ícone de brilho (✦) abre a companheira de leitura: **Perguntar sobre a história** (a IA só usa o que você já leu e mostra os trechos) ou **Mapa de personagens**. Além disso, com o marca-texto, selecione um trecho e toque em **Explicar**. Se a IA estiver indisponível, aparece a mensagem.
 
 ## 6. Gerenciar os livros
 

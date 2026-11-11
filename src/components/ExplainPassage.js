@@ -7,9 +7,9 @@ import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { fonts, radius, space } from '../theme/tokens';
 import Touchable from './Touchable';
 import AiChat from './AiChat';
-import { SpoilerBadge } from './SpoilerPill';
+import SpoilerBadge from './SpoilerBadge';
 
-export default function ExplainPassage({ visible, onClose, passage, chapters, pages, limitIndex, spoilerFree, currentIndex }) {
+export default function ExplainPassage({ visible, onClose, passage, chapters, pages, limitIndex, currentIndex }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [messages, setMessages] = useState([]);
@@ -28,7 +28,6 @@ export default function ExplainPassage({ visible, onClose, passage, chapters, pa
         chapters,
         pages,
         limitIndex,
-        spoilerFree,
         passage: passage.text,
         pageIndex: passage.pageIndex,
         question,
@@ -43,7 +42,7 @@ export default function ExplainPassage({ visible, onClose, passage, chapters, pa
     } finally {
       if (run.current === id) setBusy(false);
     }
-  }, [chapters, pages, limitIndex, spoilerFree, passage]);
+  }, [chapters, pages, limitIndex, passage]);
 
   useEffect(() => {
     if (!visible || !passage) return undefined;
@@ -88,7 +87,6 @@ export default function ExplainPassage({ visible, onClose, passage, chapters, pa
           </View>
 
           <SpoilerBadge
-            spoilerFree={spoilerFree}
             upTo={currentIndex + 1}
             total={pages.length}
             style={styles.badge}

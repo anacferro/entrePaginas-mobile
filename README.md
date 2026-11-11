@@ -142,9 +142,9 @@ O modo escuro usa superfícies verde-escuras (`#0F1A15` e `#16241D`) com verde c
 
 ## ✨ Companheira de Leitura (IA)
 
-Substitui o antigo *Resumir capítulo*. No leitor, o selo **Sem spoilers · até a folha N** abre a companheira, com duas abas, e o botão **Explicar** aparece ao selecionar um trecho com o marca-texto.
+Substitui o antigo *Resumir capítulo*. No topo do leitor há um único ícone de brilho (✦) que abre um menu com **Perguntar sobre a história** e **Mapa de personagens**, cada um em sua própria tela. O **Explicar** aparece ao selecionar um trecho com o marca-texto.
 
-- **Modo sem spoilers (ligado por padrão):** a IA recebe **somente o texto até a folha em que você está**. O texto das folhas seguintes nem sai do aparelho, então não há como a resposta usá-lo. O limite acompanha a folha atual, inclusive se você voltar. O selo mostra quando o modo está ativo e o interruptor o desliga (a IA passa a usar o livro inteiro).
+- **Modo sem spoilers (sempre ativo):** a IA recebe **somente o texto até a folha em que você está**. O texto das folhas seguintes nem sai do aparelho, então não há como a resposta usá-lo. O limite acompanha a folha atual, inclusive se você voltar. As telas de perguntas e de explicação mostram o selo *Sem spoilers · até a folha N*.
 - **Perguntar:** pergunte sobre a história. A IA cita trechos literais do que você já leu, com capítulo e folha, e o app **confere cada citação no texto**. Se a pergunta exigir algo que vem depois, ou se nenhuma citação puder ser confirmada, a resposta é bloqueada com um aviso em vez de arriscar um spoiler.
 - **Explique este trecho:** selecione uma palavra, frase ou parágrafo (ative o marca-texto, selecione e toque em *Explicar*). A IA explica significados, figuras e referências usando o contexto lido, indica capítulo e folha e aceita perguntas de acompanhamento. O texto do livro não é alterado.
 - **Mapa de personagens:** nós ligados por linhas coloridas por tipo de vínculo (parentesco, amizade, amor, rivalidade, aliança, trabalho). Ao tocar em um personagem: descrição, personalidade, relações e acontecimentos com a folha de origem. Só entram personagens cujo nome aparece no texto lido, acontecimentos com citação conferida e relações cujos dois lados existem; relação sem citação confirmada aparece como **não confirmada** (linha tracejada). Apelidos são fundidos e nomes parecidos não são juntados à força. O mapa fica guardado no aparelho e só é mostrado se foi gerado até a folha atual; se você voltou no livro, é preciso gerar de novo, para não mostrar o que está à frente. Ele é atualizado sob demanda (*Atualizar*).
@@ -199,9 +199,11 @@ entrePaginas-mobile/
 │   ├── components/            # Componentes reutilizáveis
 │   │   ├── AiChat.js          # Conversa com a IA (respostas, trechos de apoio e entrada)
 │   │   ├── CharacterMap.js    # Mapa de personagens: grafo, detalhes, relações e acontecimentos
+│   │   ├── AiMenu.js          # Menu do ícone de IA no leitor (perguntar ou mapa de personagens)
+│   │   ├── AskBook.js         # Perguntar sobre a história, sem spoilers
+│   │   ├── CharacterMapModal.js # Tela do mapa de personagens
 │   │   ├── ExplainPassage.js  # Explique este trecho (painel com conversa)
-│   │   ├── ReadingCompanion.js # Companheira de leitura: perguntas e personagens, com Modo sem spoilers
-│   │   ├── SpoilerPill.js     # Selo do Modo sem spoilers no leitor
+│   │   ├── SpoilerBadge.js    # Selo "Sem spoilers · até a folha N"
 │   │   ├── Avatar.js          # Iniciais do usuário
 │   │   ├── AnnotatedText.js   # Texto do leitor com grifos e seleção de trechos
 │   │   ├── BarChart.js        # Gráfico de barras do painel de leitura

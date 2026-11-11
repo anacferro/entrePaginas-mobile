@@ -57,7 +57,7 @@ function Edge({ a, b, color, dashed }) {
   );
 }
 
-export default function CharacterMap({ bookId, chapters, pages, limitIndex, spoilerFree, onGoToPage }) {
+export default function CharacterMap({ bookId, chapters, pages, limitIndex, onGoToPage }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
   const [map, setMap] = useState(null);
@@ -86,7 +86,7 @@ export default function CharacterMap({ bookId, chapters, pages, limitIndex, spoi
     setBusy(true);
     setError(null);
     try {
-      const built = await ai.characters({ chapters, pages, limitIndex, spoilerFree });
+      const built = await ai.characters({ chapters, pages, limitIndex });
       await storage.setCharacterMap(bookId, built);
       setMap(built);
       setSelectedId(null);
@@ -95,7 +95,7 @@ export default function CharacterMap({ bookId, chapters, pages, limitIndex, spoi
     } finally {
       setBusy(false);
     }
-  }, [bookId, chapters, pages, limitIndex, spoilerFree]);
+  }, [bookId, chapters, pages, limitIndex]);
 
   const nodes = useMemo(() => {
     if (!map) return [];
@@ -133,9 +133,7 @@ export default function CharacterMap({ bookId, chapters, pages, limitIndex, spoi
         <Ionicons name="people-outline" size={40} color={colors.secondary} />
         <Text style={styles.heading}>Mapa de personagens</Text>
         <Text style={styles.hint}>
-          {spoilerFree
-            ? `A IA lê só o que você já leu, até a folha ${limitIndex + 1}, e monta os personagens e as relações que o texto mostra.`
-            : 'A IA lê o texto do livro e monta os personagens e as relações que ele mostra.'}
+          A IA lê só o que você já leu, até a folha {limitIndex + 1}, e monta os personagens e as relações que o texto mostra.
         </Text>
         {busy ? (
           <View style={styles.busy}>

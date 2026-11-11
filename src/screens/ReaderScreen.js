@@ -18,8 +18,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import ChapterEditor from '../components/ChapterEditor';
 import AnnotatedText from '../components/AnnotatedText';
-import SpoilerPill from '../components/SpoilerPill';
-import ReadingCompanion from '../components/ReadingCompanion';
+import AiMenu from '../components/AiMenu';
+import AskBook from '../components/AskBook';
+import CharacterMapModal from '../components/CharacterMapModal';
 import ExplainPassage from '../components/ExplainPassage';
 import { ai } from '../services/ai';
 import CommentsModal from '../components/CommentsModal';
@@ -111,7 +112,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const [annotating, setAnnotating] = useState(false);
   const [selection, setSelection] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [showCompanion, setShowCompanion] = useState(false);
+  const [showAiMenu, setShowAiMenu] = useState(false);
+  const [aiPanel, setAiPanel] = useState(null);
   const [explainFor, setExplainFor] = useState(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [editorMode, setEditorMode] = useState(null);
@@ -552,6 +554,17 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               <Ionicons name="expand-outline" size={20} color={readerTextColor} />
             </Touchable>
 
+            {ai.isAvailable && (
+              <Touchable
+                style={styles.iconBtn}
+                onPress={() => setShowAiMenu(true)}
+                accessibilityLabel="Companheira de leitura"
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <Ionicons name="sparkles-outline" size={20} color={readerTextColor} />
+              </Touchable>
+            )}
+
             <Touchable
               style={styles.iconBtn}
               onPress={() => {
@@ -615,12 +628,6 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
             </Touchable>
           )}
 
-          <SpoilerPill
-            spoilerFree={prefs.spoilerFree}
-            upTo={currentPageNumber}
-            total={totalPages}
-            onPress={() => setShowCompanion(true)}
-          />
 
           {page.photo && (
             <Image
@@ -1029,15 +1036,30 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </KeyboardAvoidingView>
       </Modal>
 
-      <ReadingCompanion
-        visible={showCompanion}
-        onClose={() => setShowCompanion(false)}
+      <AiMenu
+        visible={showAiMenu}
+        onClose={() => setShowAiMenu(false)}
+        onSelect={(id) => {
+          setShowAiMenu(false);
+          setAiPanel(id);
+        }}
+      />
+      <AskBook
+        visible={aiPanel === 'ask'}
+        onClose={() => setAiPanel(null)}
         bookId={bookId}
         chapters={chapters}
         pages={pages}
         currentIndex={pageIndex}
-        spoilerFree={prefs.spoilerFree}
-        onToggleSpoiler={(value) => updatePrefs({ spoilerFree: value })}
+        onGoToPage={goToPageIndex}
+      />
+      <CharacterMapModal
+        visible={aiPanel === 'people'}
+        onClose={() => setAiPanel(null)}
+        bookId={bookId}
+        chapters={chapters}
+        pages={pages}
+        currentIndex={pageIndex}
         onGoToPage={goToPageIndex}
       />
       <ExplainPassage
@@ -1046,8 +1068,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         passage={explainFor}
         chapters={chapters}
         pages={pages}
-        limitIndex={prefs.spoilerFree ? pageIndex : pages.length - 1}
-        spoilerFree={prefs.spoilerFree}
+        limitIndex={pageIndex}
         currentIndex={pageIndex}
       />
       <ChapterEditor
@@ -1170,7 +1191,7 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: 4,
   },
   iconBtn: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
   },

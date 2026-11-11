@@ -141,7 +141,7 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 
 | ID | Requisito | Prioridade |
 | :--- | :--- | :--- |
-| RF-IA-01 | O sistema deve oferecer o Modo sem spoilers: a IA só recebe o texto até a folha atual do leitor, o limite acompanha a posição (inclusive ao voltar), o modo fica visível e respostas sem citação confirmada no texto lido são bloqueadas. | E |
+| RF-IA-01 | O sistema deve oferecer o Modo sem spoilers: a IA só recebe o texto até a folha atual do leitor, o limite acompanha a posição (inclusive ao voltar), o modo fica visível, não pode ser desligado e respostas sem citação confirmada no texto lido são bloqueadas. | E |
 | RF-IA-02 | O sistema deve transcrever para texto a foto de uma página de livro. | I |
 | RF-IA-04 | O sistema deve explicar um trecho selecionado, com o contexto lido, a referência de capítulo e folha e perguntas de acompanhamento, sem alterar o texto. | I |
 | RF-IA-05 | O sistema deve montar o mapa de personagens com descrição, relações e acontecimentos, limitado ao texto lido, validando nomes e citações e marcando relações não confirmadas. | I |
