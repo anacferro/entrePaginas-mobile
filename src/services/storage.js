@@ -5,6 +5,7 @@ import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
 import * as readingLog from './readingLog';
 import { normalizePrefs } from './readerPrefs';
+import * as personalData from './personal.js';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 
 let userId = null;
@@ -27,6 +28,7 @@ const KEYS = {
   get READING() { return userId ? keyFor('reading') : '@entre_paginas_reading_v1'; },
   get CHARACTERS() { return userId ? keyFor('characters') : '@entre_paginas_characters_v1'; },
   get READER_PREFS() { return userId ? keyFor('reader_prefs') : '@entre_paginas_reader_prefs_v1'; },
+  get PERSONAL() { return userId ? keyFor('personal') : '@entre_paginas_personal_v1'; },
   get CATALOG_HISTORY() { return userId ? keyFor('catalog_history') : '@entre_paginas_catalog_history_v1'; },
 };
 
@@ -38,6 +40,22 @@ async function saveBooks(list) {
 async function loadReading() {
   const json = await AsyncStorage.getItem(KEYS.READING);
   return readingLog.normalizeLog(json ? JSON.parse(json) : null);
+}
+
+async function loadPersonal() {
+  const json = await AsyncStorage.getItem(KEYS.PERSONAL);
+  try {
+    return personalData.normalizePersonal(json ? JSON.parse(json) : null);
+  } catch {
+    return personalData.normalizePersonal(null);
+  }
+}
+
+async function changePersonal(change) {
+  const personal = await loadPersonal();
+  change(personal);
+  await AsyncStorage.setItem(KEYS.PERSONAL, JSON.stringify(personal));
+  return personal;
 }
 
 async function changeReading(change) {
@@ -576,6 +594,62 @@ export const storage = {
     return changeReading(log => readingLog.setFinished(log, { bookId, finished, total, now: new Date() }));
   },
 
+  async getPersonal() {
+    return loadPersonal();
+  },
+
+  async updatePersonal(change) {
+    return changePersonal(change);
+  },
+
+  async rateWork(info) {
+    return changePersonal(p => personalData.setRating(p, info));
+  },
+
+  async rateDetails(workId, patch) {
+    return changePersonal(p => personalData.setRatingDetails(p, workId, patch));
+  },
+
+  async unrateWork(workId) {
+    return changePersonal(p => personalData.removeRating(p, workId));
+  },
+
+  async saveDeclared(patch, step) {
+    return changePersonal((p) => {
+      personalData.setDeclared(p, patch);
+      if (Number.isFinite(step)) p.progress.step = step;
+    });
+  },
+
+  async setPersonalSettings(patch) {
+    return changePersonal((p) => {
+      p.settings = { ...p.settings, ...patch };
+    });
+  },
+
+  async clearPersonal(part) {
+    return changePersonal((p) => {
+      const fresh = personalData.emptyPersonal();
+      if (part === 'all') {
+        Object.assign(p, fresh, { settings: p.settings });
+      } else if (part === 'declared') {
+        p.declared = fresh.declared;
+        p.progress = fresh.progress;
+      } else if (part === 'ratings') {
+        p.ratings = {};
+      } else if (part === 'recs') {
+        p.recs = {};
+        p.recFeedback = {};
+      } else if (part === 'chat') {
+        p.chat = [];
+      }
+    });
+  },
+
+  async setReadingAbandoned(bookId, abandoned) {
+    return changeReading(log => readingLog.setAbandoned(log, { bookId, abandoned, now: new Date() }));
+  },
+
   async addReadingTime(bookId, seconds) {
     return changeReading(log => readingLog.addTime(log, { bookId, seconds, now: new Date() }));
   },
@@ -598,6 +672,7 @@ export const storage = {
     await AsyncStorage.removeItem(KEYS.READER_PREFS);
     await AsyncStorage.removeItem(KEYS.CHARACTERS);
     await AsyncStorage.removeItem(KEYS.CATALOG_HISTORY);
+    await AsyncStorage.removeItem(KEYS.PERSONAL);
     return true;
   }
 };
@@ -606,7 +681,8 @@ export const storage = {
   'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
   'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
-  'setReadingPosition', 'setCharacterMap', 'openReading', 'recordReadingStep', 'registerReadingPage', 'setReadingFinished',
+  'setReadingPosition', 'setCharacterMap', 'openReading', 'recordReadingStep', 'registerReadingPage', 'setReadingFinished', 'setReadingAbandoned',
+  'updatePersonal', 'rateWork', 'rateDetails', 'unrateWork', 'saveDeclared', 'setPersonalSettings', 'clearPersonal',
   'addReadingTime', 'setReadingGoal', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',
 ].forEach((name) => {
   const original = storage[name];

@@ -3,13 +3,10 @@ import { fetchFullTextInBackground } from './googleImport';
 import { importProgress } from './importProgress';
 import { accessInfo } from './catalog/availability';
 import { genreLabel } from './catalog/genres';
-import { authorKey, normalize, titleKey } from './catalog/text';
+import { normalize } from './catalog/text';
+import { bookWorkId } from './catalog/identity';
 
-export function workIdOf(book) {
-  if (book.catalog?.workId) return book.catalog.workId;
-  const byline = String(book.subtitle || '').replace(/^Por\s+/i, '');
-  return `w:${titleKey(book.title).replace(/ /g, '-')}:${authorKey(byline) || 'anon'}`;
-}
+export const workIdOf = bookWorkId;
 
 export function catalogMeta(work) {
   const best = work.best;

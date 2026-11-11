@@ -1,5 +1,6 @@
 import { authorKey, authorFull, isbnKey, titleKey } from './text.js';
 import { bestOffer, accessInfo } from './availability.js';
+import { workIdFor } from './identity.js';
 
 class Union {
   constructor(size) {
@@ -159,7 +160,7 @@ export function groupWorks(records) {
     const authors = list.find((r) => r.authors?.length)?.authors || [];
     const subjects = [...new Set(list.flatMap((r) => r.subjects || []))].slice(0, 12);
     return {
-      id: `w:${titleKey(list[0].title).replace(/ /g, '-')}:${authorKey(authors) || 'anon'}`,
+      id: workIdFor(list[0].title, authors),
       title: bestEdition.title || list[0].title,
       authors,
       subjects,

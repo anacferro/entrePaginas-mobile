@@ -2,16 +2,18 @@ import { localDay } from './readingLog';
 
 const DAY_MS = 86400000;
 
-export const STATUS = { PLANNED: 'planejado', READING: 'lendo', FINISHED: 'lido' };
+export const STATUS = { PLANNED: 'planejado', READING: 'lendo', FINISHED: 'lido', ABANDONED: 'abandonado' };
 
 export const STATUS_LABELS = {
   [STATUS.PLANNED]: 'Quero ler',
   [STATUS.READING]: 'Lendo',
   [STATUS.FINISHED]: 'Lido',
+  [STATUS.ABANDONED]: 'Abandonado',
 };
 
 export function statusOf(book, position, entry) {
   if (entry?.finishedAt) return STATUS.FINISHED;
+  if (entry?.abandonedAt) return STATUS.ABANDONED;
   if (entry || position > 1) return STATUS.READING;
   return STATUS.PLANNED;
 }
@@ -60,7 +62,7 @@ const WEEKDAYS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 export function computeStats({ books, positions, log, now }) {
   const ids = new Set(books.map((b) => b.id));
   const today = startOfDay(now);
-  const counts = { [STATUS.PLANNED]: 0, [STATUS.READING]: 0, [STATUS.FINISHED]: 0 };
+  const counts = { [STATUS.PLANNED]: 0, [STATUS.READING]: 0, [STATUS.FINISHED]: 0, [STATUS.ABANDONED]: 0 };
   let pagesRead = 0;
   let finishedThisYear = 0;
   let finishedLastYear = 0;

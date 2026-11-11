@@ -206,7 +206,7 @@ export default function BookshelfScreen({ navigation }) {
   }, [books, reading]);
 
   const statusCounts = useMemo(() => {
-    const counts = { all: books.length, [STATUS.READING]: 0, [STATUS.PLANNED]: 0, [STATUS.FINISHED]: 0 };
+    const counts = { all: books.length, [STATUS.READING]: 0, [STATUS.PLANNED]: 0, [STATUS.FINISHED]: 0, [STATUS.ABANDONED]: 0 };
     books.forEach((b) => { counts[progressById[b.id].status] += 1; });
     return counts;
   }, [books, progressById]);
@@ -314,6 +314,7 @@ export default function BookshelfScreen({ navigation }) {
               { key: STATUS.READING, label: STATUS_LABELS[STATUS.READING] },
               { key: STATUS.PLANNED, label: STATUS_LABELS[STATUS.PLANNED] },
               { key: STATUS.FINISHED, label: STATUS_LABELS[STATUS.FINISHED] },
+              { key: STATUS.ABANDONED, label: STATUS_LABELS[STATUS.ABANDONED] },
             ].map((item) => (
               <Touchable
                 key={item.key}

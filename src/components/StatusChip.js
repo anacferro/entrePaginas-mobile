@@ -9,6 +9,7 @@ const ICONS = {
   [STATUS.PLANNED]: 'bookmark-outline',
   [STATUS.READING]: 'book-outline',
   [STATUS.FINISHED]: 'checkmark-circle-outline',
+  [STATUS.ABANDONED]: 'pause-circle-outline',
 };
 
 export default function StatusChip({ status, compact = false }) {
@@ -17,6 +18,7 @@ export default function StatusChip({ status, compact = false }) {
     [STATUS.PLANNED]: { bg: colors.surfaceSoft, fg: colors.textSecondary },
     [STATUS.READING]: { bg: colors.primaryLight, fg: colors.primary },
     [STATUS.FINISHED]: { bg: colors.successLight, fg: colors.success },
+    [STATUS.ABANDONED]: { bg: colors.warningLight, fg: colors.warningText },
   }[status];
 
   return (

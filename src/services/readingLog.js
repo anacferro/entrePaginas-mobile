@@ -19,7 +19,7 @@ export function normalizeLog(raw) {
 
 function entryOf(log, bookId, now) {
   if (!log.books[bookId]) {
-    log.books[bookId] = { startedAt: now.toISOString(), lastReadAt: null, finishedAt: null, credited: 0, seconds: 0 };
+    log.books[bookId] = { startedAt: now.toISOString(), lastReadAt: null, finishedAt: null, abandonedAt: null, credited: 0, seconds: 0 };
   }
   return log.books[bookId];
 }
@@ -48,7 +48,10 @@ function credit(log, bookId, upTo, floor, total, now) {
   const gained = Math.max(0, upTo - Math.max(floor, entry.credited));
   entry.credited = Math.max(entry.credited, Math.min(upTo, total));
   entry.lastReadAt = now.toISOString();
-  if (gained > 0) dayEntry(log, bookId, now).pages += gained;
+  if (gained > 0) {
+    dayEntry(log, bookId, now).pages += gained;
+    entry.abandonedAt = null;
+  }
   if (upTo >= total && total > 0 && !entry.finishedAt) entry.finishedAt = now.toISOString();
   return gained;
 }
@@ -78,6 +81,12 @@ export function setFinished(log, { bookId, finished, total, now }) {
   } else {
     entry.finishedAt = null;
   }
+  return log;
+}
+
+export function setAbandoned(log, { bookId, abandoned, now }) {
+  const entry = entryOf(log, bookId, now);
+  entry.abandonedAt = abandoned && !entry.finishedAt ? now.toISOString() : null;
   return log;
 }
 
