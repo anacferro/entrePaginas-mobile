@@ -23,6 +23,17 @@ users/{uid}
     chapters/{chapterId}
 ```
 
+### Campos somente locais da importação (não vão para o Firestore)
+
+| Campo | Onde | Para quê |
+| :--- | :--- | :--- |
+| `originalPdf` | livro | cópia do PDF importado (`originals/<id>.pdf` no iPhone, `idb:<id>` na web) |
+| `textPending` | livro | número do Gutenberg enquanto o texto completo não chegou (mostra "Baixando o texto..." na estante) |
+| `images` | capítulo | figuras `{ uri, offset, width, height }` e a posição no texto |
+| `photoRatio` | capítulo | proporção da página digitalizada, para exibir sem cortar |
+
+Na sincronização o app preserva esses valores locais; as regras e o modelo da nuvem não mudaram.
+
 ### Documento `users/{uid}/books/{bookId}`
 
 ```json

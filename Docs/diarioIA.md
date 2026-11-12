@@ -290,3 +290,18 @@ As correções das telas, as novas funcionalidades do leitor, a importação rea
 **O que foi pedido:** tirar o interruptor de spoilers, organizar melhor as opções na página e separar o mapa de personagens da parte de spoilers.
 
 **O que foi feito:** o Modo sem spoilers ficou sempre ativo, sem interruptor. A página perdeu o selo grande acima do texto; no topo há um único ícone de IA que abre um menu com duas telas independentes (*Perguntar sobre a história* e *Mapa de personagens*). O selo de spoilers aparece só na tela de perguntas e na de explicação do trecho.
+
+## 19. Importação fiel de PDF, avisos do app e PDF original (Claude Code)
+
+**O que foi pedido, em ordem:** capa escolhida pela IA e imagens de PDF e EPUB; sem livro perdido por falha de download; avisos do app no lugar dos avisos do navegador; texto do PDF igual ao arquivo (imagens, capítulos, letra capitular, versos); nenhuma imagem descartada; e, por fim, que o PDF abra "absolutamente igual" ao arquivo.
+
+**O que veio e foi aceito:** extração de imagens pelo leitor de PDF próprio (JPEG direto, demais formatos em PNG, CMYK para RGB), figuras ancoradas no parágrafo vizinho pela ordem de desenho, títulos como capítulos, letra capitular, versos em estrofes, correção de espaços dentro das palavras pela largura real das letras e detecção de eixo vertical invertido. Conferido com o PDF de *Alice* enviado pela usuária. Diálogo próprio do app com fila, novas tentativas no download do Gutenberg, "Baixando o texto..." na estante e cópia do PDF exibida pelo visualizador nativo (DA18 a DA20). Cada etapa tem testes automáticos e exportação para web, iOS e Android.
+
+**O que foi recusado ou adaptado:**
+- Para ler um site de e-books atrás de verificação anti-robô, uma tentativa trocava a identificação do navegador. O ambiente bloqueou e foi abandonada: contornar essa verificação não é aceitável. O site ficou como não baixável por programa.
+- Para o bloqueio de CORS do Gutenberg na web, proxies públicos de terceiros foram recusados (veriam o que a pessoa lê). A saída honesta é um proxy próprio no Firebase, que **não foi implementado**.
+- Reconstruir o texto idêntico ao PDF é impossível (fonte e quebras mudam com a largura do celular). Em vez de prometer isso, adotou-se o PDF original com alternância; no Android essa visualização não existe.
+- Um filtro de imagens pequenas e repetidas foi feito e depois removido, a pedido: nada é descartado, exceto formatos que o app não decodifica.
+
+**Ainda precisa de revisão humana:** testar no iPhone o PDF original, a estante com "Baixando o texto..." e um aviso aberto por cima de outro modal; decidir se número de página e cabeçalhos do PDF ficam no texto adaptado e se vale o proxy próprio para o Gutenberg na web.
+

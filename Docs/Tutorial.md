@@ -22,7 +22,9 @@ Os livros ficam salvos no aparelho e são sincronizados com a nuvem em segundo p
 
 1. Em **Novo Livro**, abra a aba **Importar** e escolha o formato: PDF, EPUB, Texto Puro ou JSON.
 2. Toque em selecionar, escolha o arquivo e confira título e subtítulo.
-3. Salve. O texto vira capítulos. PDFs só com imagem geram um aviso e um livro para transcrição.
+3. Salve. O texto vira capítulos, com as imagens do arquivo no lugar certo. PDFs só com imagem geram um aviso e um livro para transcrição.
+4. **PDF importado:** o livro abre mostrando o próprio PDF, idêntico ao arquivo (iPhone e web). O botão de documento no topo do leitor alterna para o texto adaptado, onde valem fonte, tema, grifos, marcadores e a companheira de leitura. Livros importados antes dessa versão precisam ser importados de novo.
+5. **Livro baixado do catálogo:** enquanto o texto completo não chega, a capa mostra "Baixando o texto...". O app tenta de novo sozinho e o livro não some.
 
 Livros importados são considerados de terceiros: toda edição fica registrada no **Histórico de Alterações** (menu `⋮` do livro), com a versão anterior e a nova.
 

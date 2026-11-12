@@ -137,6 +137,11 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | RF-IMP-07 | O sistema deve preservar negrito e itálico do original quando a obra vier em HTML. | I |
 | RF-IMP-08 | O sistema deve avisar quando a obra escolhida já estiver na estante. | D |
 | RF-IMP-09 | O sistema deve dividir capítulos muito longos em partes para que nenhum texto seja cortado ao sincronizar. | I |
+| RF-IMP-10 | O sistema deve extrair todas as imagens de PDF e EPUB, sem descartar nenhuma, e posicioná-las no texto adaptado junto do parágrafo que as seguia no arquivo, mantendo a proporção. | I |
+| RF-IMP-11 | O sistema deve guardar uma cópia do PDF importado e abri-lo exatamente como o arquivo (iOS e web), com botão para alternar ao texto adaptado. | I |
+| RF-IMP-12 | O sistema deve escolher a capa do livro importado, com apoio da IA quando disponível, e converter imagens CMYK para exibição. | D |
+| RF-IMP-13 | O sistema deve preservar a estrutura do PDF no texto adaptado: títulos como capítulos, letra capitular, estrofes de versos e folha de rosto. | I |
+| RF-IMP-14 | Se o texto completo de uma obra não puder ser baixado, o livro deve continuar na estante com a indicação "Baixando o texto...", e o app deve tentar de novo sem pedir nada à pessoa. | E |
 
 ### 7.7 Inteligência artificial (IA)
 
@@ -193,6 +198,7 @@ Entregar um aplicativo mobile funcional em Expo, testado em celular real, que cu
 | :--- | :--- | :--- |
 | RF-ERR-01 | As listagens devem tratar os estados de carregamento, vazio e erro, com opção de tentar de novo. | E |
 | RF-ERR-02 | Falhas de rede, Google Books, Gutenberg, IA, importação e exportação devem ser informadas com mensagem clara, sem travar o app. | E |
+| RF-ERR-04 | Todo aviso e toda confirmação devem aparecer como diálogo do próprio app, igual no celular e na web, nunca como caixa do sistema ou do navegador. | E |
 | RF-ERR-03 | Se a permissão de câmera for negada, o app deve explicar e continuar funcionando; se estiver bloqueada, oferecer abrir os ajustes do aparelho. | E |
 
 ## 8. Requisitos não funcionais
@@ -249,7 +255,7 @@ No Firestore: `users/{uid}/books/{bookId}` e a subcoleção `chapters`.
 
 ## 13. Decisões de arquitetura
 
-As decisões completas, com alternativas e consequências, estão em [ExplicaçãoArquiteturaTelas.md](ExplicaçãoArquiteturaTelas.md) (DA01 a DA15). As quatro que moldam este PRD:
+As decisões completas, com alternativas e consequências, estão em [ExplicaçãoArquiteturaTelas.md](ExplicaçãoArquiteturaTelas.md) (DA01 a DA20). As quatro que moldam este PRD:
 
 ### DA01 — Firebase para autenticação e dados
 
@@ -317,6 +323,9 @@ As decisões completas, com alternativas e consequências, estão em [Explicaç�
 | Serviços externos (Gutenberg, Google Books, Gemini, Firebase) indisponíveis ou com limite de uso | Tratamento de erro, dados locais primeiro e recursos essenciais sem dependência externa |
 | Qualidade da transcrição por IA varia com iluminação e fonte | A pessoa revisa e edita o texto antes de salvar |
 | PDFs escaneados não têm texto extraível | Aviso e livro para transcrição manual |
+| O navegador bloqueia (CORS) o download do texto do Gutenberg na web | O livro fica na estante com a sinopse e o download é retomado; no celular não há bloqueio |
+| O Android não abre PDF dentro do app | No Android vale só o texto adaptado; PDF original no iOS e na web |
+| Livros importados antes do PDF original não têm a cópia do arquivo | Reimportar o PDF |
 | Lista alfabética do Gutenberg tem teto de cerca de 5 mil itens (o inglês passa dele) | Modo "mais baixados" para o inglês |
 | Biometria não existe no navegador | Livros protegidos ficam bloqueados na web; o uso principal é o celular |
 | Modelo de IA descontinuado | Modelo configurável por variável de ambiente |
@@ -327,4 +336,4 @@ As decisões completas, com alternativas e consequências, estão em [Explicaç�
 | :--- | :--- |
 | 1. Protótipos (28/09) | Primeira versão: estante, baú, páginas, Google Books, resumo por IA, login Google. |
 | 2. Telas (30/10) | Persistência local com AsyncStorage; importação real de arquivos; leitor paginado. |
-| 3. Final (30/11) | Sincronização com o Firestore (local primeiro); IA pelo Firebase AI Logic; biometria; grifos, marcadores, comentários e histórico; Gutenberg com texto completo, catálogo A-Z e formatação preservada; barra inferior com Estante, Novo Livro e Baú, e perfil pelo topo. **Retirado:** a sugestão de categoria e etiquetas por IA, por não agregar ao fluxo; o OCR por biblioteca foi substituído pela transcrição com IA. O nome do produto passou de "Estante Virtual" para "Entre Páginas". |
+| 3. Final (30/11) | Sincronização com o Firestore (local primeiro); IA pelo Firebase AI Logic; biometria; grifos, marcadores, comentários e histórico; Gutenberg com texto completo, catálogo A-Z e formatação preservada; barra inferior com Estante, Novo Livro e Baú, e perfil pelo topo. **Retirado:** a sugestão de categoria e etiquetas por IA, por não agregar ao fluxo; o OCR por biblioteca foi substituído pela transcrição com IA. O nome do produto passou de "Estante Virtual" para "Entre Páginas". **Revisões posteriores:** avisos próprios do app (RF-ERR-04, DA20); importação com todas as imagens, estrutura preservada e capa por IA (RF-IMP-10, 12 e 13, DA19); PDF original com alternância para o texto adaptado (RF-IMP-11, DA18); livro do Gutenberg não é mais removido quando o download falha (RF-IMP-14, DA20). |

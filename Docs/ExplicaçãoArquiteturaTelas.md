@@ -44,6 +44,8 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 ### DA06 (Nova Decisão) — Importação de Arquivos com Leitor de PDF Próprio
 
+> Ampliada na etapa final: o mesmo leitor agora lê a largura das letras de cada fonte, posições de linha, imagens e a ordem de desenho (ver DA18 e DA19).
+
 * **Decisão:** Selecionar o arquivo com `expo-document-picker`, ler o conteúdo com `expo-file-system` e extrair o texto do PDF com um leitor próprio (`src/services/pdfParser.js`), usando apenas a biblioteca `pako` para descompactar os dados.
 * **Alternativas consideradas:**
   - **`pdf.js` (Mozilla):** descartado porque depende de recursos de navegador (workers, canvas) e não funciona de forma confiável no Expo Go.
@@ -75,7 +77,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 ### DA09 (Nova Decisão) — Serviço Único de Alertas para Celular e Web
 
 * **Decisão:** Todas as telas usam `dialog.alert` (`src/services/dialog.js`) em vez de `Alert.alert` diretamente.
-* **Motivação:** o `Alert.alert` do React Native não faz nada quando o app roda no navegador, o que deixava confirmações de exclusão, restauração e saída sem resposta. O serviço usa o alerta nativo no celular e as caixas de diálogo do navegador na web.
+* **Motivação:** o `Alert.alert` do React Native não faz nada no navegador, o que deixava confirmações sem resposta. **Revisada na etapa final:** o serviço deixou de usar o alerta do sistema e as caixas do navegador (que mostravam "localhost:8083 diz"). Ele agora mantém uma fila e o componente `AppDialog` (`src/components/AppDialog.js`) mostra um diálogo do próprio app, com o tema ativo, igual no celular e na web (ver DA20).
 
 ### DA10 (Nova Decisão) — Autenticação Somente com Google, por Página Hospedada
 
@@ -126,6 +128,24 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 * **Decisão:** paleta, espaçamento, raios, sombras e tipografia centralizados em `theme/palettes.js` e `theme/tokens.js`. Títulos em Lora; texto corrido na fonte do sistema.
 * **Consequências assumidas:** telas novas e componentes novos usam os tokens; telas antigas foram migradas nas cores e fontes, mas parte dos tamanhos e margens ainda são valores locais.
+
+### DA18 (Nova Decisão) — PDF importado abre como o próprio PDF, com texto adaptado como alternativa
+
+* **Decisão:** ao importar um PDF, o app guarda uma cópia do arquivo (`src/services/originalFiles.js`) e o leitor mostra o PDF original (`src/components/OriginalPdf.js`): visualizador nativo do iOS dentro de um `WebView` e visualizador do navegador na web. Um botão no topo do leitor alterna para o texto adaptado, que continua existindo para fonte, tema, grifos, marcadores, comentários e IA.
+* **Alternativas consideradas:** reconstruir o texto para ficar parecido com o PDF (descartado: o texto se reorganiza para a largura do celular, então fonte e quebras de linha nunca ficariam idênticas, o que a pessoa usuária rejeitou três vezes); `pdf.js` em WebView (descartado: depende de script externo ou de um pacote grande e de workers); biblioteca nativa de PDF (descartado: exige build de desenvolvimento e não roda no Expo Go).
+* **Consequências assumidas:** a cópia fica só no aparelho (pasta do app no iPhone, IndexedDB na web) e não vai para a nuvem; livros importados antes dessa versão não têm a cópia e precisam ser reimportados; no Android o WebView não abre PDF, então lá vale só o texto adaptado; no PDF original valem o rolar e o zoom do visualizador, não o virar de página do app.
+
+### DA19 (Nova Decisão) — Imagens e estrutura do PDF preservadas na importação do texto
+
+* **Decisão:** a importação do texto adaptado passa a extrair todas as imagens do PDF e do EPUB (JPEG, PNG, tons de cinza, indexadas, CMYK convertido para RGB) e a posicioná-las ancoradas no texto vizinho (a ordem de desenho no PDF decide qual parágrafo vem depois da figura). Títulos grandes viram capítulos, letra capitular volta para a palavra, versos ficam em estrofes, e PDFs com eixo vertical invertido são detectados por página. A capa pode ser escolhida pela IA entre as imagens das primeiras páginas, com a imagem de retrato da página 1 como alternativa.
+* **Alternativas consideradas:** posicionar pela proporção do texto (descartado: desvia depois da reconstrução do texto e colocava figuras em páginas erradas); filtrar imagens pequenas, repetidas ou muito grandes (descartado a pedido: nada deve ser descartado); biblioteca de PDF externa (descartado, ver DA06).
+* **Consequências assumidas:** ficam de fora só imagens em formatos que o app não decodifica (JPEG 2000, JBIG2, CCITT) e, na web, o que passar de 2 MB embutidos; as imagens ficam só no aparelho; cabeçalhos e números de página ainda são removidos do texto adaptado.
+
+### DA20 (Nova Decisão) — Avisos próprios do app e livro que nunca some por falha de download
+
+* **Decisão (avisos):** todo aviso e toda confirmação passam por `dialog.alert` e aparecem em `AppDialog`; mensagens rápidas continuam sendo toasts. **Decisão (download):** se o texto completo de uma obra do Gutenberg não puder ser baixado, o livro não é removido; ele fica na estante com a sinopse e a legenda "Baixando o texto..." na capa, e o app tenta de novo a cada 30 segundos (no máximo uma vez por minuto por livro), com até 3 tentativas por endereço.
+* **Alternativas consideradas:** apagar o livro e avisar (versão anterior; descartada: a pessoa não aceita perder o livro nem ver erro); proxy de terceiros para contornar o bloqueio do navegador (descartado: o proxy veria o que a pessoa lê); função própria no Firebase como proxy (não implementada: exige publicar uma função na conta do projeto).
+* **Consequências assumidas:** na web o gutenberg.org bloqueia o download do texto por CORS (a busca funciona), então lá o livro permanece com a sinopse; no celular não há esse bloqueio. Um aviso aberto por cima de outro modal no iOS pode não aparecer; não foi testado.
 
 ## 3. Mapeamento das Telas do Figma para a Implementação
 

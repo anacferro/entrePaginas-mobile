@@ -31,6 +31,8 @@ import Touchable from '../components/Touchable';
 import { fonts } from '../theme/tokens';
 import { SHELF_MAX_WIDTH } from '../components/BookCover';
 
+const PENDING_TEXT = { label: 'Baixando o texto...', value: 0.05 };
+
 export default function BookshelfScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -83,14 +85,20 @@ export default function BookshelfScreen({ navigation }) {
     []
   );
 
+  useEffect(() => {
+    if (!books.some(b => b.textPending)) return undefined;
+    const timer = setInterval(() => resumePendingTexts(books), 30000);
+    return () => clearInterval(timer);
+  }, [books]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadData(true);
   };
 
   const handleBookPress = async (book) => {
-    if (importProgress.get(book.id)) {
-      dialog.alert('Carregando', 'O texto completo deste livro ainda não foi baixado. O app continua tentando e ele fica disponível para leitura assim que chegar.');
+    if (importProgress.get(book.id) || book.textPending) {
+      dialog.alert('Baixando o texto', 'Este livro abre quando o download terminar.');
       return;
     }
     if (book.locked && !(await biometrics.unlock(book.title))) return;
@@ -367,7 +375,7 @@ export default function BookshelfScreen({ navigation }) {
                 onExport={handleExportBook}
                 onToggleLock={handleToggleLock}
                 onDelete={handleDeleteBook}
-                progress={importProgress.get(book.id)}
+                progress={importProgress.get(book.id) || (book.textPending ? PENDING_TEXT : null)}
                 reading={progressById[book.id]}
                 selecting={selecting}
                 selected={selectedIds.includes(book.id)}
