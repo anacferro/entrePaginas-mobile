@@ -28,9 +28,14 @@ export function languageList(input) {
   return [...new Set(all.filter(Boolean))];
 }
 
+export function readableInApp(work) {
+  return work.editions.some((e) => e.offers.some((o) => o.access.inApp));
+}
+
 function matchesFilters(work, filters) {
-  const { languages = [], yearFrom, yearTo, genre, author, availability } = filters;
-  if (languages.length && work.languages.length && !work.languages.some((l) => languages.includes(l))) return false;
+  const { languages = [], yearFrom, yearTo, genre, author, availability, readableOnly, strictLanguages } = filters;
+  if (readableOnly && !readableInApp(work)) return false;
+  if (languages.length && (work.languages.length || strictLanguages) && !work.languages.some((l) => languages.includes(l))) return false;
   if (yearFrom || yearTo) {
     const years = [work.firstYear, ...work.editions.map((e) => e.year)].filter(Boolean);
     if (!years.length) return false;
@@ -67,7 +72,7 @@ function rankWorks(works, query) {
   return keyed.map((k) => k.work);
 }
 
-export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Date.now(), history } = {}) {
+export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Date.now(), history, readableOnly = false, strictLanguages = false } = {}) {
   const cache = new Map();
   const flights = new Map();
 
@@ -120,7 +125,7 @@ export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Da
     const params = { query: text, author: author || null, subject: !text && genre ? GENRES.find((g) => g.key === genre)?.words[0] || genre : null, page, limit: 20 };
     const { records, statuses } = await gather(params, only, languages);
     const works = rankWorks(groupWorks(records), text).filter((w) =>
-      matchesFilters(w, { languages, yearFrom, yearTo, genre, author, availability })
+      matchesFilters(w, { languages, yearFrom, yearTo, genre, author, availability, readableOnly, strictLanguages })
     );
     const outcome = {
       works,
@@ -139,7 +144,7 @@ export function createCatalog({ sources = ALL_SOURCES, fetchImpl, now = () => Da
     const params = { query, subject: subject || null, page, offset, limit: 20, freeOnly: true };
     const { records, statuses } = await gather(params, only, languages);
     const works = rankWorks(groupWorks(records), query).filter((w) =>
-      w.editions.some((e) => isFree(e.best.access.level)) && matchesFilters(w, { languages })
+      w.editions.some((e) => isFree(e.best.access.level)) && matchesFilters(w, { languages, readableOnly, strictLanguages })
     );
     history?.record({ at: new Date(now()).toISOString(), kind: 'browse', query: subject || query, filters: { languages }, statuses: statuses.map(({ source, ok, count, ms, cached, error }) => ({ source, ok, count, ms, cached, error })) });
     return { works, statuses, failed: statuses.filter((s) => !s.ok), allFailed: statuses.length > 0 && statuses.every((s) => !s.ok) };

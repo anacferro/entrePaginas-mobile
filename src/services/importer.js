@@ -4,6 +4,7 @@ import { File } from 'expo-file-system';
 import { parsePdf } from './pdfParser';
 import { parseEpub } from './epubParser';
 import { looksLikeHtml, htmlToText, extractSentinelMarks, stripSentinels } from './htmlText';
+import { attachPictures, pagesAsChapters } from './pictures/attach';
 import { rebuildChapters } from './textRebuild/index.js';
 
 const CHAPTER_SIZE = 1800;
@@ -163,10 +164,21 @@ function isReadable(text) {
 }
 
 async function importPdf(asset) {
-  const { pages, title, text, fontHint, rebuild } = parsePdf(await readBytes(asset), { rebuild: false });
+  const { pages, title, text, fontHint, rebuild, pictures } = parsePdf(await readBytes(asset), { rebuild: false, pictures: true });
   const bookTitle = title || titleFromFileName(asset.name);
 
   if (!isReadable(text)) {
+    const scanned = await pagesAsChapters(pictures, 'Página').catch(() => []);
+    if (scanned.length) {
+      return {
+        title: bookTitle,
+        subtitle: 'Importado de PDF',
+        pages,
+        fontHint,
+        warning: 'Este PDF é digitalizado: cada página foi importada como imagem. Use Transcrever no editor de cada capítulo para obter o texto.',
+        chapters: scanned,
+      };
+    }
     return {
       title: bookTitle,
       subtitle: 'Importado de PDF',
@@ -184,20 +196,29 @@ async function importPdf(asset) {
   }
 
   const { chapters, summary } = rebuildChapters(splitByHeadings(text), { source: 'pdf' });
+  const figured = await attachPictures({
+    pictures,
+    pageCount: pages,
+    chapters,
+    ratioOf: (p) => (p.pageIndex + 0.5) / Math.max(pages, 1),
+  }).catch(() => ({ chapters, coverImage: null }));
   return {
     title: bookTitle,
     subtitle: 'Importado de PDF',
-    pages: Math.max(pages, estimatePages(chapters.map(c => c.content).join(''))),
+    pages: Math.max(pages, estimatePages(figured.chapters.map(c => c.content).join(''))),
     fontHint,
-    chapters,
+    coverImage: figured.coverImage,
+    chapters: figured.chapters,
     normalization: { ...summary, removed: rebuild?.removed || null },
   };
 }
 
 async function importEpub(asset) {
-  const { title, author, chapters, font, fontHint } = parseEpub(await readBytes(asset));
+  const { title, author, chapters, font, fontHint, pictures, cover } = parseEpub(await readBytes(asset));
   const rebuilt = rebuildChapters(chapters, { source: 'epub' });
   const fullText = rebuilt.chapters.map(c => c.content).join(' ');
+  const capped = capChapters(rebuilt.chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` })));
+  const figured = await attachPictures({ pictures, chapters: capped, ratioOf: (p) => p.ratio, cover }).catch(() => ({ chapters: capped, coverImage: null }));
 
   return {
     title: title || titleFromFileName(asset.name),
@@ -205,7 +226,8 @@ async function importEpub(asset) {
     pages: estimatePages(fullText),
     font,
     fontHint,
-    chapters: capChapters(rebuilt.chapters.map((c, idx) => ({ ...c, id: `chap-${Date.now()}-${idx + 1}` }))),
+    coverImage: figured.coverImage,
+    chapters: figured.chapters,
     normalization: rebuilt.summary,
   };
 }

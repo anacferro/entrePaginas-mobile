@@ -163,3 +163,20 @@ test('generos por assunto', () => {
   assert.deepEqual(genresOf([], 'Sem pista alguma'), []);
   assert.ok(!genresOf([], 'Memorias Postumas de Bras Cubas').includes('biografia'));
 });
+
+test('modo do app: so aparecem livros que abrem no app e so nos idiomas escolhidos', async () => {
+  const records = [
+    rec({ source: 'gutenberg', title: 'Dom Casmurro', authors: ['Machado de Assis'], language: 'pt', access: access(ACCESS.DOMINIO_PUBLICO, true, ['epub']) }),
+    rec({ source: 'gutenberg', title: 'Moby Dick', authors: ['Melville'], language: 'en', access: access(ACCESS.DOMINIO_PUBLICO, true, ['epub']) }),
+    rec({ source: 'openlibrary', title: 'Tao Te Ching', authors: ['Laozi'], language: 'en', access: access(ACCESS.LIVRE) }),
+    rec({ source: 'gutenberg', title: 'Sem Idioma Informado', authors: ['Fulano'], language: null, access: access(ACCESS.DOMINIO_PUBLICO, true, ['epub']) }),
+  ];
+  const src = { id: 'gutenberg', search: async () => records };
+  const strict = createCatalog({ sources: [src], readableOnly: true, strictLanguages: true });
+  const portuguese = await strict.search({ query: 'livro', languages: ['pt'] });
+  assert.deepEqual(portuguese.works.map((w) => w.title), ['Dom Casmurro']);
+  const any = await strict.search({ query: 'livro' });
+  assert.deepEqual(any.works.map((w) => w.title).sort(), ['Dom Casmurro', 'Moby Dick', 'Sem Idioma Informado']);
+  const loose = await createCatalog({ sources: [src] }).search({ query: 'livro', languages: ['pt'] });
+  assert.ok(loose.works.some((w) => w.title === 'Sem Idioma Informado'));
+});

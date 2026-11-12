@@ -1,5 +1,6 @@
 import { inflateRaw } from 'pako';
 import { dominantFont } from './fontHints.js';
+import { imageSize } from './pictures/format.js';
 
 const decoder = new TextDecoder('utf-8');
 
@@ -205,7 +206,7 @@ function extractFont(zip, manifest, base, opf) {
 }
 
 function attr(tag, name) {
-  const match = tag.match(new RegExp(`${name}\s*=\s*["']([^"']*)["']`, 'i'));
+  const match = tag.match(new RegExp(`(?:^|[\\s<])${name}\\s*=\\s*["']([^"']*)["']`, 'i'));
   return match ? decodeEntities(match[1]) : null;
 }
 
@@ -219,7 +220,7 @@ function resolvePath(base, href) {
   return out.join('/');
 }
 
-function htmlToText(html) {
+function htmlToText(html, onImage) {
   const body = (html.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] || html)
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<(script|style|head)[\s\S]*?<\/\1>/gi, '');
@@ -235,7 +236,10 @@ function htmlToText(html) {
     if (!match) return;
     const name = match[2].toLowerCase();
     const closing = match[1] === '/';
-    if (name === 'pre') {
+    if ((name === 'img' || name === 'image') && !closing) {
+      const index = onImage ? onImage(token) : null;
+      if (index !== null && index !== undefined) out += `\n\n\uE000${index}\uE001\n\n`;
+    } else if (name === 'pre') {
       pre = Math.max(0, pre + (closing ? -1 : 1));
       out += '\n\n';
     } else if (name === 'br') out += '\n';
@@ -269,24 +273,56 @@ export function parseEpub(bytes) {
   const manifest = {};
   (opf.match(/<item\b[^>]*>/gi) || []).forEach((tag) => {
     const id = attr(tag, 'id');
-    if (id) manifest[id] = { href: attr(tag, 'href'), type: attr(tag, 'media-type') || '' };
+    if (id) manifest[id] = { href: attr(tag, 'href'), type: attr(tag, 'media-type') || '', properties: attr(tag, 'properties') || '' };
   });
 
   const title = decodeEntities(opf.match(/<dc:title[^>]*>([\s\S]*?)<\/dc:title>/i)?.[1] || '').trim();
   const author = decodeEntities(opf.match(/<dc:creator[^>]*>([\s\S]*?)<\/dc:creator>/i)?.[1] || '').trim();
 
   const chapters = [];
+  const unique = [];
+  const byPath = new Map();
+  const loadPicture = (path) => {
+    if (!byPath.has(path)) {
+      const bytes = zip.bytes(path);
+      const size = bytes && imageSize(bytes);
+      byPath.set(path, size ? { id: path, bytes, mime: size.mime, width: size.width, height: size.height } : null);
+    }
+    return byPath.get(path);
+  };
+
   (opf.match(/<itemref\b[^>]*>/gi) || []).forEach((tag) => {
     const item = manifest[attr(tag, 'idref')];
     if (!item?.href || !/x?html/i.test(item.type)) return;
 
-    const html = zip.text(resolvePath(base, item.href));
+    const htmlPath = resolvePath(base, item.href);
+    const html = zip.text(htmlPath);
     if (!html) return;
 
-    const content = htmlToText(html);
+    const folder = htmlPath.includes('/') ? htmlPath.slice(0, htmlPath.lastIndexOf('/') + 1) : '';
+    const marked = htmlToText(html, (imgTag) => {
+      const src = attr(imgTag, 'src') || attr(imgTag, 'xlink:href') || attr(imgTag, 'href');
+      if (!src || /^(data:|https?:)/i.test(src)) return null;
+      const picture = loadPicture(resolvePath(folder, src));
+      if (!picture) return null;
+      let index = unique.indexOf(picture);
+      if (index === -1) {
+        unique.push(picture);
+        index = unique.length - 1;
+      }
+      return index;
+    });
+
+    const figures = [];
+    let removed = 0;
+    const content = marked.replace(/\uE000(\d+)\uE001/g, (match, index, at) => {
+      figures.push({ index: Number(index), at: at - removed });
+      removed += match.length;
+      return '';
+    }).replace(/\n{3,}/g, '\n\n').trim();
     if (content.length < 40) return;
 
-    chapters.push({ title: headingOf(html) || `Capítulo ${chapters.length + 1}`, content });
+    chapters.push({ title: headingOf(html) || `Capítulo ${chapters.length + 1}`, content, figures });
   });
 
   if (chapters.length === 0) throw new Error('Não foi possível extrair texto deste EPUB.');
@@ -297,5 +333,20 @@ export function parseEpub(bytes) {
     font = null;
   }
   const fontHint = dominantFont([font?.family, ...bodyFamilies(zip, manifest, base)].filter(Boolean));
-  return { title, author, chapters, font, fontHint };
+  const total = chapters.reduce((n, c) => n + c.content.length, 0) || 1;
+  let before = 0;
+  const pictures = [];
+  chapters.forEach((chapter) => {
+    chapter.figures.forEach((figure) => {
+      pictures.push({ ...unique[figure.index], ratio: (before + Math.min(figure.at, chapter.content.length)) / total });
+    });
+    before += chapter.content.length;
+  });
+
+  const coverId = opf.match(/<meta\b[^>]*name\s*=\s*["']cover["'][^>]*content\s*=\s*["']([^"']+)["']/i)?.[1]
+    || opf.match(/<meta\b[^>]*content\s*=\s*["']([^"']+)["'][^>]*name\s*=\s*["']cover["']/i)?.[1];
+  const coverItem = Object.values(manifest).find((item) => /cover-image/.test(item.properties)) || manifest[coverId];
+  const cover = coverItem?.href && /^image\//.test(coverItem.type) ? loadPicture(resolvePath(base, coverItem.href)) : null;
+
+  return { title, author, chapters: chapters.map(({ figures, ...rest }) => rest), font, fontHint, pictures, cover };
 }

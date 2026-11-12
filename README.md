@@ -183,7 +183,7 @@ Limites assumidos: as preferências não sincronizam entre aparelhos; a anotaç�
 
 ### Descobrir (aba própria)
 
-- **Busca unificada** em cinco fontes ao mesmo tempo, com resultados juntos e sem repetir a mesma obra. Filtros: **idiomas (escolha um ou mais; sem escolha, todos)**, gênero, autor, ano, disponibilidade (gratuito, lê no app). Paginação, cache de 10 minutos e histórico de buscas só no aparelho (máximo 60, apagado em *Excluir dados*).
+- **Busca unificada** em cinco fontes ao mesmo tempo, com resultados juntos e sem repetir a mesma obra. Filtros: **idiomas**, gênero, autor e ano. Só aparecem livros que podem ser lidos dentro do app (hoje, os do Project Gutenberg com texto completo): obras que só abririam em outra plataforma não são mostradas nem podem ser adicionadas. **Idiomas de leitura:** os idiomas escolhidos no filtro ficam salvos no perfil (os mesmos de *Meu perfil literário*) e valem para buscas, exploração e sugestões; com idiomas escolhidos, livros sem idioma informado ficam de fora. Paginação, cache de 10 minutos e histórico de buscas só no aparelho (máximo 60, apagado em *Excluir dados*).
 - **Explorar:** 14 temas guiados (literatura brasileira, vozes africanas, América Latina, poesia, ciência para leigos, clássicos fora do radar etc.) e *Surpreenda-me*, que sorteia livros reais do catálogo.
 - **Tolerância a falhas:** cada fonte tem tempo limite de 8 s e uma nova tentativa com espera; se uma cair, aparece um aviso discreto e as outras seguem valendo. Só vira erro se todas falharem.
 - **Etiquetas de acesso** (classificação conservadora; na dúvida, "Condição não confirmada"): domínio público, acesso aberto, gratuito, empréstimo digital, só prévia, acesso restrito, sem texto online. Cada livro informa se **lê dentro do app** ou **abre na plataforma de origem**.
@@ -231,7 +231,7 @@ Tudo vem do registro real de leitura, das notas e dos metadados dos livros. Indi
 ### Testes
 
 ```bash
-node --test tests/rebuild.test.mjs tests/converter.test.mjs tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
+node --test tests/rebuild.test.mjs tests/pictures.test.mjs tests/converter.test.mjs tests/catalog.test.mjs tests/personal.test.mjs tests/recommend.test.mjs tests/stats.test.mjs
 ```
 
 Cobrem deduplicação, classificação de disponibilidade, perfil e inferência, regras de diversidade, validação da IA contra o catálogo e cálculo das estatísticas com dados conhecidos. `node tests/live-catalog.mjs "dom casmurro"` consulta as fontes reais (precisa de internet; `LANG_FILTER=pt` filtra por idioma). O aviso `MODULE_TYPELESS_PACKAGE_JSON` do Node é inofensivo.
@@ -259,6 +259,15 @@ Em **Criar > Importar**, o cartão "Converter arquivo em livro" transforma um do
 **Conferência:** o arquivo gerado é reaberto pelo leitor do próprio app e o texto é comparado com o do documento; qualquer divergência aparece antes de adicionar.
 
 **Limites:** DOC binário, imagens de RTF, gráficos (viram aviso), PDF digitalizado (sem OCR), caracteres fora do alfabeto latino no PDF gerado (a fonte é padrão) e imagens no leitor do app (viram marcação de texto). Não houve teste em aparelho nem validação com epubcheck.
+
+## 🖼️ Capa e imagens dos arquivos importados
+
+Ao importar **PDF** ou **EPUB**, o app extrai as imagens do arquivo (`src/services/pictures/`). No PDF são lidas as imagens JPEG, as de cores RGB e tons de cinza e as indexadas, convertidas em PNG quando necessário; ficam de fora CMYK, máscaras, JPEG 2000, JBIG2 e CCITT. No EPUB entram JPEG, PNG e GIF.
+
+- **Capa:** no EPUB vale a capa declarada no próprio arquivo. No PDF, a **IA** (quando disponível) olha até 4 imagens das 3 primeiras páginas e diz qual é a capa ou que nenhuma é; só essas imagens são enviadas, sem o texto nem o título. Sem IA ou sem resposta confiável, vale a imagem em formato de retrato da primeira página, e se não houver, o livro fica sem capa.
+- **Ilustrações:** vão para a página do leitor mais próxima da posição que tinham no arquivo, abaixo do texto dessa página. Descartam-se imagens pequenas (menos de 80 px de lado ou 25 mil pixels), muito alongadas, grandes demais (acima de 3 MB) e as que se repetem em 3 ou mais páginas (logotipos e rodapés).
+- **PDF digitalizado** (sem texto): cada página vira um capítulo com a imagem da página, para você usar *Transcrever* no editor.
+- Arquivos ficam na pasta do app no aparelho e não vão para a nuvem; na web ficam embutidos no livro até 2 MB. DOCX, ODT, RTF e HTML ainda não trazem imagens.
 
 ## ✍️ Reconstrução do texto importado
 

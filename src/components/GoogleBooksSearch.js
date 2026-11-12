@@ -35,7 +35,7 @@ export default function GoogleBooksSearch({ onSelect }) {
     setLoading(true);
     setError(null);
     try {
-      setResults(await googleBooks.search(query));
+      setResults((await googleBooks.search(query)).filter((b) => b.gutenbergId));
     } catch (e) {
       setResults(null);
       setError(e.message || 'Não foi possível consultar o Google Books.');

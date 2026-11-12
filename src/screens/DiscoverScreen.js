@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, StatusBar, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -71,6 +71,16 @@ export default function DiscoverScreen({ navigation }) {
     }, [])
   );
 
+  useEffect(() => {
+    let active = true;
+    storage.getPersonal().then((p) => {
+      if (active && p.declared.languages.length) setFilters((f) => (f.languages.length ? f : { ...f, languages: p.declared.languages }));
+    }).catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const isOwned = (work) => owned.ids.has(work.id) || owned.titles.has(normalize(work.title));
 
   const toSearchInput = (f, nextPage) => ({
@@ -141,6 +151,7 @@ export default function DiscoverScreen({ navigation }) {
 
   const applyFilters = (next) => {
     setFilters(next);
+    storage.saveDeclared({ languages: next.languages }).catch(() => {});
     setShowFilters(false);
     if (query.trim() || next.author.trim() || next.genre) search(next, 1);
   };
@@ -151,6 +162,10 @@ export default function DiscoverScreen({ navigation }) {
     setAdding(true);
     try {
       const result = await addWorkToLibrary(work);
+      if (result.status === 'unreadable') {
+        toast.show('Este livro não pode ser lido dentro do app.', 'error');
+        return false;
+      }
       if (result.status === 'exists') {
         toast.show('Este livro já está na sua estante.');
       } else {

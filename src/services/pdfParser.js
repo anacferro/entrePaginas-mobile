@@ -2,6 +2,8 @@ import { inflate } from 'pako';
 import { dominantFont } from './fontHints.js';
 import { assemblePages } from './textRebuild/pdfLayout.js';
 import { rebuildText } from './textRebuild/index.js';
+import { createPictureReader } from './pictures/pdfPictures.js';
+import { PICTURE_LIMITS } from './pictures/select.js';
 
 const WIN_ANSI = {
   0x80: '€', 0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',
@@ -356,7 +358,7 @@ function decodeInfoTitle(raw) {
   return literal.trim();
 }
 
-export function parsePdf(bytes, { rebuild = true } = {}) {
+export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false } = {}) {
   const raw = bytesToLatin1(bytes);
   if (!raw.startsWith('%PDF')) {
     throw new Error('O arquivo selecionado não é um PDF válido.');
@@ -368,6 +370,7 @@ export function parsePdf(bytes, { rebuild = true } = {}) {
   const objects = parseObjects(raw, bytes);
   const { pages, resolve } = getPages(objects);
   const fontCache = new Map();
+  const reader = withPictures ? createPictureReader({ objects, dictValue }) : null;
 
   const loadFont = (num) => {
     if (fontCache.has(num)) return fontCache.get(num);
@@ -381,7 +384,7 @@ export function parsePdf(bytes, { rebuild = true } = {}) {
     return font;
   };
 
-  const pageTexts = pages.map((page) => {
+  const pageTexts = pages.map((page, pageIndex) => {
     const fontDict = resolve(dictValue(resolve(page.resources), 'Font'));
     const fonts = new Map();
     for (const m of fontDict.matchAll(/\/([^\s/<>[\]()]+)\s+(\d+)\s+\d+\s+R/g)) {
@@ -394,7 +397,12 @@ export function parsePdf(bytes, { rebuild = true } = {}) {
       : refsIn(contents);
 
     const stream = streamNums.map(n => streamText(objects.get(n))).join('\n');
-    return { text: extractPageText(stream, fonts), lines: extractPageLines(stream, fonts), height: mediaHeight(page, resolve) };
+    return {
+      text: extractPageText(stream, fonts),
+      lines: extractPageLines(stream, fonts),
+      height: mediaHeight(page, resolve),
+      found: reader ? reader.picturesOfPage(stream, page.resources, pageIndex) : [],
+    };
   });
 
   const infoTitle = decodeInfoTitle(raw);
@@ -406,7 +414,22 @@ export function parsePdf(bytes, { rebuild = true } = {}) {
     ? rebuildText(baseText, { source: layout ? 'pdf' : 'plain' })
     : { content: baseText, report: { version: 0, source: 'pdf', raw: true } };
 
+  const pictures = [];
+  if (reader) {
+    const decoded = new Map();
+    pageTexts.flatMap(p => p.found).forEach((found) => {
+      if (pictures.length >= PICTURE_LIMITS.maxCount * 2) return;
+      if (!decoded.has(found.id)) {
+        const small = Math.min(found.width, found.height) < PICTURE_LIMITS.minSide || found.width * found.height < PICTURE_LIMITS.minArea;
+        decoded.set(found.id, small ? null : reader.decodeImage(found.obj));
+      }
+      const image = decoded.get(found.id);
+      if (image) pictures.push({ id: found.id, pageIndex: found.pageIndex, order: found.order, ...image });
+    });
+  }
+
   return {
+    pictures,
     pages: pages.length || 1,
     title: /^[\x20-\x7EÀ-ÿ‘’“”–—…]{3,}$/.test(infoTitle) ? infoTitle : null,
     text: rebuilt.content,

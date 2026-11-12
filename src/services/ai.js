@@ -91,6 +91,19 @@ ${JSON.stringify(payload)}`], { json: true, timeoutMs: 25000 });
     return parseJson(raw);
   },
 
+  async pickCover(images) {
+    const parts = [
+      `Você verá ${images.length} imagens numeradas de 0 a ${images.length - 1}, extraídas das primeiras páginas de um arquivo de livro. ` +
+        'Diga qual delas é a CAPA do livro: a imagem de capa, com arte ou título, e não uma ilustração interna, logotipo, selo, ornamento ou página de texto. ' +
+        'Se nenhuma for a capa, use null. Responda só em JSON: {"indice": número ou null, "confianca": "alta" | "media" | "baixa"}.',
+    ];
+    images.forEach((image, i) => {
+      parts.push(`Imagem ${i}:`, { inlineData: { data: image.base64, mimeType: image.mime } });
+    });
+    const raw = await generate(parts, { json: true, timeoutMs: 30000 });
+    return parseJson(raw);
+  },
+
   async transcribePhoto(uri) {
     let image;
     try {

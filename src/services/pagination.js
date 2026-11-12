@@ -27,6 +27,7 @@ export function paginate(chapters) {
     let start = 0;
     let first = true;
     let previousEnd = 0;
+    const figures = (chapter.images || []).map((image) => ({ ...image, offset: Math.min(image.offset || 0, content.length) }));
 
     do {
       while (start < content.length && /\s/.test(content[start])) start += 1;
@@ -40,6 +41,7 @@ export function paginate(chapters) {
         content: content.slice(start, end),
         marks: marksFor(chapter.marks, start, end),
         photo: first ? chapter.photo : null,
+        images: figures.filter((image) => image.offset >= previousEnd && (image.offset < end || end >= content.length)),
       });
       first = false;
       previousEnd = end;

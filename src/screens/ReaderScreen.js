@@ -641,6 +641,16 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
             />
             </Pressable>
 
+            {pg.images.map((image) => (
+              <Image
+                key={image.id}
+                source={{ uri: image.uri }}
+                style={[styles.figure, image.width && image.height ? { aspectRatio: image.width / image.height } : { height: 280 }]}
+                resizeMode="contain"
+                accessibilityLabel="Ilustração do livro"
+              />
+            ))}
+
             {comments.length > 0 && (
               <View style={[styles.comments, { borderColor: colors.border }]}>
                 {comments.map(cm => (
@@ -1620,6 +1630,11 @@ const createStyles = (colors) => StyleSheet.create({
     paddingHorizontal: 22,
     paddingTop: 24,
     paddingBottom: 40,
+  },
+  figure: {
+    width: '100%',
+    borderRadius: 6,
+    marginVertical: 14,
   },
   pagePhoto: {
     width: '100%',

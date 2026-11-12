@@ -50,13 +50,6 @@ export default function DiscoverFilters({ visible, filters, onApply, onClose }) 
           </View>
 
           <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-            <Text style={styles.label}>Disponibilidade</Text>
-            <View style={styles.chips}>
-              <Chip styles={styles} label="Todos" active={draft.availability === 'any'} onPress={() => set({ availability: 'any' })} />
-              <Chip styles={styles} label="Só gratuitos" active={draft.availability === 'free'} onPress={() => set({ availability: 'free' })} />
-              <Chip styles={styles} label="Lê no app" active={draft.availability === 'inapp'} onPress={() => set({ availability: 'inapp' })} />
-            </View>
-
             <Text style={styles.label}>Idiomas</Text>
             <View style={styles.chips}>
               <Chip styles={styles} label="Todos" active={!draft.languages.length} onPress={() => set({ languages: [] })} />
@@ -70,7 +63,7 @@ export default function DiscoverFilters({ visible, filters, onApply, onClose }) 
                 />
               ))}
             </View>
-            <Text style={styles.hint}>Escolha um ou mais. Sem escolha, aparecem todos os idiomas.</Text>
+            <Text style={styles.hint}>Escolha os idiomas que você lê. A escolha fica salva e vale para as buscas e sugestões. Só aparecem livros que podem ser lidos dentro do app.</Text>
 
             <Text style={styles.label}>Gênero</Text>
             <View style={styles.chips}>

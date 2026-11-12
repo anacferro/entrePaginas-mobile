@@ -43,13 +43,8 @@ export async function addWorkToLibrary(work) {
   const gutenbergId = work.best.source === 'gutenberg' ? work.best.gutenbergId : offerWithText?.gutenbergId || null;
   const byline = work.authors.join(', ');
   const category = work.genres?.[0] ? genreLabel(work.genres[0]) : 'Literatura';
+  if (!gutenbergId) return { status: 'unreadable', book: null };
   const meta = catalogMeta(work);
-
-  const placeholder = gutenbergId
-    ? 'O texto completo está sendo baixado.'
-    : work.best.url
-      ? 'Este livro foi adicionado pela busca, mas o texto não pode ser lido aqui. A leitura abre na plataforma de origem, indicada nos detalhes do livro.'
-      : 'Livro adicionado pela busca. Esta obra não traz o texto; use o botão de comentários no leitor para fazer suas anotações.';
 
   const book = await storage.addBook({
     title: work.title,
@@ -66,12 +61,11 @@ export async function addWorkToLibrary(work) {
       {
         id: `chap-${Date.now()}-1`,
         title: work.description ? 'Sinopse' : 'Capítulo 1',
-        content: work.description || placeholder,
+        content: work.description || 'O texto completo está sendo baixado.',
       },
     ],
   });
 
-  if (!gutenbergId) return { status: 'added', book, text: 'none' };
 
   const download = fetchFullTextInBackground(book.id, book.title, byline, gutenbergId).then(async (result) => {
     if (result !== 'failed') return result;

@@ -163,10 +163,12 @@ export const cloud = {
         const remoteIsNewer = !localBook || new Date(remote.updatedAt) > new Date(localBook.updatedAt);
 
         if (remoteIsNewer) {
-          const photos = new Map((localBook?.chapters || []).filter(c => c.photo).map(c => [c.id, c.photo]));
-          remote.chapters = remote.chapters.map(chapter =>
-            photos.has(chapter.id) ? { ...chapter, photo: photos.get(chapter.id) } : chapter
-          );
+          const local = new Map((localBook?.chapters || []).map(c => [c.id, c]));
+          remote.chapters = remote.chapters.map((chapter) => {
+            const mine = local.get(chapter.id);
+            if (!mine || (!mine.photo && !mine.images)) return chapter;
+            return { ...chapter, ...(mine.photo ? { photo: mine.photo } : {}), ...(mine.images ? { images: mine.images } : {}) };
+          });
           if (localBook?.coverImage && !remote.coverImage) remote.coverImage = localBook.coverImage;
           byId.set(remote.id, remote);
           synced.set(remote.id, signatureOf(remote));
