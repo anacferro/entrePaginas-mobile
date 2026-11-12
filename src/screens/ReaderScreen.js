@@ -12,7 +12,6 @@ import {
   Image,
   AppState,
   Animated,
-  PanResponder,
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +41,7 @@ import { bookWorkId } from '../services/catalog/identity';
 import ProgressBar from '../components/ProgressBar';
 import { useToast } from '../components/Toast';
 import ReaderSettings from '../components/ReaderSettings';
+import PageTurner from '../components/PageTurner';
 import { bookForecast } from '../services/readingStats';
 import { readerThemeOf } from '../theme/readerThemes';
 import { DEFAULT_READER_PREFS, WIDTHS, PARAGRAPH_GAPS, normalizePrefs } from '../services/readerPrefs';
@@ -172,9 +172,10 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     setSelection(null);
+    if (prefs.turn !== 'simple') return;
     fade.setValue(0.25);
     Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
-  }, [currentPageIndex, fade]);
+  }, [currentPageIndex, fade, prefs.turn]);
 
   useEffect(() => {
     if (!prefs.keepAwake) return undefined;
@@ -196,8 +197,27 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     return () => clearTimeout(timer);
   }, [prefs.autoHide, chromeVisible, showSettings, annotating]);
 
-  const handleTapText = () => {
-    if (prefs.autoHide && !annotating) setChromeVisible((v) => !v);
+  const turnerRef = useRef(null);
+  const stageRef = useRef(null);
+
+  const commitPage = useCallback((idx) => {
+    setCurrentPageIndex(idx);
+  }, []);
+
+  const handleTapText = (e) => {
+    if (annotating) return;
+    const pageX = e?.nativeEvent?.pageX;
+    const stage = stageRef.current;
+    if (typeof pageX === 'number' && stage?.measureInWindow) {
+      stage.measureInWindow((x, y, w) => {
+        const rel = (pageX - x) / w;
+        if (rel < 0.22) turnerRef.current?.turn('prev');
+        else if (rel > 0.78) turnerRef.current?.turn('next');
+        else if (prefs.autoHide) setChromeVisible((v) => !v);
+      });
+      return;
+    }
+    if (prefs.autoHide) setChromeVisible((v) => !v);
   };
 
   const handleSelect = useCallback((start, end) => {
@@ -213,21 +233,8 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const currentChapter = chapters[page.chapterIndex];
   const totalPages = pages.length;
   const currentPageNumber = pageIndex + 1;
-  const isLastPage = pageIndex >= pages.length - 1;
   const firstPageOf = (chapterId, list = pages) => Math.max(0, list.findIndex(p => p.chapterId === chapterId));
   const pageForIndex = (idx) => firstPageOf(chapters[idx].id) + 1;
-
-  const pageCount = pages.length;
-  const pan = useMemo(() => {
-    const go = (step) => setCurrentPageIndex(i => Math.max(0, Math.min(pageCount - 1, Math.min(i, pageCount - 1) + step)));
-    return PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => !annotating && Math.abs(g.dx) > 18 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
-      onPanResponderRelease: (_, g) => {
-        if (g.dx < -50) go(1);
-        else if (g.dx > 50) go(-1);
-      },
-    });
-  }, [annotating, pageCount]);
 
   const openNewChapter = () => {
     setShowSummary(false);
@@ -287,8 +294,6 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     ...bookmarks.map((bm) => ({ kind: 'page', key: bm.id, bm, pageIndex: Math.max(0, bm.page - 1) })),
     ...savedPins.map((pin) => ({ kind: 'pin', key: pin.id, pin, pageIndex: pin.pageIndex })),
   ].sort((a, b) => a.pageIndex - b.pageIndex), [bookmarks, savedPins]);
-
-  const pageComments = (book?.comments || []).filter(cm => cm.page === currentPageNumber);
 
   const handleAddComment = async (text) => {
     const updated = await storage.addComment(book.id, { chapterId: currentChapter.id, page: currentPageNumber, text });
@@ -572,6 +577,132 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     );
   }
 
+  const renderPage = (i, interactive = false) => {
+    const pg = pages[i];
+    const chap = chapters[pg.chapterIndex];
+    const number = i + 1;
+    const bookmark = bookmarks.find(bm => bm.chapterId === chap.id && bm.page === number);
+    const comments = (book?.comments || []).filter(cm => cm.page === number);
+    const last = i >= pages.length - 1;
+    return (
+        <ScrollView
+            key={i}
+            ref={interactive ? scrollRef : undefined}
+            scrollEnabled={interactive}
+            style={styles.readerScroll}
+            contentContainerStyle={[
+              styles.readerContentContainer,
+              { paddingHorizontal: prefs.margin },
+              prefs.autoHide && !focusMode && { paddingTop: 96 },
+              annotating && { paddingBottom: 170 },
+              focusMode && { paddingTop: 68 },
+            ]}
+          >
+            <View style={[styles.column, widthMax && { maxWidth: widthMax }]}>
+            {bookmark && (
+              <Touchable style={styles.bookmarkNote} onPress={interactive ? openBookmarkSheet : undefined} activeOpacity={0.7}>
+                <Ionicons name="bookmark" size={13} color={bookmark.color} />
+                <Text style={[styles.bookmarkNoteText, { color: bookmark.color }]} numberOfLines={1}>
+                  {bookmark.title}
+                </Text>
+              </Touchable>
+            )}
+
+
+            {pg.photo && (
+              <Image
+                source={{ uri: pg.photo }}
+                style={styles.pagePhoto}
+                resizeMode="contain"
+                accessibilityLabel="Foto da página"
+              />
+            )}
+
+            <Pressable onPress={interactive ? handleTapText : undefined} accessible={false}>
+            <AnnotatedText
+              content={pg.content}
+              marks={pg.marks}
+              annotating={annotating}
+              onSelect={handleSelect}
+              paragraphGap={fontSize * gapEm}
+              indent={prefs.indent}
+              skipFirstIndent={pg.opensChapter || pg.continues}
+              lang={book?.catalog?.language || 'pt-BR'}
+              style={[
+                styles.bookParagraphs,
+                {
+                  color: readerTextColor,
+                  fontSize: fontSize,
+                  lineHeight: fontSize * prefs.lineHeight,
+                  fontFamily: bodyFont,
+                  textAlign: prefs.align,
+                },
+              ]}
+            />
+            </Pressable>
+
+            {comments.length > 0 && (
+              <View style={[styles.comments, { borderColor: colors.border }]}>
+                {comments.map(cm => (
+                  <Touchable key={cm.id} onPress={() => setShowComments(true)} style={styles.pageComment}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.primary} />
+                    <Text style={[styles.pageCommentText, { color: readerTextColor }]}>{cm.text}</Text>
+                  </Touchable>
+                ))}
+              </View>
+            )}
+
+            {book && isOwnBook && last && (
+              <Touchable
+                style={[styles.addChapterBtn, { borderColor: colors.border }]}
+                onPress={openNewChapter}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="add" size={18} color={isDark ? readerTextColor : colors.primary} />
+                <Text style={[styles.addChapterText, { color: isDark ? readerTextColor : colors.primary }]}>
+                  Escrever novo capítulo
+                </Text>
+              </Touchable>
+            )}
+
+            <View style={styles.pageFooter}>
+              <Touchable
+                style={[styles.pageNavBtn, i === 0 && { opacity: 0.3 }]}
+                disabled={i === 0}
+                onPress={() => turnerRef.current?.turn('prev')}
+              >
+                <Ionicons name="chevron-back" size={20} color={readerTextColor} />
+                <Text style={[styles.pageNavText, { color: readerTextColor }]}>Anterior</Text>
+              </Touchable>
+
+              <Touchable
+                style={styles.pageIndicatorBox}
+                onPress={() => setShowProgress(true)}
+                accessibilityLabel={`Página ${number} de ${pages.length}. Abrir progresso de leitura`}
+              >
+                <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
+                  Página {number}
+                </Text>
+                <Text style={[styles.pageTotalText, { color: mutedColor }]}>
+                  de {pages.length} {pages.length === 1 ? 'folha' : 'folhas'} · {Math.round((number / pages.length) * 100)}%{pages.length > number ? ` · faltam ${pages.length - number}` : ''}
+                </Text>
+                <ProgressBar value={number / pages.length} height={4} style={styles.footerProgress} label="Progresso do livro" />
+              </Touchable>
+
+              <Touchable
+                style={[styles.pageNavBtn, last && { opacity: 0.3 }]}
+                disabled={last}
+                onPress={() => turnerRef.current?.turn('next')}
+              >
+                <Text style={[styles.pageNavText, { color: readerTextColor }]}>Próxima</Text>
+                <Ionicons name="chevron-forward" size={20} color={readerTextColor} />
+              </Touchable>
+            </View>
+            </View>
+          </ScrollView>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: readerBg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.surfaceSoft} />
@@ -688,122 +819,21 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </Animated.View>
       )}
 
-      <View style={styles.readerScroll} {...pan.panHandlers}>
-        <Animated.View style={{ flex: 1, opacity: fade }}>
-        <ScrollView
-          ref={scrollRef}
-          style={styles.readerScroll}
-          contentContainerStyle={[
-            styles.readerContentContainer,
-            { paddingHorizontal: prefs.margin },
-            prefs.autoHide && !focusMode && { paddingTop: 96 },
-            annotating && { paddingBottom: 170 },
-            focusMode && { paddingTop: 68 },
-          ]}
+      <View ref={stageRef} collapsable={false} style={styles.readerScroll}>
+        <PageTurner
+          ref={turnerRef}
+          mode={prefs.turn}
+          enabled={!annotating}
+          index={pageIndex}
+          count={pages.length}
+          background={readerBg}
+          renderPage={renderPage}
+          onCommit={commitPage}
         >
-          <View style={[styles.column, widthMax && { maxWidth: widthMax }]}>
-          {currentBookmark && (
-            <Touchable style={styles.bookmarkNote} onPress={openBookmarkSheet} activeOpacity={0.7}>
-              <Ionicons name="bookmark" size={13} color={currentBookmark.color} />
-              <Text style={[styles.bookmarkNoteText, { color: currentBookmark.color }]} numberOfLines={1}>
-                {currentBookmark.title}
-              </Text>
-            </Touchable>
-          )}
-
-
-          {page.photo && (
-            <Image
-              source={{ uri: page.photo }}
-              style={styles.pagePhoto}
-              resizeMode="contain"
-              accessibilityLabel="Foto da página"
-            />
-          )}
-
-          <Pressable onPress={handleTapText} accessible={false}>
-          <AnnotatedText
-            content={page.content}
-            marks={page.marks}
-            annotating={annotating}
-            onSelect={handleSelect}
-            paragraphGap={fontSize * gapEm}
-            indent={prefs.indent}
-            skipFirstIndent={page.opensChapter || page.continues}
-            lang={book?.catalog?.language || 'pt-BR'}
-            style={[
-              styles.bookParagraphs,
-              {
-                color: readerTextColor,
-                fontSize: fontSize,
-                lineHeight: fontSize * prefs.lineHeight,
-                fontFamily: bodyFont,
-                textAlign: prefs.align,
-              },
-            ]}
-          />
-          </Pressable>
-
-          {pageComments.length > 0 && (
-            <View style={[styles.pageComments, { borderColor: colors.border }]}>
-              {pageComments.map(cm => (
-                <Touchable key={cm.id} onPress={() => setShowComments(true)} style={styles.pageComment}>
-                  <Ionicons name="chatbubble-ellipses-outline" size={14} color={colors.primary} />
-                  <Text style={[styles.pageCommentText, { color: readerTextColor }]}>{cm.text}</Text>
-                </Touchable>
-              ))}
-            </View>
-          )}
-
-          {book && isOwnBook && isLastPage && (
-            <Touchable
-              style={[styles.addChapterBtn, { borderColor: colors.border }]}
-              onPress={openNewChapter}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="add" size={18} color={isDark ? readerTextColor : colors.primary} />
-              <Text style={[styles.addChapterText, { color: isDark ? readerTextColor : colors.primary }]}>
-                Escrever novo capítulo
-              </Text>
-            </Touchable>
-          )}
-
-          <View style={styles.pageFooter}>
-            <Touchable
-              style={[styles.pageNavBtn, pageIndex === 0 && { opacity: 0.3 }]}
-              disabled={pageIndex === 0}
-              onPress={() => setCurrentPageIndex(Math.max(0, pageIndex - 1))}
-            >
-              <Ionicons name="chevron-back" size={20} color={readerTextColor} />
-              <Text style={[styles.pageNavText, { color: readerTextColor }]}>Anterior</Text>
-            </Touchable>
-
-            <Touchable
-              style={styles.pageIndicatorBox}
-              onPress={() => setShowProgress(true)}
-              accessibilityLabel={`Página ${currentPageNumber} de ${totalPages}. Abrir progresso de leitura`}
-            >
-              <Text style={[styles.pageCurrentText, { color: readerTextColor }]}>
-                Página {currentPageNumber}
-              </Text>
-              <Text style={[styles.pageTotalText, { color: mutedColor }]}>
-                de {totalPages} {totalPages === 1 ? 'folha' : 'folhas'} · {Math.round((currentPageNumber / totalPages) * 100)}%{totalPages > currentPageNumber ? ` · faltam ${totalPages - currentPageNumber}` : ''}
-              </Text>
-              <ProgressBar value={currentPageNumber / totalPages} height={4} style={styles.footerProgress} label="Progresso do livro" />
-            </Touchable>
-
-            <Touchable
-              style={[styles.pageNavBtn, isLastPage && { opacity: 0.3 }]}
-              disabled={isLastPage}
-              onPress={() => setCurrentPageIndex(Math.min(pages.length - 1, pageIndex + 1))}
-            >
-              <Text style={[styles.pageNavText, { color: readerTextColor }]}>Próxima</Text>
-              <Ionicons name="chevron-forward" size={20} color={readerTextColor} />
-            </Touchable>
-          </View>
-          </View>
-        </ScrollView>
-        </Animated.View>
+          <Animated.View style={{ flex: 1, opacity: fade }}>
+            {renderPage(pageIndex, true)}
+          </Animated.View>
+        </PageTurner>
 
         {currentBookmark && (
           <Touchable style={styles.ribbon} onPress={openBookmarkSheet} activeOpacity={0.85}>

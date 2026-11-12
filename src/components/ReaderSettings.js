@@ -9,6 +9,7 @@ import {
   WIDTHS,
   PARAGRAPH_GAPS,
   FONT_CHOICES,
+  TURN_CHOICES,
   DEFAULT_READER_PREFS,
 } from '../services/readerPrefs';
 import Touchable from './Touchable';
@@ -231,6 +232,16 @@ export default function ReaderSettings({ prefs, onChange, onReset, onClose, prev
 
         {tab === 'read' && (
           <>
+            <Text style={styles.section}>Virada de página</Text>
+            <Segmented options={TURN_CHOICES} value={prefs.turn} onChange={(v) => onChange({ turn: v })} styles={styles} />
+            <Text style={styles.hint}>
+              {prefs.turn === 'curl'
+                ? 'A folha vira de verdade, acompanhando o dedo, com sombra e perspectiva.'
+                : prefs.turn === 'slide'
+                  ? 'A página acompanha o dedo e desliza para o lado.'
+                  : 'Troca direta, sem acompanhar o dedo.'}
+            </Text>
+
             <View style={styles.switchRow}>
               <View style={styles.switchText}>
                 <Text style={styles.rowLabel}>Ocultar menus ao ler</Text>

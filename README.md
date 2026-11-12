@@ -278,6 +278,8 @@ Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a imp
 
 **Leitor:** sem espaçamento entre letras, recuo na primeira linha (opção em Ajustes de leitura; sem recuo no primeiro parágrafo do capítulo nem em continuação de página), hifenização automática no idioma do livro (web e Android), justificado ou à esquerda.
 
+**Virada de página:** em Ajustes de leitura > Leitura, três modos. *Deslizar* (padrão): a página acompanha o dedo e desliza, com a próxima entrando ao lado. *Folha*: a folha gira de verdade em torno da lombada, em perspectiva 3D, com sombra sobre a página de baixo. *Simples*: troca direta com um leve esmaecer. Nos dois primeiros, soltar além de 30% da largura ou com um movimento rápido completa a virada; senão a página volta. No limite do livro a página resiste ao arrasto e volta. Tocar nas bordas esquerda e direita da página (22% de cada lado) também vira a página, e os botões Anterior e Próxima usam a mesma animação. Implementado em `src/components/PageTurner.js`, sem dependências nativas além do `expo-linear-gradient`.
+
 **Limites:** sem OCR (PDF digitalizado continua sem texto), colunas múltiplas são lidas na ordem do arquivo, notas de rodapé de PDF não são separadas, o recuo e a hifenização dependem da plataforma, e livros já importados não são reprocessados automaticamente (a função existe, mas não há botão). Não houve teste visual em aparelho.
 
 ---

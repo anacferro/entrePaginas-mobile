@@ -20,6 +20,12 @@ export const PARAGRAPH_GAPS = [
   { id: 'amplo', label: 'Amplo', em: 1.5 },
 ];
 
+export const TURN_CHOICES = [
+  { id: 'slide', label: 'Deslizar' },
+  { id: 'curl', label: 'Folha' },
+  { id: 'simple', label: 'Simples' },
+];
+
 export const FONT_CHOICES = [
   { id: 'livro', label: 'Do livro' },
   { id: 'serif', label: 'Serifada' },
@@ -36,6 +42,7 @@ export const DEFAULT_READER_PREFS = {
   width: 'media',
   align: 'justify',
   indent: true,
+  turn: 'slide',
   margin: 22,
   dim: 0,
   keepAwake: false,
@@ -62,6 +69,7 @@ export function normalizePrefs(raw) {
     width: pick(r.width, WIDTHS.map((w) => w.id), d.width),
     align: pick(r.align, ['left', 'justify'], d.align),
     indent: r.indent === undefined ? d.indent : r.indent === true,
+    turn: pick(r.turn, TURN_CHOICES.map((t) => t.id), d.turn),
     margin: Math.round(clamp(r.margin, READER_LIMITS.margin, d.margin)),
     dim: Math.round(clamp(r.dim, READER_LIMITS.dim, d.dim) * 100) / 100,
     keepAwake: r.keepAwake === true,
