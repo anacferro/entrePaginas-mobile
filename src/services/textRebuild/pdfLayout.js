@@ -100,18 +100,51 @@ export function assemblePages(pages) {
   const offsets = [];
   let outLength = 0;
   let current = '';
+  let pendingDrop = null;
+  let wrapLines = 0;
+  let currentHeading = false;
+  const isHeadingLine = (line) => line.size > bodySize * 1.2 && line.text.trim().length > 1 && line.text.trim().length < 90;
+  const markHeadings = all.filter(isHeadingLine).length >= 3;
   all.forEach((line, index) => {
-    const text = line.text.replace(/\s+/g, ' ').trim();
+    let text = line.text.replace(/\s+/g, ' ').trim();
     if (!text) return;
+    if (line.size > bodySize * 2 && /^[A-Za-zÀ-ÿ“"‘]{1,2}$/.test(text)) {
+      pendingDrop = text;
+      return;
+    }
     const prev = index > 0 ? all[index - 1] : null;
     const bigger = line.size > bodySize * 1.2 || (prev && prev.size > bodySize * 1.2 && line.size <= bodySize * 1.2);
     const gapBig = prev && !line.pageStart && prev.y - line.y > lineGap * 1.55;
-    const indent = line.x - left > bodySize * 0.8 && line.x - left < bodySize * 6;
+    let indent = line.x - left > bodySize * 0.8 && line.x - left < bodySize * 6;
+    let dropped = false;
+    if (pendingDrop && line.size <= bodySize * 1.2) {
+      if (/^[a-zà-ÿ]/.test(text)) {
+        text = pendingDrop + text;
+        wrapLines = 3;
+        dropped = true;
+      } else {
+        if (current) {
+          out.push(current);
+          outLength += current.length + 2;
+        }
+        current = pendingDrop;
+      }
+      pendingDrop = null;
+    } else if (wrapLines > 0 && line.size <= bodySize * 1.2) {
+      indent = false;
+      wrapLines -= 1;
+    }
     const prevText = current.trim();
     const prevShort = prev && prev.text.trim().length / Math.max(1, prev.size) < width * 0.72;
     const prevEnds = STRONG_END.test(prevText);
     const dialogue = DIALOGUE_START.test(text) && (prevEnds || prevShort);
-    const isNew = !current || bigger || gapBig || (indent && (prevEnds || prevShort || !line.pageStart)) || (prevShort && prevEnds) || dialogue;
+    const heading = markHeadings && isHeadingLine(line);
+    const joinsHeading = heading && currentHeading && prev && Math.abs(prev.size - line.size) < 0.6 && !line.pageStart && !gapBig;
+    if (joinsHeading) {
+      current += ` ${text}`;
+      return;
+    }
+    const isNew = !current || bigger || gapBig || (indent && (prevEnds || prevShort || !line.pageStart)) || (prevShort && prevEnds && !(wrapLines > 0 && !dropped)) || dialogue || dropped;
     const at = isNew ? outLength + (current ? current.length + 2 : 0) : outLength + current.length + 1;
     if (offsets[line.pageIndex] === undefined) offsets[line.pageIndex] = at;
     if (isNew) {
@@ -119,7 +152,8 @@ export function assemblePages(pages) {
         out.push(current);
         outLength += current.length + 2;
       }
-      current = text;
+      current = heading ? `# ${text}` : text;
+      currentHeading = heading;
     } else {
       current += `\n${text}`;
     }

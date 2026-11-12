@@ -281,6 +281,8 @@ Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a imp
 
 **Espaços dentro de palavras no PDF:** alguns PDFs desenham a mesma palavra em pedaços ("aventur" e "as") em posições separadas. A extração agora lê a largura real de cada letra da fonte (`/Widths` e `/W`), calcula onde cada pedaço termina e só insere espaço quando a lacuna até o próximo pedaço passa de 20% do tamanho da letra. Teste: `tests/pdfSpacing.test.mjs`.
 
+**Fidelidade ao PDF:** títulos em letra maior viram capítulos (quando o PDF tem ao menos 3), a letra capitular volta para a palavra ("A" + "lice") e as linhas recuadas ao lado dela ficam no mesmo parágrafo. Cada figura é ancorada no texto que vem logo depois dela na página (a ordem do desenho no PDF decide), com a proporção do texto só como último recurso; figura sozinha na página vai antes do texto da página seguinte.
+
 **Onde o problema nascia:** a extração de PDF descartava as coordenadas e juntava linhas só pela pontuação final; TXT com quebra em largura fixa chegava ao leitor com as quebras originais; EPUB mantinha as quebras de linha do código-fonte dentro dos parágrafos; o leitor aplicava espaçamento artificial entre letras e não tinha recuo nem hifenização.
 
 **Etapas:** extração com posições (PDF) → remoção de cabeçalhos, rodapés e números de página repetidos → limpeza (hífen suave, caracteres invisíveis, ligaduras, separadores Unicode, mojibake, espaços duplos) → parágrafos (recuo, intervalo vertical, linha curta com ponto final, falas, títulos, listas, versos preservados) → hifenização de fim de linha → palavras fragmentadas → validação → armazenamento.

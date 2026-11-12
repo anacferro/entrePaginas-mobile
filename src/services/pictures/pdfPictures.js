@@ -152,7 +152,7 @@ export function createPictureReader({ objects, dictValue }) {
       const width = number(obj.dict, 'Width');
       const height = number(obj.dict, 'Height');
       if (!width || !height) continue;
-      found.push({ id, pageIndex, order: found.length, width, height, obj });
+      found.push({ id, pageIndex, order: found.length, width, height, obj, streamAt: m.index });
     }
     return found;
   }

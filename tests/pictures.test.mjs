@@ -236,3 +236,12 @@ test('figura fica entre os paragrafos, na posicao do livro, sem partir frases', 
   assert.equal(parts[0].marks.length, 1);
   assert.equal(parts.map((p) => p.content || '').join('').replace(/\s+/g, ' ').trim(), content.replace(/\s+/g, ' '));
 });
+
+test('posicao: figura com texto vizinho cai exatamente antes do paragrafo que vem depois dela', () => {
+  const filler = 'Texto de enchimento sem relacao nenhuma. '.repeat(40);
+  const chapters = [{ id: 'c', content: `${filler}\n\nPrimeiro paragrafo da pagina nova com bastante texto.\n\n${filler}\n\nSegundo bloco bem diferente do outro.\n\n${filler}` }];
+  const picture = { id: 1, pageIndex: 3, width: 400, height: 300, bytes: new Uint8Array(1), anchor: { after: ['Segundo bloco bem diferente'], before: [] } };
+  const [list] = anchorPictures([picture], chapters, () => 0.05);
+  const at = list[0].offset;
+  assert.ok(chapters[0].content.slice(at).startsWith('Segundo bloco bem diferente'));
+});

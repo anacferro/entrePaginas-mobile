@@ -256,6 +256,7 @@ function extractPageLines(content, fonts) {
   let leading = 0;
   let line = null;
   let moved = false;
+  let at = 0;
   let pen = null;
   let hscale = 1;
   let token;
@@ -264,7 +265,7 @@ function extractPageLines(content, fonts) {
   const show = (text, advance = 0) => {
     if (!text) return;
     if (!line || Math.abs(line.y - y) > effective() * 0.3) {
-      line = { x, y, size: effective(), text: '' };
+      line = { x, y, size: effective(), text: '', at };
       lines.push(line);
     } else if (moved && x > line.x && !/\s$/.test(line.text) && !/^\s/.test(text)) {
       if (pen === null || x - pen > effective() * 0.2) line.text += ' ';
@@ -280,6 +281,7 @@ function extractPageLines(content, fonts) {
   };
 
   while ((token = tokenRe.exec(content))) {
+    at = token.index;
     if (token[1] !== undefined) {
       font = fonts.get(token[1]) || null;
       size = Number(token[2]) || size;
@@ -379,6 +381,17 @@ function decodeInfoTitle(raw) {
   return literal.trim();
 }
 
+function anchorOf(pageLines, pageIndex, streamAt) {
+  const text = (line) => line.text.replace(/\s+/g, ' ').trim();
+  const lines = pageLines[pageIndex];
+  const after = lines.filter((line) => line.at > streamAt).slice(0, 3).map(text);
+  for (let next = pageIndex + 1; after.length === 0 && next < pageLines.length && next <= pageIndex + 3; next += 1) {
+    after.push(...pageLines[next].slice(0, 3).map(text));
+  }
+  const before = lines.filter((line) => line.at < streamAt).slice(-3).map(text);
+  return { after, before };
+}
+
 export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false } = {}) {
   const raw = bytesToLatin1(bytes);
   if (!raw.startsWith('%PDF')) {
@@ -460,6 +473,7 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
     : { content: baseText, report: { version: 0, source: 'pdf', raw: true } };
 
   const pictures = [];
+  const pageLines = pageTexts.map(p => p.lines);
   if (reader) {
     const decoded = new Map();
     pageTexts.flatMap(p => p.found).forEach((found) => {
@@ -469,7 +483,7 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
         decoded.set(found.id, small ? null : reader.decodeImage(found.obj));
       }
       const image = decoded.get(found.id);
-      if (image) pictures.push({ id: found.id, pageIndex: found.pageIndex, order: found.order, ...image });
+      if (image) pictures.push({ id: found.id, pageIndex: found.pageIndex, order: found.order, anchor: anchorOf(pageLines, found.pageIndex, found.streamAt), ...image });
     });
   }
 
