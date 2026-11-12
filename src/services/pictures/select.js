@@ -1,42 +1,12 @@
 export const PICTURE_LIMITS = {
-  minSide: 80,
-  minArea: 25000,
-  maxBytes: 3 * 1024 * 1024,
-  maxCount: 80,
-  repeatedOnPages: 3,
-  titleArtArea: 150000,
-  titleArtShare: 0.03,
   coverPages: 3,
   coverCandidates: 4,
 };
 
 const ratioOf = (p) => p.width / p.height;
 
-export function keepPictures(pictures, pageCount = 0) {
-  const pagesOf = new Map();
-  pictures.forEach((p) => {
-    if (p.pageIndex === undefined) return;
-    if (!pagesOf.has(p.id)) pagesOf.set(p.id, new Set());
-    pagesOf.get(p.id).add(p.pageIndex);
-  });
-  const timesOn = (p) => pagesOf.get(p.id)?.size || 0;
-  const pattern = (p) => pageCount >= 8 && timesOn(p) >= PICTURE_LIMITS.repeatedOnPages;
-  const titleArt = (p) => pattern(p) && p.width * p.height >= PICTURE_LIMITS.titleArtArea && timesOn(p) / pageCount <= PICTURE_LIMITS.titleArtShare;
-  const repeated = (p) => pattern(p) && !titleArt(p);
-
-  const seen = new Set();
-  return pictures
-    .filter((p) => {
-      if (!p.bytes || p.bytes.length > PICTURE_LIMITS.maxBytes) return false;
-      if (Math.min(p.width, p.height) < PICTURE_LIMITS.minSide || p.width * p.height < PICTURE_LIMITS.minArea) return false;
-      if (ratioOf(p) < 0.15 || ratioOf(p) > 6.5) return false;
-      if (repeated(p)) return false;
-      if (titleArt(p)) return true;
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    })
-    .slice(0, PICTURE_LIMITS.maxCount);
+export function keepPictures(pictures) {
+  return pictures.filter((p) => p.bytes && p.bytes.length);
 }
 
 export function coverCandidates(pictures) {

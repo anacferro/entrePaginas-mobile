@@ -3,7 +3,7 @@ import { chooseCover } from './cover';
 import { createPictureStore } from './store';
 
 export async function attachPictures({ pictures, pageCount = 0, chapters, ratioOf, cover: declaredCover = null }) {
-  const kept = keepPictures(pictures, pageCount);
+  const kept = keepPictures(pictures);
   const cover = declaredCover || (await chooseCover(kept));
   const store = createPictureStore();
   const coverImage = cover ? await store.save(cover, 'cover') : null;

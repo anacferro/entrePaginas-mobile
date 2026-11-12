@@ -3,7 +3,6 @@ import { dominantFont } from './fontHints.js';
 import { assemblePages } from './textRebuild/pdfLayout.js';
 import { rebuildText } from './textRebuild/index.js';
 import { createPictureReader } from './pictures/pdfPictures.js';
-import { PICTURE_LIMITS } from './pictures/select.js';
 
 const WIN_ANSI = {
   0x80: '€', 0x85: '…', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”',
@@ -478,11 +477,7 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
   if (reader) {
     const decoded = new Map();
     pageTexts.flatMap(p => p.found).forEach((found) => {
-      if (pictures.length >= PICTURE_LIMITS.maxCount * 2) return;
-      if (!decoded.has(found.id)) {
-        const small = Math.min(found.width, found.height) < PICTURE_LIMITS.minSide || found.width * found.height < PICTURE_LIMITS.minArea;
-        decoded.set(found.id, small ? null : reader.decodeImage(found.obj));
-      }
+      if (!decoded.has(found.id)) decoded.set(found.id, reader.decodeImage(found.obj));
       const image = decoded.get(found.id);
       if (image) pictures.push({ id: found.id, pageIndex: found.pageIndex, order: found.order, anchor: anchorOf(pageLines, found.pageIndex, found.streamAt), ...image });
     });

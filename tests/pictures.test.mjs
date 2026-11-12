@@ -151,17 +151,15 @@ function decodePngSample() {
 
 const picture = (o) => ({ id: o.id, pageIndex: o.pageIndex ?? 0, width: o.width ?? 400, height: o.height ?? 300, bytes: new Uint8Array(o.size ?? 5000), ...o });
 
-test('selecao: descarta pequenas, extremas, repetidas em varias paginas e grandes demais', () => {
+test('selecao: nada e descartado, so ficam de fora imagens sem dados', () => {
   const list = [
     picture({ id: 1, width: 40, height: 40 }),
     picture({ id: 2, width: 800, height: 20 }),
-    picture({ id: 3, width: 300, height: 300, pageIndex: 1 }),
     picture({ id: 4, width: 300, height: 300, pageIndex: 2, size: 4 * 1024 * 1024 }),
     ...[0, 1, 2, 3].map((pageIndex) => picture({ id: 9, pageIndex, width: 200, height: 200 })),
-    picture({ id: 5, width: 300, height: 200, pageIndex: 6 }),
+    { id: 7, width: 300, height: 300, bytes: new Uint8Array(0) },
   ];
-  assert.deepEqual(keepPictures(list, 20).map((p) => p.id), [3, 5]);
-  assert.deepEqual(keepPictures([picture({ id: 9, pageIndex: 0 }), picture({ id: 9, pageIndex: 1 })], 3).map((p) => p.id), [9]);
+  assert.deepEqual(keepPictures(list).map((p) => p.id), [1, 2, 4, 9, 9, 9, 9]);
 });
 
 test('capa: candidatas so das primeiras paginas, retrato primeiro', () => {
