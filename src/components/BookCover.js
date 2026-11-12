@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useViewport } from './viewport';
+import useImageUri from './useImageUri';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR } from '../theme/bookOptions';
 
 export const SHELF_MAX_WIDTH = 1100;
@@ -32,6 +33,8 @@ export default function BookCover({
     large: { width: 220, height: 320, titleSize: 22, pageCountSize: 13, spineWidth: 10 },
   }[size] || { width: 155, height: 230, titleSize: 16, pageCountSize: 11, spineWidth: 7 };
 
+  const coverShown = useImageUri(coverImage);
+
   if (width && width < dimensions.width) {
     const scale = width / dimensions.width;
     dimensions.width = width;
@@ -51,8 +54,8 @@ export default function BookCover({
         style,
       ]}
     >
-      {coverImage && (
-        <Image source={{ uri: coverImage }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+      {coverImage && coverShown && (
+        <Image source={{ uri: coverShown }} style={StyleSheet.absoluteFill} resizeMode="cover" />
       )}
 
       <View

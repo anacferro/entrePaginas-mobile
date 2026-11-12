@@ -38,13 +38,13 @@ const KEYS = {
 async function moveImagesOut(list) {
   const move = (uri) => webImages.moveDataUri(uri).catch(() => uri);
   return Promise.all(list.map(async (book) => {
-    if (!book.chapters) return book;
-    const chapters = await Promise.all(book.chapters.map(async (chapter) => {
+    const chapters = await Promise.all((book.chapters || []).map(async (chapter) => {
       const photo = chapter.photo ? await move(chapter.photo) : chapter.photo;
       const images = chapter.images ? await Promise.all(chapter.images.map(async (image) => ({ ...image, uri: await move(image.uri) }))) : chapter.images;
       return photo === chapter.photo && images === chapter.images ? chapter : { ...chapter, photo, images };
     }));
-    return { ...book, chapters };
+    const coverImage = book.coverImage ? await move(book.coverImage) : book.coverImage;
+    return { ...book, coverImage, chapters };
   }));
 }
 
@@ -55,7 +55,11 @@ async function saveBooks(list) {
   } catch (error) {
     if (Platform.OS !== 'web') throw error;
     toSave = await moveImagesOut(list);
-    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(toSave));
+    try {
+      await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(toSave));
+    } catch {
+      throw new Error('O navegador ficou sem espaço para os livros. Apague algum livro grande ou use o app no celular.');
+    }
   }
   cloud.schedule(toSave);
 }

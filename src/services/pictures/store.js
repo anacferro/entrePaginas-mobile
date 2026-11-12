@@ -21,7 +21,6 @@ export function createPictureStore() {
     async save(picture, prefix = 'figure') {
       const extension = picture.mime === 'image/png' ? 'png' : picture.mime === 'image/gif' ? 'gif' : 'jpg';
       if (Platform.OS === 'web') {
-        if (prefix === 'cover') return `data:${picture.mime};base64,${toBase64(picture.bytes)}`;
         return webImages.saveBytes(picture.bytes, picture.mime);
       }
       counter += 1;
