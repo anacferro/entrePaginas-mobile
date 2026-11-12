@@ -33,7 +33,7 @@ export default function OriginalPdf({ path, background, textColor }) {
     );
   }
   return React.createElement('iframe', {
-    src: state.uri,
+    src: `${state.uri}#view=FitH&toolbar=0&navpanes=0&scrollbar=0`,
     title: 'PDF original',
     style: { flex: 1, width: '100%', height: '100%', border: 0, backgroundColor: background },
   });
