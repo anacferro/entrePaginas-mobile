@@ -7,6 +7,7 @@ import {
   TextInput,
   RefreshControl,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -31,7 +32,8 @@ import Touchable from '../components/Touchable';
 import { fonts } from '../theme/tokens';
 import { SHELF_MAX_WIDTH } from '../components/BookCover';
 
-const PENDING_TEXT = { label: 'Baixando o texto...', value: 0.05 };
+const ON_WEB = Platform.OS === 'web';
+const PENDING_TEXT = ON_WEB ? { label: 'Texto só no celular', value: 0 } : { label: 'Baixando o texto...', value: 0.05 };
 
 export default function BookshelfScreen({ navigation }) {
   const { colors } = useTheme();
@@ -98,7 +100,8 @@ export default function BookshelfScreen({ navigation }) {
 
   const handleBookPress = async (book) => {
     if (importProgress.get(book.id) || book.textPending) {
-      dialog.alert('Baixando o texto', 'Este livro abre quando o download terminar.');
+      if (ON_WEB && book.textPending) dialog.alert('Texto só no celular', 'O navegador bloqueia o download deste texto. Abra o app no celular: lá ele baixa sozinho.');
+      else dialog.alert('Baixando o texto', 'Este livro abre quando o download terminar.');
       return;
     }
     if (book.locked && !(await biometrics.unlock(book.title))) return;
