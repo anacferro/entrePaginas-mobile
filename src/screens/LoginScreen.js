@@ -134,7 +134,7 @@ export default function LoginScreen() {
         </LinearGradient>
 
         <Animated.View style={[styles.sheet, cardAnim]}>
-          <Text style={styles.formTitle}>Bem-vindo de volta</Text>
+          <Text style={styles.formTitle}>Bem-vindo</Text>
           <Text style={styles.formHint}>
             Entre com a sua conta Google. Seus livros ficam salvos na sua conta e acompanham você em qualquer aparelho.
           </Text>
@@ -175,12 +175,7 @@ export default function LoginScreen() {
             )}
           </Touchable>
 
-          <View style={styles.trustRow}>
-            <Ionicons name="shield-checkmark-outline" size={15} color={colors.textMuted} />
-            <Text style={styles.trustText}>Não guardamos sua senha. O acesso é feito pelo Google.</Text>
-          </View>
-
-          <Text style={styles.copyrightText}>Entre Páginas © {new Date().getFullYear()} • Edição de Colecionador</Text>
+          <Text style={styles.copyrightText}>Entre Páginas © {new Date().getFullYear()}</Text>
         </Animated.View>
       </ScrollView>
     </View>
@@ -427,17 +422,6 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.onPrimary,
-  },
-  trustRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 16,
-  },
-  trustText: {
-    fontSize: 12.5,
-    color: colors.textSecondary,
   },
   copyrightText: {
     fontSize: 11,

@@ -37,16 +37,6 @@ export function SkeletonShelf({ count = 6 }) {
   );
 }
 
-export function SkeletonCards({ count = 3, height = 96 }) {
-  return (
-    <View accessibilityLabel="Carregando" accessibilityRole="progressbar">
-      {Array.from({ length: count }, (_, i) => (
-        <SkeletonBlock key={i} height={height} borderRadius={radius.lg} style={styles.card} />
-      ))}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
@@ -59,8 +49,5 @@ const styles = StyleSheet.create({
   },
   line: {
     marginTop: 8,
-  },
-  card: {
-    marginBottom: 12,
   },
 });

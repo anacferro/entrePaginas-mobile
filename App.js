@@ -6,6 +6,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { ToastProvider } from './src/components/Toast';
+import PhoneFrame from './src/components/PhoneFrame';
 
 function ThemedStatusBar() {
   const { isDark } = useTheme();
@@ -21,11 +22,13 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <ThemedStatusBar />
-        <AuthProvider>
-          <ToastProvider>
-            <AppNavigator />
-          </ToastProvider>
-        </AuthProvider>
+        <PhoneFrame>
+          <AuthProvider>
+            <ToastProvider>
+              <AppNavigator />
+            </ToastProvider>
+          </AuthProvider>
+        </PhoneFrame>
       </ThemeProvider>
     </SafeAreaProvider>
   );

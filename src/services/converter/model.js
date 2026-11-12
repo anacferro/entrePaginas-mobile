@@ -199,7 +199,3 @@ export function blocksToContent(blocks) {
   });
   return joined.join('');
 }
-
-export function wordsOfBlocks(blocks) {
-  return blocks.reduce((n, b) => n + countWords(blockText(b)), 0);
-}

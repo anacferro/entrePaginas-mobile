@@ -15,10 +15,6 @@ export function useShelfLayout() {
   };
 }
 
-export function useShelfCoverWidth() {
-  return useShelfLayout().coverWidth;
-}
-
 export default function BookCover({
   title = 'Sem Título',
   coverColor = DEFAULT_COVER_COLOR,

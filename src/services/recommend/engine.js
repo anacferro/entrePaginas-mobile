@@ -53,17 +53,6 @@ export function goalContext(ctx, goalId) {
   };
 }
 
-export const FEEDBACK = {
-  interested: { label: 'Tenho interesse' },
-  added: { label: 'Adicionei à biblioteca' },
-  read: { label: 'Já li' },
-  not_interested: { label: 'Não tenho interesse' },
-  dislike_kind: { label: 'Não gosto desse tipo' },
-  known_author: { label: 'Já conheço o autor' },
-  more_like: { label: 'Mais assim' },
-  different: { label: 'Algo bem diferente' },
-};
-
 const EXCLUDE_FEEDBACK = new Set(['not_interested', 'read', 'added', 'known_author', 'dislike_kind', 'different']);
 
 function topKeys(rows, limit) {

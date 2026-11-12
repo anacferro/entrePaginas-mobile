@@ -60,7 +60,7 @@ O design foi rigorosamente inspirado nas telas concebidas no protótipo Figma (d
    - **No celular físico:** Abra a câmera (iOS) ou o app Expo Go (Android) e escaneie o **QR Code** exibido no terminal.
    - **No emulador Android:** Pressione a tecla `a` no terminal.
    - **No simulador iOS (macOS):** Pressione a tecla `i` no terminal.
-   - **No navegador Web:** Pressione a tecla `w` no terminal, ou rode `npx expo start --web`.
+   - **No navegador Web:** Pressione a tecla `w` no terminal, ou rode `npx expo start --web`. Em janelas largas o app aparece em uma moldura no formato de celular, centralizada; em janelas estreitas ele ocupa a tela inteira.
 
 > **O celular não conecta?** O celular e o computador precisam estar na mesma rede Wi-Fi, e redes corporativas ou de universidade costumam bloquear essa conexão. Nesse caso, use um roteador próprio (ou o roteamento do celular) e, se o QR Code mostrar `exp://127.0.0.1`, inicie informando o IP do computador:
 > ```bash
