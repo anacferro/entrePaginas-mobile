@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useViewport } from './viewport';
 import { DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR } from '../theme/bookOptions';
 
 export const SHELF_MAX_WIDTH = 1100;
 
 export function useShelfLayout() {
-  const { width } = useWindowDimensions();
+  const { width } = useViewport();
   const available = Math.min(width, SHELF_MAX_WIDTH) - 32;
   const columns = Math.max(2, Math.floor(available / 175));
   return {

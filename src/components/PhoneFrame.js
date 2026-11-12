@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { ViewportContext } from './viewport';
 
 const PHONE_WIDTH = 412;
 const PHONE_HEIGHT = 892;
@@ -17,7 +18,9 @@ export default function PhoneFrame({ children }) {
   return (
     <View style={[styles.stage, { backgroundColor: colors.surfaceMuted }]}>
       <View style={[styles.phone, { width: PHONE_WIDTH, height: frameHeight, backgroundColor: colors.background, borderColor: colors.border }]}>
-        {children}
+        <ViewportContext.Provider value={{ width: PHONE_WIDTH, height: frameHeight }}>
+          {children}
+        </ViewportContext.Provider>
       </View>
     </View>
   );
