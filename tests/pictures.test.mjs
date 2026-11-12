@@ -6,7 +6,7 @@ import { parsePdf } from '../src/services/pdfParser.js';
 import { parseEpub } from '../src/services/epubParser.js';
 import { writeZip, crc32 } from '../src/services/converter/zip.js';
 import { imageSize, mimeOf, jpegInfo } from '../src/services/pictures/format.js';
-import { paginate } from '../src/services/pagination.js';
+import { paginate, splitPage } from '../src/services/pagination.js';
 import { keepPictures, coverCandidates, guessCover, anchorPictures } from '../src/services/pictures/select.js';
 
 const latin = (text) => Uint8Array.from(text, (c) => c.charCodeAt(0));
@@ -119,6 +119,17 @@ test('PDF: JPEG segue direto e CMYK, mascara e filtros desconhecidos sao ignorad
   assert.deepEqual([...pictures[0].bytes], [...rgbJpeg]);
 });
 
+test('PDF: JPEG CMYK real e convertido em JPEG RGB com as cores certas', () => {
+  const cmyk = new Uint8Array(fs.readFileSync(new URL('./fixtures/cmyk.jpg', import.meta.url)));
+  assert.equal(jpegInfo(cmyk).components, 4);
+  const bytes = pdfWith([{ width: 200, height: 150, dict: '/ColorSpace /DeviceCMYK /BitsPerComponent 8 /Decode [1 0 1 0 1 0 1 0] /Filter /DCTDecode', data: cmyk }]);
+  const { pictures } = parsePdf(bytes, { rebuild: false, pictures: true });
+  assert.equal(pictures.length, 1);
+  assert.equal(pictures[0].mime, 'image/jpeg');
+  const info = jpegInfo(pictures[0].bytes);
+  assert.deepEqual([info.width, info.height, info.components], [200, 150, 3]);
+});
+
 test('PDF sem pedido de imagens nao devolve nada e nao muda o texto', () => {
   const bytes = pdfWith([{ width: 200, height: 150, dict: '/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode', data: deflate(gradient(200, 150, 3)) }]);
   assert.deepEqual(parsePdf(bytes, { rebuild: false }).pictures, []);
@@ -210,4 +221,18 @@ test('paginacao: figura vai para a pagina em que o deslocamento cai, inclusive n
   assert.deepEqual(pages[0].images.map((i) => i.id), ['i1']);
   assert.deepEqual(pages[pages.length - 1].images.map((i) => i.id), ['i3']);
   assert.ok(paginate([{ id: 'x', content: 'curto' }])[0].images.length === 0);
+});
+
+test('figura fica entre os paragrafos, na posicao do livro, sem partir frases', () => {
+  const content = 'Primeiro paragrafo do capitulo.\n\nSegundo paragrafo com mais texto.\n\nTerceiro paragrafo.';
+  const offset = content.indexOf('mais texto');
+  const [page] = paginate([{ id: 'c1', content, marks: [{ start: 0, end: 8, color: 'y' }], images: [{ id: 'i1', uri: 'u', offset, width: 10, height: 5 }] }]);
+  const parts = splitPage(page);
+  assert.deepEqual(parts.map((p) => p.type), ['text', 'image', 'text']);
+  assert.ok(parts[0].content.trim().endsWith('Segundo paragrafo com mais texto.'));
+  assert.equal(parts[2].content.trim(), 'Terceiro paragrafo.');
+  assert.equal(parts[0].first, true);
+  assert.equal(parts[2].first, false);
+  assert.equal(parts[0].marks.length, 1);
+  assert.equal(parts.map((p) => p.content || '').join('').replace(/\s+/g, ' ').trim(), content.replace(/\s+/g, ' '));
 });

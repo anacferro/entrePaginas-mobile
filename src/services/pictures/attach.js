@@ -41,7 +41,7 @@ export async function pagesAsChapters(pictures, label) {
   for (const picture of ordered) {
     const uri = await store.save(picture, 'scan');
     if (!uri) continue;
-    chapters.push({ id: `chap-${stamp}-${chapters.length + 1}`, title: `${label} ${picture.pageIndex + 1}`, content: 'Página digitalizada. Abra o editor deste capítulo e use Transcrever para obter o texto da imagem.', photo: uri });
+    chapters.push({ id: `chap-${stamp}-${chapters.length + 1}`, title: `${label} ${picture.pageIndex + 1}`, content: 'Página digitalizada. Abra o editor deste capítulo e use Transcrever para obter o texto da imagem.', photo: uri, photoRatio: picture.width && picture.height ? picture.width / picture.height : null });
   }
   return chapters;
 }

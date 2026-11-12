@@ -430,6 +430,7 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
 
   return {
     pictures,
+    pageRatios: layout?.pageRatios || null,
     pages: pages.length || 1,
     title: /^[\x20-\x7EÀ-ÿ‘’“”–—…]{3,}$/.test(infoTitle) ? infoTitle : null,
     text: rebuilt.content,

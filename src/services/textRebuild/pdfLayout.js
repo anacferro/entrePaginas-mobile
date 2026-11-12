@@ -97,6 +97,8 @@ export function assemblePages(pages) {
   const width = fullLine * 0.95 || longest * 0.9;
 
   const out = [];
+  const offsets = [];
+  let outLength = 0;
   let current = '';
   all.forEach((line, index) => {
     const text = line.text.replace(/\s+/g, ' ').trim();
@@ -110,8 +112,13 @@ export function assemblePages(pages) {
     const prevEnds = STRONG_END.test(prevText);
     const dialogue = DIALOGUE_START.test(text) && (prevEnds || prevShort);
     const isNew = !current || bigger || gapBig || (indent && (prevEnds || prevShort || !line.pageStart)) || (prevShort && prevEnds) || dialogue;
+    const at = isNew ? outLength + (current ? current.length + 2 : 0) : outLength + current.length + 1;
+    if (offsets[line.pageIndex] === undefined) offsets[line.pageIndex] = at;
     if (isNew) {
-      if (current) out.push(current);
+      if (current) {
+        out.push(current);
+        outLength += current.length + 2;
+      }
       current = text;
     } else {
       current += `\n${text}`;

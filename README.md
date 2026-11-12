@@ -262,10 +262,10 @@ Em **Criar > Importar**, o cartão "Converter arquivo em livro" transforma um do
 
 ## 🖼️ Capa e imagens dos arquivos importados
 
-Ao importar **PDF** ou **EPUB**, o app extrai as imagens do arquivo (`src/services/pictures/`). No PDF são lidas as imagens JPEG, as de cores RGB e tons de cinza e as indexadas, convertidas em PNG quando necessário; ficam de fora CMYK, máscaras, JPEG 2000, JBIG2 e CCITT. No EPUB entram JPEG, PNG e GIF.
+Ao importar **PDF** ou **EPUB**, o app extrai as imagens do arquivo (`src/services/pictures/`). No PDF são lidas as imagens JPEG, as de cores RGB e tons de cinza e as indexadas, convertidas em PNG quando necessário; JPEG CMYK é convertido para RGB; ficam de fora máscaras, JPEG 2000, JBIG2 e CCITT. No EPUB entram JPEG, PNG e GIF.
 
 - **Capa:** no EPUB vale a capa declarada no próprio arquivo. No PDF, a **IA** (quando disponível) olha até 4 imagens das 3 primeiras páginas e diz qual é a capa ou que nenhuma é; só essas imagens são enviadas, sem o texto nem o título. Sem IA ou sem resposta confiável, vale a imagem em formato de retrato da primeira página, e se não houver, o livro fica sem capa.
-- **Ilustrações:** vão para a página do leitor mais próxima da posição que tinham no arquivo, abaixo do texto dessa página. Descartam-se imagens pequenas (menos de 80 px de lado ou 25 mil pixels), muito alongadas, grandes demais (acima de 3 MB) e as que se repetem em 3 ou mais páginas (logotipos e rodapés).
+- **Ilustrações:** vão para a página do leitor mais próxima da posição que tinham no arquivo, entre os parágrafos, no ponto em que estavam no livro (a posição usa o deslocamento real do texto de cada página do PDF). A figura mantém a proporção original e só é reduzida quando passa de 70% da altura da tela; a foto de página digitalizada, de 85%. Descartam-se imagens pequenas (menos de 80 px de lado ou 25 mil pixels), muito alongadas, grandes demais (acima de 3 MB) e as que se repetem em 3 ou mais páginas (logotipos e rodapés).
 - **PDF digitalizado** (sem texto): cada página vira um capítulo com a imagem da página, para você usar *Transcrever* no editor.
 - Arquivos ficam na pasta do app no aparelho e não vão para a nuvem; na web ficam embutidos no livro até 2 MB. DOCX, ODT, RTF e HTML ainda não trazem imagens.
 

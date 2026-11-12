@@ -167,7 +167,7 @@ export const cloud = {
           remote.chapters = remote.chapters.map((chapter) => {
             const mine = local.get(chapter.id);
             if (!mine || (!mine.photo && !mine.images)) return chapter;
-            return { ...chapter, ...(mine.photo ? { photo: mine.photo } : {}), ...(mine.images ? { images: mine.images } : {}) };
+            return { ...chapter, ...(mine.photo ? { photo: mine.photo, photoRatio: mine.photoRatio || null } : {}), ...(mine.images ? { images: mine.images } : {}) };
           });
           if (localBook?.coverImage && !remote.coverImage) remote.coverImage = localBook.coverImage;
           byId.set(remote.id, remote);

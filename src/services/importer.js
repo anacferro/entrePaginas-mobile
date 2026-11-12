@@ -164,7 +164,7 @@ function isReadable(text) {
 }
 
 async function importPdf(asset) {
-  const { pages, title, text, fontHint, rebuild, pictures } = parsePdf(await readBytes(asset), { rebuild: false, pictures: true });
+  const { pages, title, text, fontHint, rebuild, pictures, pageRatios } = parsePdf(await readBytes(asset), { rebuild: false, pictures: true });
   const bookTitle = title || titleFromFileName(asset.name);
 
   if (!isReadable(text)) {
@@ -200,7 +200,7 @@ async function importPdf(asset) {
     pictures,
     pageCount: pages,
     chapters,
-    ratioOf: (p) => (p.pageIndex + 0.5) / Math.max(pages, 1),
+    ratioOf: (p) => pageRatios?.[p.pageIndex] ?? (p.pageIndex + 0.5) / Math.max(pages, 1),
   }).catch(() => ({ chapters, coverImage: null }));
   return {
     title: bookTitle,

@@ -1,4 +1,5 @@
 import { inflate } from 'pako';
+import jpeg from 'jpeg-js';
 import { jpegInfo, encodePng, pngFromRows } from './format.js';
 
 const UNSUPPORTED = /\/(CCITTFaxDecode|CCF|JBIG2Decode|JPXDecode|LZWDecode|LZW|ASCII85Decode|A85|ASCIIHexDecode|AHx|RunLengthDecode|RL)\b/;
@@ -23,6 +24,19 @@ function exactData(obj) {
   if (end && obj.data[end - 1] === 0x0a) end -= 1;
   if (end && obj.data[end - 1] === 0x0d) end -= 1;
   return obj.data.subarray(0, end);
+}
+
+const CMYK_MAX_PIXELS = 4000000;
+
+function cmykToJpeg(bytes, width, height) {
+  if (width * height > CMYK_MAX_PIXELS) return null;
+  try {
+    const decoded = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 200 });
+    const encoded = jpeg.encode({ data: decoded.data, width: decoded.width, height: decoded.height }, 88).data;
+    return { mime: 'image/jpeg', bytes: new Uint8Array(encoded), width: decoded.width, height: decoded.height };
+  } catch {
+    return null;
+  }
 }
 
 function hexBytes(hex) {
@@ -85,15 +99,15 @@ export function createPictureReader({ objects, dictValue }) {
     const height = number(dict, 'Height');
     if (!width || !height || !obj.data) return null;
     const data = exactData(obj);
-    if (/\/ImageMask\s+true/.test(dict) || UNSUPPORTED.test(dict) || /\/Decode\s*\[/.test(dict)) return null;
-
     const dct = /\/DCTDecode|\/DCT\b/.test(dict);
     const flate = /\/FlateDecode|\/Fl\b/.test(dict);
+    if (/\/ImageMask\s+true/.test(dict) || UNSUPPORTED.test(dict) || (!dct && /\/Decode\s*\[/.test(dict))) return null;
 
     if (dct) {
       const bytes = flate ? inflated(data) : data;
       const info = bytes && jpegInfo(bytes);
-      if (!info || info.components === 4) return null;
+      if (!info) return null;
+      if (info.components === 4) return cmykToJpeg(bytes, info.width || width, info.height || height);
       return { mime: 'image/jpeg', bytes, width: info.width || width, height: info.height || height };
     }
     if (!flate) return null;

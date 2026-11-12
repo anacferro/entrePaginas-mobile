@@ -9,7 +9,6 @@ import {
   TextInput,
   Platform,
   KeyboardAvoidingView,
-  Image,
   AppState,
   Animated,
   Pressable,
@@ -24,7 +23,8 @@ import ExplainPassage from '../components/ExplainPassage';
 import PinExcerptSheet from '../components/PinExcerptSheet';
 import { ai } from '../services/ai';
 import CommentsModal from '../components/CommentsModal';
-import { paginate } from '../services/pagination';
+import { paginate, splitPage } from '../services/pagination';
+import PageFigure from '../components/PageFigure';
 import { bookFonts } from '../services/bookFonts';
 import { fontFamilyFor, isDarkColor } from '../theme/bookOptions';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
@@ -611,42 +611,55 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
 
 
             {pg.photo && (
-              <Image
-                source={{ uri: pg.photo }}
+              <PageFigure
+                uri={pg.photo}
+                ratio={chap.photoRatio}
+                label="Foto da página"
+                maxShare={0.85}
+                fallbackHeight={320}
                 style={styles.pagePhoto}
-                resizeMode="contain"
-                accessibilityLabel="Foto da página"
               />
             )}
 
-            <AnnotatedText
-              content={pg.content}
-              marks={pg.marks}
-              annotating={annotating}
-              onSelect={handleSelect}
-              paragraphGap={fontSize * gapEm}
-              indent={prefs.indent}
-              skipFirstIndent={pg.opensChapter || pg.continues}
-              lang={book?.catalog?.language || 'pt-BR'}
-              style={[
-                styles.bookParagraphs,
-                {
-                  color: readerTextColor,
-                  fontSize: fontSize,
-                  lineHeight: fontSize * prefs.lineHeight,
-                  fontFamily: bodyFont,
-                  textAlign: prefs.align,
-                },
-              ]}
-            />
+            {(annotating ? [{ type: 'text', content: pg.content, marks: pg.marks, first: true }] : splitPage(pg)).map((part, partIndex) => (
+              part.type === 'image' ? (
+                <PageFigure
+                  key={`fig-${part.image.id}`}
+                  uri={part.image.uri}
+                  ratio={part.image.width && part.image.height ? part.image.width / part.image.height : null}
+                  label="Ilustração do livro"
+                />
+              ) : (
+                <AnnotatedText
+                  key={`txt-${partIndex}`}
+                  content={part.content}
+                  marks={part.marks}
+                  annotating={annotating}
+                  onSelect={handleSelect}
+                  paragraphGap={fontSize * gapEm}
+                  indent={prefs.indent}
+                  skipFirstIndent={part.first ? (pg.opensChapter || pg.continues) : false}
+                  lang={book?.catalog?.language || 'pt-BR'}
+                  style={[
+                    styles.bookParagraphs,
+                    {
+                      color: readerTextColor,
+                      fontSize: fontSize,
+                      lineHeight: fontSize * prefs.lineHeight,
+                      fontFamily: bodyFont,
+                      textAlign: prefs.align,
+                    },
+                  ]}
+                />
+              )
+            ))}
 
-            {pg.images.map((image) => (
-              <Image
+            {annotating && pg.images.map((image) => (
+              <PageFigure
                 key={image.id}
-                source={{ uri: image.uri }}
-                style={[styles.figure, image.width && image.height ? { aspectRatio: image.width / image.height } : { height: 280 }]}
-                resizeMode="contain"
-                accessibilityLabel="Ilustração do livro"
+                uri={image.uri}
+                ratio={image.width && image.height ? image.width / image.height : null}
+                label="Ilustração do livro"
               />
             ))}
 
@@ -1631,15 +1644,8 @@ const createStyles = (colors) => StyleSheet.create({
     paddingTop: 24,
     paddingBottom: 40,
   },
-  figure: {
-    width: '100%',
-    borderRadius: 6,
-    marginVertical: 14,
-  },
   pagePhoto: {
-    width: '100%',
-    height: 320,
-    borderRadius: 8,
+    marginTop: 0,
     marginBottom: 16,
   },
   bookParagraphs: {
