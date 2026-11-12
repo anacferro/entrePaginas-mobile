@@ -592,12 +592,13 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
             style={styles.readerScroll}
             contentContainerStyle={[
               styles.readerContentContainer,
-              { paddingHorizontal: prefs.margin },
+              { paddingHorizontal: 0, flexGrow: 1 },
               prefs.autoHide && !focusMode && { paddingTop: 96 },
               annotating && { paddingBottom: 170 },
               focusMode && { paddingTop: 68 },
             ]}
           >
+            <Pressable onPress={interactive ? handleTapText : undefined} accessible={false} style={{ flexGrow: 1, paddingHorizontal: prefs.margin }}>
             <View style={[styles.column, widthMax && { maxWidth: widthMax }]}>
             {bookmark && (
               <Touchable style={styles.bookmarkNote} onPress={interactive ? openBookmarkSheet : undefined} activeOpacity={0.7}>
@@ -618,7 +619,6 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               />
             )}
 
-            <Pressable onPress={interactive ? handleTapText : undefined} accessible={false}>
             <AnnotatedText
               content={pg.content}
               marks={pg.marks}
@@ -639,7 +639,6 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
                 },
               ]}
             />
-            </Pressable>
 
             {pg.images.map((image) => (
               <Image
@@ -709,6 +708,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               </Touchable>
             </View>
             </View>
+            </Pressable>
           </ScrollView>
     );
   };

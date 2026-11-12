@@ -88,6 +88,7 @@ export default function AppNavigator() {
               component={ReaderScreen}
               options={{
                 animation: 'slide_from_right',
+                gestureEnabled: false,
               }}
             />
           </>
