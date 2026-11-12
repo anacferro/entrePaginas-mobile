@@ -1,6 +1,5 @@
 import { storage } from './storage';
 import { fetchFullTextInBackground } from './googleImport';
-import { importProgress } from './importProgress';
 import { accessInfo } from './catalog/availability';
 import { genreLabel } from './catalog/genres';
 import { normalize } from './catalog/text';
@@ -67,11 +66,6 @@ export async function addWorkToLibrary(work) {
   });
 
 
-  const download = fetchFullTextInBackground(book.id, book.title, byline, gutenbergId).then(async (result) => {
-    if (result !== 'failed') return result;
-    await storage.deleteBookPermanently(book.id);
-    importProgress.finish(book.id);
-    return 'failed';
-  });
+  const download = fetchFullTextInBackground(book.id, book.title, byline, gutenbergId);
   return { status: 'added', book, text: 'downloading', download };
 }

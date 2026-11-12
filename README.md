@@ -269,6 +269,12 @@ Ao importar **PDF** ou **EPUB**, o app extrai as imagens do arquivo (`src/servic
 - **PDF digitalizado** (sem texto): cada página vira um capítulo com a imagem da página, para você usar *Transcrever* no editor.
 - Arquivos ficam na pasta do app no aparelho e não vão para a nuvem; na web ficam embutidos no livro até 2 MB. DOCX, ODT, RTF e HTML ainda não trazem imagens.
 
+## 🔔 Avisos e confirmações
+
+Todo aviso e toda confirmação passam por `dialog.alert` (`src/services/dialog.js`) e aparecem como diálogo do próprio app (`src/components/AppDialog.js`), no celular e na web, sem as caixas do sistema ou do navegador. Vários avisos seguidos entram em fila. Mensagens rápidas continuam sendo toasts.
+
+**Texto de livro do Gutenberg:** se o download falhar, o livro **não é mais removido** da estante: fica com a sinopse, o app tenta de novo a cada minuto ao abrir a estante e a conexão é repetida até 3 vezes por endereço. Na web o navegador bloqueia (CORS) o download do texto do gutenberg.org; no celular não há esse bloqueio.
+
 ## ✍️ Reconstrução do texto importado
 
 Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a importação (`src/services/textRebuild/`), antes de chegar ao leitor. O leitor só apresenta bem um texto que já está bem formado.

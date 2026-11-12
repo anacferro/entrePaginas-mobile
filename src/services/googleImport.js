@@ -3,13 +3,14 @@ import { importer } from './importer';
 import { importProgress } from './importProgress';
 import { storage } from './storage';
 
-const resumed = new Set();
+const RETRY_AFTER_MS = 60000;
+const attempts = new Map();
 
 export function resumePendingTexts(books) {
   books
-    .filter(book => book.textPending && !resumed.has(book.id) && !importProgress.get(book.id))
+    .filter(book => book.textPending && !importProgress.get(book.id) && Date.now() - (attempts.get(book.id) || 0) > RETRY_AFTER_MS)
     .forEach((book) => {
-      resumed.add(book.id);
+      attempts.set(book.id, Date.now());
       fetchFullTextInBackground(book.id, book.title, '', book.textPending);
     });
 }

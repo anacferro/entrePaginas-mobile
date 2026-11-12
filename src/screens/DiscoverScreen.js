@@ -17,7 +17,6 @@ import { storage } from '../services/storage';
 import { addWorkToLibrary, workIdOf } from '../services/libraryAdd';
 import { DISCOVERY_PRESETS, pickPreset, presetRequest } from '../services/catalog/discovery';
 import { normalize } from '../services/catalog/text';
-import { dialog } from '../services/dialog';
 
 const MODES = [
   { key: 'paravoce', label: 'Para você' },
@@ -172,16 +171,7 @@ export default function DiscoverScreen({ navigation }) {
         setOwned((prev) => ({ ids: new Set(prev.ids).add(work.id), titles: new Set(prev.titles).add(normalize(work.title)) }));
         toast.show(result.text === 'downloading' ? 'Livro adicionado. Baixando o texto completo...' : 'Livro adicionado à estante.');
         result.download?.then((outcome) => {
-          if (outcome === 'failed') {
-            setOwned((prev) => {
-              const titles = new Set(prev.titles);
-              titles.delete(normalize(work.title));
-              const ids = new Set(prev.ids);
-              ids.delete(work.id);
-              return { ids, titles };
-            });
-            dialog.alert('Livro não adicionado', `Não foi possível baixar o texto de "${work.title}" agora. Tente de novo mais tarde.`);
-          }
+          if (outcome === 'failed') toast.show('O texto completo ainda não pôde ser baixado. O livro continua na estante e o app tenta de novo.', 'info');
         });
       }
       setSelected(null);

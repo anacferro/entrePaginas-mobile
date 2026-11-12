@@ -14,7 +14,9 @@ export function normalize(text) {
     .trim();
 }
 
-async function request(url) {
+const ATTEMPTS = 3;
+
+async function attempt(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
@@ -22,6 +24,21 @@ async function request(url) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function request(url) {
+  let failure;
+  for (let i = 0; i < ATTEMPTS; i += 1) {
+    try {
+      const response = await attempt(url);
+      if (response.status < 500 && response.status !== 429) return response;
+      failure = new Error(`http-${response.status}`);
+    } catch (error) {
+      failure = error;
+    }
+    if (i < ATTEMPTS - 1) await new Promise((resolve) => setTimeout(resolve, 800 * (i + 1)));
+  }
+  throw failure;
 }
 
 function decode(text) {
@@ -153,7 +170,7 @@ async function downloadHtml(id) {
 }
 
 async function downloadText(id) {
-  for (const url of [`${TEXT_ENDPOINT}/${id}/pg${id}.txt`, `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`]) {
+  for (const url of [`${TEXT_ENDPOINT}/${id}/pg${id}.txt`, `https://www.gutenberg.org/files/${id}/${id}-0.txt`, `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`]) {
     try {
       const response = await request(url);
       if (response.ok) return await response.text();

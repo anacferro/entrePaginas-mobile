@@ -7,6 +7,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { ToastProvider } from './src/components/Toast';
+import AppDialog from './src/components/AppDialog';
 import PhoneFrame from './src/components/PhoneFrame';
 
 function ThemedStatusBar() {
@@ -27,6 +28,7 @@ export default function App() {
           <AuthProvider>
             <ToastProvider>
               <AppNavigator />
+              <AppDialog />
             </ToastProvider>
           </AuthProvider>
         </PhoneFrame>

@@ -1,22 +1,27 @@
-import { Alert, Platform } from 'react-native';
+let current = null;
+const listeners = new Set();
+const queue = [];
+
+function emit() {
+  listeners.forEach((listener) => listener(current));
+}
+
+function next() {
+  current = queue.shift() || null;
+  emit();
+}
 
 export const dialog = {
   alert(title, message, buttons = []) {
-    if (Platform.OS !== 'web') {
-      Alert.alert(title, message, buttons);
-      return;
-    }
-
-    const text = message ? `${title}\n\n${message}` : title;
-    const action = buttons.find((b) => b.style !== 'cancel');
-    const hasCancel = buttons.some((b) => b.style === 'cancel');
-
-    if (hasCancel) {
-      if (window.confirm(text)) action?.onPress?.();
-      return;
-    }
-
-    window.alert(text);
-    action?.onPress?.();
+    queue.push({ title, message, buttons });
+    if (!current) next();
+  },
+  dismiss() {
+    next();
+  },
+  subscribe(listener) {
+    listeners.add(listener);
+    listener(current);
+    return () => listeners.delete(listener);
   },
 };

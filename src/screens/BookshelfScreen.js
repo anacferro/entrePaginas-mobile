@@ -90,7 +90,7 @@ export default function BookshelfScreen({ navigation }) {
 
   const handleBookPress = async (book) => {
     if (importProgress.get(book.id)) {
-      dialog.alert('Carregando', 'O texto deste livro ainda está sendo baixado. Em instantes ele fica disponível para leitura.');
+      dialog.alert('Carregando', 'O texto completo deste livro ainda não foi baixado. O app continua tentando e ele fica disponível para leitura assim que chegar.');
       return;
     }
     if (book.locked && !(await biometrics.unlock(book.title))) return;

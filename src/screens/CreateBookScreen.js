@@ -15,7 +15,6 @@ import GoogleBooksSearch from '../components/GoogleBooksSearch';
 import FormatCard from '../components/FormatCard';
 import ConvertBookFlow from '../components/ConvertBookFlow';
 import { fetchFullTextInBackground } from '../services/googleImport';
-import { importProgress } from '../services/importProgress';
 import { bookFonts } from '../services/bookFonts';
 import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
@@ -185,11 +184,8 @@ export default function CreateBookScreen({ navigation, route }) {
       resetForm();
       navigation.navigate('Estante');
 
-      fetchFullTextInBackground(newBook.id, newBook.title, book.authors, book.gutenbergId).then(async (result) => {
-        if (result !== 'failed') return;
-        await storage.deleteBookPermanently(newBook.id);
-        importProgress.finish(newBook.id);
-        dialog.alert('Livro não adicionado', `Não foi possível baixar o texto de "${newBook.title}" agora. Verifique a conexão e tente de novo.`);
+      fetchFullTextInBackground(newBook.id, newBook.title, book.authors, book.gutenbergId).then((result) => {
+        if (result === 'failed') toast.show('O texto completo ainda não pôde ser baixado. O livro continua na estante e o app tenta de novo.', 'info');
       });
     } catch {
       dialog.alert('Erro ao Salvar', 'Não foi possível adicionar o livro à estante.');
