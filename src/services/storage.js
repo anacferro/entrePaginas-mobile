@@ -3,6 +3,7 @@ import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
 import { relocateMarks } from './marks';
 import { cloud } from './cloud';
 import { bookFonts } from './bookFonts';
+import { originalFiles } from './originalFiles';
 import * as readingLog from './readingLog';
 import { normalizePrefs } from './readerPrefs';
 import * as personalData from './personal.js';
@@ -238,6 +239,7 @@ export const storage = {
       book.fontLabel = updates.fontLabel || null;
     }
     if ('coverImage' in updates) book.coverImage = updates.coverImage || null;
+    if ('originalPdf' in updates) book.originalPdf = updates.originalPdf || null;
     book.updatedAt = new Date().toISOString();
     await saveBooks(list);
     return book;
@@ -467,6 +469,7 @@ export const storage = {
     const remaining = list.filter(b => b.status !== 'bau');
     const dropped = list.filter(b => b.status === 'bau').map(b => b.id);
     bookFonts.remove(dropped);
+    originalFiles.remove(dropped);
     await dropPositions(dropped);
     await saveBooks(remaining);
     return remaining;
@@ -477,6 +480,7 @@ export const storage = {
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
     const filtered = list.filter(b => b.id !== id);
     bookFonts.remove([id]);
+    originalFiles.remove([id]);
     await dropPositions([id]);
     await saveBooks(filtered);
     return filtered;
@@ -488,6 +492,7 @@ export const storage = {
     const drop = new Set(ids);
     const filtered = list.filter(b => !drop.has(b.id));
     bookFonts.remove(ids);
+    originalFiles.remove(ids);
     await dropPositions(ids);
     await saveBooks(filtered);
     return filtered;
@@ -703,6 +708,8 @@ export const storage = {
   async deleteAllData() {
     const removedFromCloud = await cloud.wipe();
     if (!removedFromCloud) return false;
+    const stored = await AsyncStorage.getItem(KEYS.BOOKS);
+    originalFiles.remove((stored ? JSON.parse(stored) : []).map(b => b.id));
     await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify([]));
     await AsyncStorage.removeItem(KEYS.POSITIONS);
     await AsyncStorage.removeItem(KEYS.READING);

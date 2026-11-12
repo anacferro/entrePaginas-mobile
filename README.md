@@ -275,6 +275,10 @@ Todo aviso e toda confirmação passam por `dialog.alert` (`src/services/dialog.
 
 **Texto de livro do Gutenberg:** se o download falhar, o livro **não é mais removido** da estante: fica com a sinopse, o app tenta de novo a cada minuto ao abrir a estante e a conexão é repetida até 3 vezes por endereço. Na web o navegador bloqueia (CORS) o download do texto do gutenberg.org; no celular não há esse bloqueio.
 
+## 📄 PDF original (idêntico ao arquivo)
+
+Ao importar um PDF, o app guarda uma cópia do arquivo (`src/services/originalFiles.js`: pasta do app no iPhone, IndexedDB na web; fica só no aparelho e não vai para a nuvem). Ao abrir o livro, o leitor mostra **o próprio PDF**, com as mesmas fontes, cores, páginas e figuras (`src/components/OriginalPdf.js`: visualizador nativo do iOS dentro de um WebView; na web, o visualizador do navegador). O botão de documento no topo do leitor alterna para o **texto adaptado**, que é o que permite fonte, tema, grifos, marcadores e a companheira de leitura. No Android o WebView não abre PDF, então lá vale só o texto adaptado. Livros importados antes dessa versão não têm a cópia: reimporte o PDF.
+
 ## ✍️ Reconstrução do texto importado
 
 Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a importação (`src/services/textRebuild/`), antes de chegar ao leitor. O leitor só apresenta bem um texto que já está bem formado.

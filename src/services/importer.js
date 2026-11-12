@@ -166,7 +166,13 @@ function isReadable(text) {
 }
 
 async function importPdf(asset) {
-  const { pages, title, text, fontHint, rebuild, pictures, pageRatios } = parsePdf(await readBytes(asset), { rebuild: false, pictures: true });
+  const bytes = await readBytes(asset);
+  const result = await importPdfBytes(asset, bytes);
+  return { ...result, original: bytes };
+}
+
+async function importPdfBytes(asset, bytes) {
+  const { pages, title, text, fontHint, rebuild, pictures, pageRatios } = parsePdf(bytes, { rebuild: false, pictures: true });
   const bookTitle = title || titleFromFileName(asset.name);
 
   if (!isReadable(text)) {

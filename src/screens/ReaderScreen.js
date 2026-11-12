@@ -25,6 +25,8 @@ import { ai } from '../services/ai';
 import CommentsModal from '../components/CommentsModal';
 import { paginate, splitPage } from '../services/pagination';
 import PageFigure from '../components/PageFigure';
+import OriginalPdf from '../components/OriginalPdf';
+import { originalFiles } from '../services/originalFiles';
 import { bookFonts } from '../services/bookFonts';
 import { fontFamilyFor, isDarkColor } from '../theme/bookOptions';
 import { applyMark, clearMarks, HIGHLIGHT_COLORS, PIN_COLORS } from '../services/marks';
@@ -118,6 +120,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   const [bookmarkTitle, setBookmarkTitle] = useState('');
   const [bookmarkColor, setBookmarkColor] = useState(PIN_COLORS[0]);
   const [annotating, setAnnotating] = useState(false);
+  const [viewMode, setViewMode] = useState(null);
   const [selection, setSelection] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAiMenu, setShowAiMenu] = useState(false);
@@ -186,7 +189,9 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   }, [prefs.keepAwake]);
 
   const [chrome] = useState(() => new Animated.Value(1));
-  const chromeShown = !prefs.autoHide || chromeVisible || showSettings || annotating;
+  const showOriginal = Boolean(book?.originalPdf) && originalFiles.supported && viewMode !== 'text';
+  const canToggleOriginal = Boolean(book?.originalPdf) && originalFiles.supported;
+  const chromeShown = showOriginal || !prefs.autoHide || chromeVisible || showSettings || annotating;
   useEffect(() => {
     Animated.timing(chrome, { toValue: chromeShown ? 1 : 0, duration: 200, useNativeDriver: true }).start();
   }, [chromeShown, chrome]);
@@ -732,7 +737,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
       
       {!focusMode && (
         <Animated.View
-          style={prefs.autoHide ? [styles.floatHeader, { opacity: chrome }] : undefined}
+          style={prefs.autoHide && !showOriginal ? [styles.floatHeader, { opacity: chrome }] : undefined}
           pointerEvents={chromeShown ? 'auto' : 'none'}
         >
         <View style={[styles.readerNavHeader, { backgroundColor: barColor }]}>
@@ -757,6 +762,20 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
           </View>
 
           <View style={styles.navIconsRow}>
+            {canToggleOriginal && (
+              <Touchable
+                style={[styles.iconBtn, showOriginal && styles.iconBtnActive]}
+                onPress={() => {
+                  setAnnotating(false);
+                  setViewMode(showOriginal ? 'text' : 'original');
+                }}
+                accessibilityLabel={showOriginal ? 'Ver texto adaptado' : 'Ver PDF original'}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="document-text-outline" size={20} color={showOriginal ? colors.onPrimary : readerTextColor} />
+              </Touchable>
+            )}
+
             {book && (
               <Touchable
                 style={styles.iconBtn}
@@ -842,7 +861,13 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </Animated.View>
       )}
 
-      <View ref={stageRef} collapsable={false} style={styles.readerScroll}>
+      {showOriginal && (
+        <View style={styles.readerScroll}>
+          <OriginalPdf path={book.originalPdf} background={readerBg} textColor={readerTextColor} />
+        </View>
+      )}
+
+      <View ref={stageRef} collapsable={false} style={showOriginal ? { height: 0, overflow: 'hidden' } : styles.readerScroll}>
         <PageTurner
           ref={turnerRef}
           mode={prefs.turn}

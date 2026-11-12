@@ -16,6 +16,7 @@ import FormatCard from '../components/FormatCard';
 import ConvertBookFlow from '../components/ConvertBookFlow';
 import { fetchFullTextInBackground } from '../services/googleImport';
 import { bookFonts } from '../services/bookFonts';
+import { originalFiles } from '../services/originalFiles';
 import { Section, Field, CoverPicker, CategoryPicker, ColorRow, FontPicker, fieldStyles } from '../components/FormBlocks';
 import { storage } from '../services/storage';
 import { dialog } from '../services/dialog';
@@ -98,6 +99,10 @@ export default function CreateBookScreen({ navigation, route }) {
     });
     const savedFont = file.font ? await bookFonts.save(newBook.id, file.font).catch(() => null) : null;
     if (savedFont) await storage.updateBook(newBook.id, { ...savedFont, fontFamily: 'original' });
+    if (file.original && originalFiles.supported) {
+      const originalPdf = await originalFiles.save(newBook.id, file.original).catch(() => null);
+      if (originalPdf) await storage.updateBook(newBook.id, { originalPdf });
+    }
     resetForm();
     toast.show(`"${newBook.title}" foi adicionado à sua estante.`);
     navigation.navigate('Estante');

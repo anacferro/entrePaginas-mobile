@@ -170,6 +170,7 @@ export const cloud = {
             return { ...chapter, ...(mine.photo ? { photo: mine.photo, photoRatio: mine.photoRatio || null } : {}), ...(mine.images ? { images: mine.images } : {}) };
           });
           if (localBook?.coverImage && !remote.coverImage) remote.coverImage = localBook.coverImage;
+          if (localBook?.originalPdf) remote.originalPdf = localBook.originalPdf;
           byId.set(remote.id, remote);
           synced.set(remote.id, signatureOf(remote));
         }
