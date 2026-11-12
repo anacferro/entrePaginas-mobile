@@ -4,6 +4,8 @@ export const PICTURE_LIMITS = {
   maxBytes: 3 * 1024 * 1024,
   maxCount: 80,
   repeatedOnPages: 3,
+  titleArtArea: 150000,
+  titleArtShare: 0.03,
   coverPages: 3,
   coverCandidates: 4,
 };
@@ -17,7 +19,10 @@ export function keepPictures(pictures, pageCount = 0) {
     if (!pagesOf.has(p.id)) pagesOf.set(p.id, new Set());
     pagesOf.get(p.id).add(p.pageIndex);
   });
-  const repeated = (p) => pageCount >= 8 && (pagesOf.get(p.id)?.size || 0) >= PICTURE_LIMITS.repeatedOnPages;
+  const timesOn = (p) => pagesOf.get(p.id)?.size || 0;
+  const pattern = (p) => pageCount >= 8 && timesOn(p) >= PICTURE_LIMITS.repeatedOnPages;
+  const titleArt = (p) => pattern(p) && p.width * p.height >= PICTURE_LIMITS.titleArtArea && timesOn(p) / pageCount <= PICTURE_LIMITS.titleArtShare;
+  const repeated = (p) => pattern(p) && !titleArt(p);
 
   const seen = new Set();
   return pictures
@@ -26,6 +31,7 @@ export function keepPictures(pictures, pageCount = 0) {
       if (Math.min(p.width, p.height) < PICTURE_LIMITS.minSide || p.width * p.height < PICTURE_LIMITS.minArea) return false;
       if (ratioOf(p) < 0.15 || ratioOf(p) > 6.5) return false;
       if (repeated(p)) return false;
+      if (titleArt(p)) return true;
       if (seen.has(p.id)) return false;
       seen.add(p.id);
       return true;
@@ -69,7 +75,7 @@ function fold(text) {
       map.push(i);
     }
   }
-  return { out, map };
+  return { out, map, content: text };
 }
 
 function snippetOf(line, fromEnd) {
@@ -96,7 +102,9 @@ function locate(folded, offsets, anchor, hint) {
       let from = 0;
       let index;
       while ((index = entry.out.indexOf(snippet, from)) !== -1) {
-        const distance = Math.abs(offsets[chapterIndex] + entry.map[index] - hint);
+        const original = entry.map[index];
+        const startsParagraph = original === 0 || entry.content.slice(original - 2, original) === '\n\n';
+        const distance = Math.abs(offsets[chapterIndex] + original - hint) + (end || startsParagraph ? 0 : 1000000);
         if (!best || distance < best.distance) best = { chapterIndex, index: end ? index + snippet.length - 1 : index, distance };
         from = index + 1;
       }

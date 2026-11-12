@@ -182,7 +182,7 @@ export function assemblePages(pages) {
     const prevEnds = STRONG_END.test(prevText);
     const dialogue = DIALOGUE_START.test(text) && (prevEnds || prevShort);
     const heading = markHeadings && isHeadingLine(line);
-    const joinsHeading = heading && currentHeading && prev && Math.abs(prev.size - line.size) < 0.6 && !line.pageStart && !gapBig;
+    const joinsHeading = heading && currentHeading && prev && Math.abs(prev.size - line.size) < 0.6 && !line.pageStart && prev.y - line.y <= line.size * 1.6;
     if (joinsHeading) {
       current += ` ${text}`;
       return;

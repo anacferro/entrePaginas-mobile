@@ -89,7 +89,7 @@ function capChapters(chapters) {
   return out.map((chapter, idx) => ({ ...chapter, id: `chap-${stamp}-${idx + 1}` }));
 }
 
-function splitByHeadings(text) {
+function splitByHeadings(text, { frontMatter = false } = {}) {
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   const sections = [];
   let current = null;
@@ -108,9 +108,11 @@ function splitByHeadings(text) {
     }
   });
 
-  const filled = sections
-    .map(s => ({ title: s.title, content: s.lines.join('\n').trim() }))
-    .filter(s => s.content);
+  const withBody = sections.map(s => ({ title: s.title, content: s.lines.join('\n').trim() }));
+  const firstBody = withBody.findIndex(s => s.content);
+  const filled = withBody.filter(s => s.content);
+  const prelude = frontMatter && firstBody > 0 ? withBody.slice(0, firstBody).map(s => s.title).filter(Boolean) : [];
+  if (prelude.length) filled.unshift({ title: 'Folha de rosto', content: prelude.join('\n\n') });
 
   if (filled.length <= 1 || !filled.some(s => s.title)) {
     return chunkIntoChapters(text.replace(/\r\n?/g, '\n'));
@@ -195,7 +197,7 @@ async function importPdf(asset) {
     };
   }
 
-  const { chapters, summary } = rebuildChapters(splitByHeadings(text), { source: 'pdf' });
+  const { chapters, summary } = rebuildChapters(splitByHeadings(text, { frontMatter: true }), { source: 'pdf' });
   const figured = await attachPictures({
     pictures,
     pageCount: pages,
