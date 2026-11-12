@@ -283,6 +283,8 @@ Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a imp
 
 **Fidelidade ao PDF:** títulos em letra maior viram capítulos (quando o PDF tem ao menos 3), a letra capitular volta para a palavra ("A" + "lice") e as linhas recuadas ao lado dela ficam no mesmo parágrafo. Cada figura é ancorada no texto que vem logo depois dela na página (a ordem do desenho no PDF decide), com a proporção do texto só como último recurso; figura sozinha na página vai antes do texto da página seguinte.
 
+**Versos e eixo invertido:** sequências de 4 ou mais linhas curtas viram estrofes (quebras de linha preservadas, linha em branco entre estrofes pela distância real entre elas). PDFs com o eixo vertical invertido são detectados por página, o que também corrige a detecção de parágrafos e estrofes neles. Pedaços da mesma linha desenhados em blocos separados (palavra em itálico no meio da frase) voltam a ser uma linha só.
+
 **Onde o problema nascia:** a extração de PDF descartava as coordenadas e juntava linhas só pela pontuação final; TXT com quebra em largura fixa chegava ao leitor com as quebras originais; EPUB mantinha as quebras de linha do código-fonte dentro dos parágrafos; o leitor aplicava espaçamento artificial entre letras e não tinha recuo nem hifenização.
 
 **Etapas:** extração com posições (PDF) → remoção de cabeçalhos, rodapés e números de página repetidos → limpeza (hífen suave, caracteres invisíveis, ligaduras, separadores Unicode, mojibake, espaços duplos) → parágrafos (recuo, intervalo vertical, linha curta com ponto final, falas, títulos, listas, versos preservados) → hifenização de fim de linha → palavras fragmentadas → validação → armazenamento.

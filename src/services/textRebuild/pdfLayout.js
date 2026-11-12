@@ -33,15 +33,42 @@ function isPageNumber(text) {
   return /^[-–—\s]*\d{1,4}[-–—\s]*$/.test(t) || /^(?:p[áa]g(?:ina)?\.?\s*)?\d{1,4}(?:\s*(?:de|\/)\s*\d{1,4})?$/i.test(t) || /^[ivxlcdm]{1,6}$/i.test(t);
 }
 
+function mergeRows(lines) {
+  const out = [];
+  lines.forEach((line) => {
+    const prev = out[out.length - 1];
+    const sameRow = prev && Math.abs(prev.y - line.y) < Math.max(prev.size, line.size) * 0.3 && line.x >= prev.x;
+    if (!sameRow) {
+      out.push({ ...line });
+      return;
+    }
+    const glue = /\s$/.test(prev.text) || /^\s/.test(line.text) || prev.end === undefined || line.x - prev.end <= Math.max(prev.size, line.size) * 0.2 ? '' : ' ';
+    prev.text += glue + line.text;
+    prev.end = line.end ?? prev.end;
+    prev.size = Math.max(prev.size, line.size);
+  });
+  return out;
+}
+
 export function assemblePages(pages) {
   const removed = [];
   const doubts = [];
-  const usable = pages.map((page) => {
-    const ys = page.lines.map((l) => l.y);
-    const top = page.height || Math.max(...ys, 0);
-    const bottom = page.height ? 0 : Math.min(...ys, 0);
+  const usable = pages.map((source) => {
+    const page = { ...source, lines: mergeRows(source.lines) };
+    let down = 0;
+    let up = 0;
+    for (let i = 1; i < page.lines.length; i += 1) {
+      const dy = page.lines[i - 1].y - page.lines[i].y;
+      if (dy > 0.5) down += 1;
+      else if (dy < -0.5) up += 1;
+    }
+    const flipped = up > down;
+    const lines = flipped ? page.lines.map((l) => ({ ...l, y: -l.y })) : page.lines;
+    const ys = lines.map((l) => l.y);
+    const top = flipped ? 0 : page.height || Math.max(...ys, 0);
+    const bottom = flipped ? (page.height ? -page.height : Math.min(...ys, 0)) : page.height ? 0 : Math.min(...ys, 0);
     const span = Math.max(1, top - bottom);
-    return { ...page, edge: span * 0.09, top, bottom };
+    return { ...page, lines, edge: span * 0.09, top, bottom };
   });
 
   const edgeSignatures = new Map();
@@ -96,6 +123,22 @@ export function assemblePages(pages) {
   const longest = Math.max(...charsPerUnit, 1);
   const width = fullLine * 0.95 || longest * 0.9;
 
+  const isShort = (line) => line.text.trim().length / Math.max(1, line.size) < width * 0.72 && line.size <= bodySize * 1.2;
+  const verse = new Set();
+  let run = [];
+  const closeRun = () => {
+    if (run.length >= 4) run.forEach((i) => verse.add(i));
+    run = [];
+  };
+  all.forEach((line, i) => {
+    if (!isShort(line)) {
+      closeRun();
+      return;
+    }
+    run.push(i);
+  });
+  closeRun();
+
   const out = [];
   const offsets = [];
   let outLength = 0;
@@ -144,7 +187,10 @@ export function assemblePages(pages) {
       current += ` ${text}`;
       return;
     }
-    const isNew = !current || bigger || gapBig || (indent && (prevEnds || prevShort || !line.pageStart)) || (prevShort && prevEnds && !(wrapLines > 0 && !dropped)) || dialogue || dropped;
+    const inVerse = verse.has(index);
+    const verseJoin = inVerse && verse.has(index - 1) && !gapBig && !bigger && current;
+    const verseStart = inVerse && !verse.has(index - 1);
+    const isNew = verseStart || (!verseJoin && (!current || bigger || gapBig || (indent && (prevEnds || prevShort || !line.pageStart)) || (prevShort && prevEnds && !(wrapLines > 0 && !dropped)) || dialogue || dropped));
     const at = isNew ? outLength + (current ? current.length + 2 : 0) : outLength + current.length + 1;
     if (offsets[line.pageIndex] === undefined) offsets[line.pageIndex] = at;
     if (isNew) {

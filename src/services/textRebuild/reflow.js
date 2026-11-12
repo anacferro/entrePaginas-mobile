@@ -20,7 +20,7 @@ function isListLine(line) {
 }
 
 function looksLikeVerse(lines, width) {
-  if (lines.length < 3) return false;
+  if (lines.length < 2) return false;
   const lengths = lines.map((l) => l.trim().length);
   const median = percentile(lengths, 0.5);
   if (!width || median > width * 0.72) return false;

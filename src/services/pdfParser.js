@@ -273,6 +273,7 @@ function extractPageLines(content, fonts) {
     moved = false;
     line.text += text;
     pen = x + (advance / 1000) * Math.abs(size) * hscale;
+    line.end = pen;
   };
   const nextLine = (dx, dy) => {
     x += dx;
