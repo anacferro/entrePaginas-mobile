@@ -18,6 +18,7 @@ import { ai } from '../services/ai';
 import { dialog } from '../services/dialog';
 import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import Touchable from './Touchable';
+import useImageUri from './useImageUri';
 import { fonts } from '../theme/tokens';
 
 export default function ChapterEditor({
@@ -35,6 +36,7 @@ export default function ChapterEditor({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [photo, setPhoto] = useState(null);
+  const photoShown = useImageUri(photo);
   const [transcribing, setTranscribing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -141,7 +143,7 @@ export default function ChapterEditor({
 
             {photo && (
               <View style={styles.photoRow}>
-                <Image source={{ uri: photo }} style={styles.photoThumb} />
+                <Image source={{ uri: photoShown || undefined }} style={styles.photoThumb} />
                 <Text style={[styles.photoLabel, { color: mutedColor }]}>Página fotografada</Text>
                 {ai.isAvailable && (
                   <Touchable

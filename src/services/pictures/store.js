@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 
-const WEB_BUDGET = 2 * 1024 * 1024;
+import { webImages } from '../webImages';
 
 function toBase64(bytes) {
   let out = '';
@@ -14,7 +14,6 @@ export function base64Of(picture) {
 }
 
 export function createPictureStore() {
-  let webUsed = 0;
   let counter = 0;
   const stamp = Date.now();
 
@@ -22,9 +21,8 @@ export function createPictureStore() {
     async save(picture, prefix = 'figure') {
       const extension = picture.mime === 'image/png' ? 'png' : picture.mime === 'image/gif' ? 'gif' : 'jpg';
       if (Platform.OS === 'web') {
-        if (webUsed + picture.bytes.length > WEB_BUDGET) return null;
-        webUsed += picture.bytes.length;
-        return `data:${picture.mime};base64,${toBase64(picture.bytes)}`;
+        if (prefix === 'cover') return `data:${picture.mime};base64,${toBase64(picture.bytes)}`;
+        return webImages.saveBytes(picture.bytes, picture.mime);
       }
       counter += 1;
       const file = new File(Paths.document, `${prefix}-${stamp}-${counter}.${extension}`);

@@ -1,4 +1,6 @@
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { webImages } from './webImages';
 import { INITIAL_BOOKS, INITIAL_USER } from './mockData';
 import { relocateMarks } from './marks';
 import { cloud } from './cloud';
@@ -33,9 +35,29 @@ const KEYS = {
   get CATALOG_HISTORY() { return userId ? keyFor('catalog_history') : '@entre_paginas_catalog_history_v1'; },
 };
 
+async function moveImagesOut(list) {
+  const move = (uri) => webImages.moveDataUri(uri).catch(() => uri);
+  return Promise.all(list.map(async (book) => {
+    if (!book.chapters) return book;
+    const chapters = await Promise.all(book.chapters.map(async (chapter) => {
+      const photo = chapter.photo ? await move(chapter.photo) : chapter.photo;
+      const images = chapter.images ? await Promise.all(chapter.images.map(async (image) => ({ ...image, uri: await move(image.uri) }))) : chapter.images;
+      return photo === chapter.photo && images === chapter.images ? chapter : { ...chapter, photo, images };
+    }));
+    return { ...book, chapters };
+  }));
+}
+
 async function saveBooks(list) {
-  await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(list));
-  cloud.schedule(list);
+  let toSave = list;
+  try {
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(toSave));
+  } catch (error) {
+    if (Platform.OS !== 'web') throw error;
+    toSave = await moveImagesOut(list);
+    await AsyncStorage.setItem(KEYS.BOOKS, JSON.stringify(toSave));
+  }
+  cloud.schedule(toSave);
 }
 
 async function loadReading() {

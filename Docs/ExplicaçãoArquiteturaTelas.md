@@ -139,7 +139,7 @@ Foi realizada uma revisão planejada das decisões de arquitetura e dos requisit
 
 * **Decisão:** a importação do texto adaptado passa a extrair todas as imagens do PDF e do EPUB (JPEG, PNG, tons de cinza, indexadas, CMYK convertido para RGB) e a posicioná-las ancoradas no texto vizinho (a ordem de desenho no PDF decide qual parágrafo vem depois da figura). Títulos grandes viram capítulos, letra capitular volta para a palavra, versos ficam em estrofes, e PDFs com eixo vertical invertido são detectados por página. A capa pode ser escolhida pela IA entre as imagens das primeiras páginas, com a imagem de retrato da página 1 como alternativa.
 * **Alternativas consideradas:** posicionar pela proporção do texto (descartado: desvia depois da reconstrução do texto e colocava figuras em páginas erradas); filtrar imagens pequenas, repetidas ou muito grandes (descartado a pedido: nada deve ser descartado); biblioteca de PDF externa (descartado, ver DA06).
-* **Consequências assumidas:** ficam de fora só imagens em formatos que o app não decodifica (JPEG 2000, JBIG2, CCITT) e, na web, o que passar de 2 MB embutidos; as imagens ficam só no aparelho; cabeçalhos e números de página ainda são removidos do texto adaptado.
+* **Consequências assumidas:** ficam de fora só imagens em formatos que o app não decodifica (JPEG 2000, JBIG2, CCITT) as imagens ficam só no aparelho; cabeçalhos e números de página ainda são removidos do texto adaptado.
 
 ### DA20 (Nova Decisão) — Avisos próprios do app e livro que nunca some por falha de download
 

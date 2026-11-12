@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { File } from 'expo-file-system';
+import { webImages } from './webImages';
 import { getAI, getGenerativeModel, GoogleAIBackend } from 'firebase/ai';
 import { app } from './firebase';
 import { createAssistant, parseJson } from './readingAssistant';
@@ -65,7 +66,7 @@ async function generate(parts, { json = false, timeoutMs = TIMEOUT_MS } = {}) {
 
 async function readBase64(uri) {
   if (Platform.OS === 'web') {
-    const blob = await (await fetch(uri)).blob();
+    const blob = await (await fetch(await webImages.resolve(uri))).blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve({ data: String(reader.result).split(',')[1], mimeType: blob.type || 'image/jpeg' });

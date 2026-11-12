@@ -267,7 +267,7 @@ Ao importar **PDF** ou **EPUB**, o app extrai as imagens do arquivo (`src/servic
 - **Capa:** no EPUB vale a capa declarada no próprio arquivo. No PDF, a **IA** (quando disponível) olha até 4 imagens das 3 primeiras páginas e diz qual é a capa ou que nenhuma é; só essas imagens são enviadas, sem o texto nem o título. Sem IA ou sem resposta confiável, vale a imagem em formato de retrato da primeira página, e se não houver, o livro fica sem capa.
 - **Ilustrações:** vão para a página do leitor mais próxima da posição que tinham no arquivo, entre os parágrafos, no ponto em que estavam no livro (a posição usa o deslocamento real do texto de cada página do PDF). A figura mantém a proporção original e só é reduzida quando passa de 70% da altura da tela; a foto de página digitalizada, de 85%. Nenhuma imagem é descartada por tamanho, proporção ou repetição; ficam de fora só as que o app não consegue decodificar (formatos como JPEG 2000, JBIG2 e CCITT) e, na web, o que passar de 2 MB embutidos no livro.
 - **PDF digitalizado** (sem texto): cada página vira um capítulo com a imagem da página, para você usar *Transcrever* no editor.
-- Arquivos ficam na pasta do app no aparelho e não vão para a nuvem; na web ficam embutidos no livro até 2 MB. DOCX, ODT, RTF e HTML ainda não trazem imagens.
+- Arquivos ficam na pasta do app no aparelho e não vão para a nuvem; na web ficam no IndexedDB do navegador (o localStorage tem só cerca de 5 MB e estourava a cota). DOCX, ODT, RTF e HTML ainda não trazem imagens.
 
 ## 🔔 Avisos e confirmações
 
