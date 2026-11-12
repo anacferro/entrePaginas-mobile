@@ -279,6 +279,8 @@ Todo aviso e toda confirmação passam por `dialog.alert` (`src/services/dialog.
 
 Livros importados de PDF, EPUB e TXT passam por uma reconstrução durante a importação (`src/services/textRebuild/`), antes de chegar ao leitor. O leitor só apresenta bem um texto que já está bem formado.
 
+**Espaços dentro de palavras no PDF:** alguns PDFs desenham a mesma palavra em pedaços ("aventur" e "as") em posições separadas. A extração agora lê a largura real de cada letra da fonte (`/Widths` e `/W`), calcula onde cada pedaço termina e só insere espaço quando a lacuna até o próximo pedaço passa de 20% do tamanho da letra. Teste: `tests/pdfSpacing.test.mjs`.
+
 **Onde o problema nascia:** a extração de PDF descartava as coordenadas e juntava linhas só pela pontuação final; TXT com quebra em largura fixa chegava ao leitor com as quebras originais; EPUB mantinha as quebras de linha do código-fonte dentro dos parágrafos; o leitor aplicava espaçamento artificial entre letras e não tinha recuo nem hifenização.
 
 **Etapas:** extração com posições (PDF) → remoção de cabeçalhos, rodapés e números de página repetidos → limpeza (hífen suave, caracteres invisíveis, ligaduras, separadores Unicode, mojibake, espaços duplos) → parágrafos (recuo, intervalo vertical, linha curta com ponto final, falas, títulos, listas, versos preservados) → hifenização de fim de linha → palavras fragmentadas → validação → armazenamento.

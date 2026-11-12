@@ -175,7 +175,7 @@ function getPages(objects) {
   return { pages, resolve };
 }
 
-function decodeString(token, font) {
+function stringCodes(token, font) {
   let codes = [];
   if (token.startsWith('(')) {
     const inner = token
@@ -195,7 +195,16 @@ function decodeString(token, font) {
     codes = combined;
   }
 
-  return codes
+  return codes;
+}
+
+function stringAdvance(token, font) {
+  const width = font?.width;
+  return stringCodes(token, font).reduce((total, code) => total + (width ? width(code) : 500), 0);
+}
+
+function decodeString(token, font) {
+  return stringCodes(token, font)
     .map((code) => {
       if (font?.cmap?.has(code)) return font.cmap.get(code);
       if (font?.twoByte) return '';
@@ -247,19 +256,22 @@ function extractPageLines(content, fonts) {
   let leading = 0;
   let line = null;
   let moved = false;
+  let pen = null;
+  let hscale = 1;
   let token;
 
   const effective = () => Math.max(1, Math.abs(size * scale));
-  const show = (text) => {
+  const show = (text, advance = 0) => {
     if (!text) return;
     if (!line || Math.abs(line.y - y) > effective() * 0.3) {
       line = { x, y, size: effective(), text: '' };
       lines.push(line);
     } else if (moved && x > line.x && !/\s$/.test(line.text) && !/^\s/.test(text)) {
-      line.text += ' ';
+      if (pen === null || x - pen > effective() * 0.2) line.text += ' ';
     }
     moved = false;
     line.text += text;
+    pen = x + (advance / 1000) * Math.abs(size) * hscale;
   };
   const nextLine = (dx, dy) => {
     x += dx;
@@ -273,16 +285,23 @@ function extractPageLines(content, fonts) {
       size = Number(token[2]) || size;
     } else if (token[3] !== undefined) {
       let text = '';
+      let advance = 0;
       (token[3].match(/\((?:\\[\s\S]|[^\\)])*\)|<[0-9a-fA-F\s]*>|-?[\d.]+/g) || []).forEach((part) => {
-        if (part.startsWith('(') || part.startsWith('<')) text += decodeString(part, font);
-        else if (Number(part) < -180) text += ' ';
+        if (part.startsWith('(') || part.startsWith('<')) {
+          text += decodeString(part, font);
+          advance += stringAdvance(part, font);
+        } else {
+          advance -= Number(part);
+          if (Number(part) < -180) text += ' ';
+        }
       });
-      show(text);
+      show(text, advance);
     } else if (token[4] !== undefined) {
       if (token[5] !== 'Tj') nextLine(0, -(leading || effective() * 1.2));
-      show(decodeString(token[4], font));
+      show(decodeString(token[4], font), stringAdvance(token[4], font));
     } else if (token[6] !== undefined) {
       scale = Math.abs(Number(token[9])) || 1;
+      hscale = Math.abs(Number(token[6])) || 1;
       x = Number(token[10]);
       y = Number(token[11]);
       moved = true;
@@ -298,6 +317,8 @@ function extractPageLines(content, fonts) {
       x = 0;
       y = 0;
       scale = 1;
+      hscale = 1;
+      pen = null;
       line = null;
     }
   }
@@ -372,6 +393,29 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
   const fontCache = new Map();
   const reader = withPictures ? createPictureReader({ objects, dictValue }) : null;
 
+  const numbersOf = (value) => (String(resolve(value)).match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+
+  const fontWidths = (dict) => {
+    if (/\/Subtype\s*\/Type0/.test(dict)) {
+      const descendant = objects.get(refsIn(String(resolve(dictValue(dict, 'DescendantFonts'))))[0])?.dict || '';
+      const fallback = Number(/\/DW\s+(\d+(?:\.\d+)?)/.exec(descendant)?.[1]) || 1000;
+      const table = new Map();
+      const raw = String(resolve(dictValue(descendant, 'W')));
+      for (const m of raw.matchAll(/(\d+)\s*\[([^\]]*)\]|(\d+)\s+(\d+)\s+(-?\d+(?:\.\d+)?)/g)) {
+        if (m[1] !== undefined) {
+          (m[2].match(/-?\d+(?:\.\d+)?/g) || []).forEach((w, i) => table.set(Number(m[1]) + i, Number(w)));
+        } else {
+          for (let c = Number(m[3]); c <= Number(m[4]) && c - Number(m[3]) < 65536; c += 1) table.set(c, Number(m[5]));
+        }
+      }
+      return (code) => table.get(code) ?? fallback;
+    }
+    const first = Number(dictValue(dict, 'FirstChar'));
+    const list = numbersOf(dictValue(dict, 'Widths'));
+    if (!list.length || Number.isNaN(first)) return null;
+    return (code) => list[code - first] ?? 500;
+  };
+
   const loadFont = (num) => {
     if (fontCache.has(num)) return fontCache.get(num);
     const dict = objects.get(num)?.dict || '';
@@ -379,6 +423,7 @@ export function parsePdf(bytes, { rebuild = true, pictures: withPictures = false
     const font = {
       twoByte: /\/Subtype\s*\/Type0/.test(dict),
       cmap: toUnicode?.ref ? parseCMap(streamText(objects.get(toUnicode.ref))) : null,
+      width: fontWidths(dict),
     };
     fontCache.set(num, font);
     return font;
