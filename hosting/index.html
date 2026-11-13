@@ -11,6 +11,7 @@
   main { max-width: 340px; padding: 24px; text-align: center; }
   h1 { margin: 0 0 12px; font-size: 28px; color: #244C3A; }
   p { margin: 0 0 16px; font: 15px/1.5 system-ui, sans-serif; }
+  button { font: 600 15px system-ui, sans-serif; padding: 11px 20px; border: 0; border-radius: 12px; background: #244C3A; color: #fff; margin-top: 8px; }
   a { color: #244C3A; font: 600 15px system-ui, sans-serif; }
   @media (prefers-color-scheme: dark) {
     body { background: #0F1A15; color: #EEF0E6; }
@@ -23,6 +24,8 @@
   <h1>Entre Páginas</h1>
   <p id="msg">Abrindo o login do Google...</p>
   <a id="back" hidden>Voltar ao aplicativo</a>
+  <p id="codeHint" hidden>Se o aplicativo não abrir, copie o código e cole na tela de login.</p>
+  <button id="copy" hidden>Copiar código</button>
 </main>
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
@@ -77,6 +80,17 @@
       msg.textContent = 'Pronto! Voltando ao aplicativo...';
       backLink.href = target;
       backLink.hidden = false;
+      const copyButton = document.getElementById('copy');
+      document.getElementById('codeHint').hidden = false;
+      copyButton.hidden = false;
+      copyButton.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(credential?.idToken || '');
+          copyButton.textContent = 'Código copiado';
+        } catch {
+          msg.textContent = credential?.idToken || '';
+        }
+      };
       location.replace(target);
       return;
     }

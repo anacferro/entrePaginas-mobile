@@ -91,6 +91,18 @@ async function signInFromUrl(url) {
 export const authService = {
   isConfigured: isFirebaseConfigured,
 
+  async signInWithCode(code) {
+    assertConfigured();
+    const token = String(code || '').trim().replace(/\s+/g, '');
+    if (token.split('.').length !== 3) throw new Error('Código inválido. Copie de novo na página do navegador.');
+    try {
+      const signed = await signInWithCredential(auth, GoogleAuthProvider.credential(token));
+      return signed.user;
+    } catch (e) {
+      throw friendly(e);
+    }
+  },
+
   listenForLoginLink() {
     if (Platform.OS === 'web') return () => {};
     Linking.getInitialURL().then(signInFromUrl).catch(() => {});

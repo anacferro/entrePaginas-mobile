@@ -4,10 +4,12 @@ import {
   Text,
   StyleSheet,
   StatusBar,
+  Platform,
   ScrollView,
   ActivityIndicator,
   Animated,
   Easing,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -66,6 +68,8 @@ export default function LoginScreen() {
   const styles = useThemedStyles(createStyles);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [code, setCode] = useState('');
 
   const heroAnim = useEntrance(0);
   const cardAnim = useEntrance(220);
@@ -78,6 +82,18 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await authService.signInWithGoogle();
+    } catch (e) {
+      setError(e.message);
+      setLoading(false);
+    }
+  };
+
+  const handleCode = async () => {
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await authService.signInWithCode(code);
     } catch (e) {
       setError(e.message);
       setLoading(false);
@@ -174,6 +190,31 @@ export default function LoginScreen() {
               </>
             )}
           </Touchable>
+
+          {Platform.OS !== 'web' && (
+            <View style={styles.codeBox}>
+              <Touchable onPress={() => setCodeOpen(!codeOpen)} accessibilityRole="button" accessibilityLabel="Entrar com código">
+                <Text style={styles.codeLink}>Entrei no navegador e não voltou? Colar código</Text>
+              </Touchable>
+              {codeOpen && (
+                <>
+                  <TextInput
+                    style={styles.codeInput}
+                    value={code}
+                    onChangeText={setCode}
+                    placeholder="Cole o código aqui"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    multiline
+                  />
+                  <Touchable style={styles.codeButton} onPress={handleCode} disabled={loading || !code.trim()} accessibilityRole="button" accessibilityLabel="Entrar com o código">
+                    <Text style={styles.googleText}>Entrar com o código</Text>
+                  </Touchable>
+                </>
+              )}
+            </View>
+          )}
 
           <Text style={styles.copyrightText}>Entre Páginas © {new Date().getFullYear()}</Text>
         </Animated.View>
@@ -422,6 +463,33 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+  codeBox: {
+    marginTop: 18,
+    alignItems: 'center',
+  },
+  codeLink: {
+    fontSize: 13,
+    color: colors.primary,
+    textDecorationLine: 'underline',
+  },
+  codeInput: {
+    alignSelf: 'stretch',
+    minHeight: 70,
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    color: colors.text,
+    fontSize: 13,
+  },
+  codeButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    marginTop: 10,
+    paddingVertical: 13,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
   },
   copyrightText: {
     fontSize: 11,
