@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { authService } from './src/services/auth';
 import './src/webStyles';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +18,8 @@ function ThemedStatusBar() {
 
 export default function App() {
   const [fontsLoaded, fontError] = useFonts({ Lora_600SemiBold, Lora_700Bold });
+
+  useEffect(() => authService.listenForLoginLink(), []);
 
   if (!fontsLoaded && !fontError) return null;
 

@@ -74,8 +74,29 @@ async function signInOnDevice() {
   return signed.user;
 }
 
+let lastToken = null;
+
+async function signInFromUrl(url) {
+  if (!url || !auth || !url.includes('idToken=')) return;
+  const params = parseFragment(url);
+  if (!params.idToken || params.idToken === lastToken) return;
+  lastToken = params.idToken;
+  try {
+    await signInWithCredential(auth, GoogleAuthProvider.credential(params.idToken, params.accessToken || undefined));
+  } catch {
+    lastToken = null;
+  }
+}
+
 export const authService = {
   isConfigured: isFirebaseConfigured,
+
+  listenForLoginLink() {
+    if (Platform.OS === 'web') return () => {};
+    Linking.getInitialURL().then(signInFromUrl).catch(() => {});
+    const subscription = Linking.addEventListener('url', ({ url }) => signInFromUrl(url));
+    return () => subscription.remove();
+  },
 
   onChange(callback) {
     if (!auth) {
