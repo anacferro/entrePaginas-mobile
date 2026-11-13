@@ -73,8 +73,11 @@
       sessionStorage.removeItem(RETURN_KEY);
       sessionStorage.removeItem(STARTED_KEY);
       const params = new URLSearchParams({ idToken: credential?.idToken || '', accessToken: credential?.accessToken || '' });
+      const target = back + '#' + params.toString();
       msg.textContent = 'Pronto! Voltando ao aplicativo...';
-      location.replace(back + '#' + params.toString());
+      backLink.href = target;
+      backLink.hidden = false;
+      location.replace(target);
       return;
     }
 
