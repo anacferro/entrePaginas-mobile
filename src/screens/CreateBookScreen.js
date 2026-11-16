@@ -26,7 +26,7 @@ import { useTheme, useThemedStyles } from '../theme/ThemeContext';
 import { COVER_COLORS, TITLE_COLORS, PAPER_COLORS, CATEGORIES, DEFAULT_COVER_COLOR, DEFAULT_TITLE_COLOR, DEFAULT_PAPER_COLOR } from '../theme/bookOptions';
 import Touchable from '../components/Touchable';
 import { useToast } from '../components/Toast';
-import { fonts } from '../theme/tokens';
+import { fonts, radius } from '../theme/tokens';
 
 const IMPORT_FORMATS = [
   { format: 'pdf', icon: 'document-text', name: 'PDF', description: 'Livro diagramado' },
@@ -257,35 +257,39 @@ export default function CreateBookScreen({ navigation, route }) {
             <Text style={styles.pageTitle}>Criar Obra</Text>
           </View>
 
-          <View style={styles.tabsSwitcher}>
+          <View style={styles.segment} accessibilityRole="tablist">
             <Touchable
-              style={[styles.tabButton, activeTab === 'create' && styles.tabButtonActive]}
+              style={[styles.segBtn, activeTab === 'create' && styles.segBtnActive]}
               onPress={() => setActiveTab('create')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'create' }}
               activeOpacity={0.8}
             >
               <Ionicons
                 name="create-outline"
                 size={16}
-                color={activeTab === 'create' ? colors.onPrimary : colors.text}
+                color={activeTab === 'create' ? colors.onPrimary : colors.textSecondary}
                 style={{ marginRight: 6 }}
               />
-              <Text style={[styles.tabButtonText, activeTab === 'create' && styles.tabButtonTextActive]}>
+              <Text style={[styles.segText, activeTab === 'create' && styles.segTextActive]}>
                 Criar Livro
               </Text>
             </Touchable>
 
             <Touchable
-              style={[styles.tabButton, activeTab === 'import' && styles.tabButtonActive]}
+              style={[styles.segBtn, activeTab === 'import' && styles.segBtnActive]}
               onPress={() => setActiveTab('import')}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeTab === 'import' }}
               activeOpacity={0.8}
             >
               <Ionicons
                 name="cloud-upload-outline"
                 size={16}
-                color={activeTab === 'import' ? colors.onPrimary : colors.text}
+                color={activeTab === 'import' ? colors.onPrimary : colors.textSecondary}
                 style={{ marginRight: 6 }}
               />
-              <Text style={[styles.tabButtonText, activeTab === 'import' && styles.tabButtonTextActive]}>
+              <Text style={[styles.segText, activeTab === 'import' && styles.segTextActive]}>
                 Importar
               </Text>
             </Touchable>
@@ -454,43 +458,32 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.heading,
   },
-  tabsSwitcher: {
+  segment: {
     flexDirection: 'row',
-    gap: 10,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.lg,
+    padding: 4,
     marginBottom: 20,
   },
-  tabButton: {
+  segBtn: {
     flex: 1,
     flexDirection: 'row',
+    minHeight: 42,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 14,
-    backgroundColor: colors.card,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
+    paddingHorizontal: 12,
   },
-  tabButtonActive: {
+  segBtnActive: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
   },
-  tabButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  tabButtonTextActive: {
-    color: colors.onPrimary,
+  segText: {
+    fontSize: 13,
     fontWeight: '700',
+    color: colors.textSecondary,
+  },
+  segTextActive: {
+    color: colors.onPrimary,
   },
   importHeaderRow: {
     flexDirection: 'row',

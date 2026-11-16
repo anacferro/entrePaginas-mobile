@@ -178,6 +178,30 @@ export default function BookshelfScreen({ navigation }) {
     setSelectedIds(prev => (prev.includes(bookId) ? prev.filter(id => id !== bookId) : [...prev, bookId]));
   };
 
+  const handleArchiveSelected = () => {
+    const count = selectedIds.length;
+    dialog.alert(
+      'Guardar no Baú',
+      `Deseja mover ${count} ${count === 1 ? 'livro' : 'livros'} para o Baú Literário?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Guardar',
+          onPress: async () => {
+            try {
+              await storage.moveBooksToChest(selectedIds);
+              toast.show(count === 1 ? 'Livro guardado no Baú.' : `${count} livros guardados no Baú.`);
+              setSelectedIds([]);
+              loadData();
+            } catch {
+              toast.show('Não foi possível mover os livros para o baú. Tente de novo.', 'error');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteSelected = () => {
     const count = selectedIds.length;
     dialog.alert(
@@ -317,9 +341,19 @@ export default function BookshelfScreen({ navigation }) {
             >
               <Text style={styles.selectionAllText}>Todos</Text>
             </Touchable>
-            <Touchable style={styles.selectionDelete} onPress={handleDeleteSelected} accessibilityLabel="Excluir selecionados">
-              <Ionicons name="trash-outline" size={18} color="#FAF8F1" />
-              <Text style={styles.selectionDeleteText}>Excluir</Text>
+            <Touchable
+              style={styles.selectionChest}
+              onPress={handleArchiveSelected}
+              accessibilityLabel="Guardar selecionados no Baú"
+            >
+              <Ionicons name="archive-outline" size={19} color="#FAF8F1" />
+            </Touchable>
+            <Touchable
+              style={styles.selectionDelete}
+              onPress={handleDeleteSelected}
+              accessibilityLabel="Excluir selecionados"
+            >
+              <Ionicons name="trash-outline" size={19} color="#FAF8F1" />
             </Touchable>
           </View>
         ) : (
@@ -334,7 +368,7 @@ export default function BookshelfScreen({ navigation }) {
             <Text style={styles.sortButtonText}>
               Organizar {sortOrder === 'az' ? 'A-Z' : sortOrder === 'pages' ? 'Páginas' : 'Recentes'}
             </Text>
-            <Ionicons name="swap-vertical" size={15} color={colors.textSecondary} />
+            <Ionicons name="swap-vertical" size={14} color={colors.textSecondary} />
           </Touchable>
         </View>
         )}
@@ -477,19 +511,19 @@ const createStyles = (colors) => StyleSheet.create({
   },
   sectionHeaderRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    gap: 8,
     marginBottom: 16,
   },
   sectionTitleWithCount: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
+    gap: 6,
+    flexShrink: 1,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.text,
     fontFamily: fonts.heading,
@@ -502,16 +536,17 @@ const createStyles = (colors) => StyleSheet.create({
   sortButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    minHeight: 40,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    gap: 4,
+    height: 34,
+    paddingHorizontal: 10,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surfaceMuted,
+    flexShrink: 0,
   },
   sortButtonText: {
-    fontSize: 12,
+    fontSize: 11.5,
     color: colors.textSecondary,
     fontWeight: '600',
   },
@@ -552,19 +587,21 @@ const createStyles = (colors) => StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
   },
+  selectionChest: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   selectionDelete: {
-    minHeight: 40,
-    paddingHorizontal: 14,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     backgroundColor: colors.danger,
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-  },
-  selectionDeleteText: {
-    color: '#FAF8F1',
-    fontSize: 13,
-    fontWeight: '700',
+    justifyContent: 'center',
   },
   booksGrid: {
     flexDirection: 'row',

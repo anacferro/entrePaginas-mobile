@@ -71,13 +71,11 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
         multiline
         scrollEnabled={false}
         showSoftInputOnFocus={false}
-        contextMenuHidden
         caretHidden
+        value={content}
         onChangeText={() => {}}
         onSelectionChange={(e) => onSelect(e.nativeEvent.selection.start, e.nativeEvent.selection.end)}
-      >
-        {children}
-      </TextInput>
+      />
     );
   }
 
@@ -109,7 +107,13 @@ export default function AnnotatedText({ content, marks, style, annotating, onSel
 const styles = StyleSheet.create({
   input: {
     padding: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    margin: 0,
     textAlignVertical: 'top',
+    backgroundColor: 'transparent',
   },
   bold: {
     fontWeight: '700',

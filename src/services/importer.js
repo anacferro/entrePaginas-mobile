@@ -20,16 +20,24 @@ const PICKER_TYPES = {
 
 async function readBytes(asset) {
   if (Platform.OS === 'web') {
-    return new Uint8Array(await asset.file.arrayBuffer());
+    if (asset.file) {
+      return new Uint8Array(await asset.file.arrayBuffer());
+    }
+    const res = await fetch(asset.uri);
+    return new Uint8Array(await res.arrayBuffer());
   }
-  return new File(asset.uri).bytes();
+  return await new File(asset.uri).bytes();
 }
 
 async function readText(asset) {
   if (Platform.OS === 'web') {
-    return asset.file.text();
+    if (asset.file) {
+      return await asset.file.text();
+    }
+    const res = await fetch(asset.uri);
+    return await res.text();
   }
-  return new File(asset.uri).text();
+  return await new File(asset.uri).text();
 }
 
 function titleFromFileName(name) {
@@ -95,7 +103,7 @@ function splitByHeadings(text, { frontMatter = false } = {}) {
   let current = null;
 
   lines.forEach((line) => {
-    const heading = line.match(/^#{1,3}\s+(.+)$/) || line.match(/^\s*((cap[ií]tulo|parte)\b.*)$/i);
+    const heading = line.match(/^#{1,3}\s+(.+)$/) || line.match(/^\s*((cap[ií]tulo|parte|livro|se[cç][aã]o|chapter|part|book|section|canto)\b.*)$/i);
     if (heading) {
       current = { title: heading[1].trim(), lines: [] };
       sections.push(current);
@@ -314,7 +322,7 @@ export const importer = {
   fromGutenberg(source) {
     const isHtml = looksLikeHtml(source);
     const flowed = reflow(isHtml ? htmlToText(source) : source);
-    const chapters = splitByHeadings(flowed).map((chapter) => {
+    const chapters = splitByHeadings(flowed, { frontMatter: true }).map((chapter) => {
       const { content, marks } = isHtml ? extractSentinelMarks(chapter.content) : extractItalics(chapter.content);
       return { ...chapter, title: stripSentinels(chapter.title), content, marks };
     });
@@ -324,7 +332,7 @@ export const importer = {
   async pickAndImport(format) {
     const result = await DocumentPicker.getDocumentAsync({
       type: PICKER_TYPES[format] || '*/*',
-      copyToCacheDirectory: true,
+      copyToCacheDirectory: Platform.OS === 'ios',
       base64: false,
     });
 
@@ -333,7 +341,11 @@ export const importer = {
   },
 
   async pickDocument() {
-    const result = await DocumentPicker.getDocumentAsync({ type: '*/*', copyToCacheDirectory: true, base64: false });
+    const result = await DocumentPicker.getDocumentAsync({
+      type: '*/*',
+      copyToCacheDirectory: Platform.OS === 'ios',
+      base64: false,
+    });
     if (result.canceled || !result.assets?.length) return null;
     const asset = result.assets[0];
     if (asset.size && asset.size > MAX_CONVERT_BYTES) throw new Error(`O arquivo passa do limite de ${MAX_CONVERT_BYTES / 1048576} MB.`);

@@ -23,15 +23,13 @@ import { minimizeProfile } from '../services/recommend/curator';
 
 const QUICK = [
   { id: 'interested', label: 'Tenho interesse', icon: 'heart-outline' },
-  { id: 'add', label: 'Adicionar', icon: 'add-circle-outline' },
-  { id: 'read', label: 'Já li', icon: 'checkmark-circle-outline' },
   { id: 'not_interested', label: 'Sem interesse', icon: 'close-circle-outline' },
 ];
 const MORE = [
+  { id: 'add', label: 'Adicionar', icon: 'add-circle-outline' },
+  { id: 'read', label: 'Já li', icon: 'checkmark-circle-outline' },
   { id: 'dislike_kind', label: 'Não gosto desse tipo' },
   { id: 'known_author', label: 'Já conheço o autor' },
-  { id: 'more_like', label: 'Mais assim' },
-  { id: 'different', label: 'Algo bem diferente' },
 ];
 
 const GUESS = [
@@ -96,11 +94,15 @@ function Card({ item, category, styles, colors, reason, aiReason, state, onOpen,
       </View>
       {more ? (
         <View style={styles.actions}>
-          {MORE.map((m) => (
-            <Touchable key={m.id} style={[styles.action, state === m.id && styles.actionOn]} onPress={() => onAction(work, m.id)}>
-              <Text style={[styles.actionText, state === m.id && styles.actionTextOn]}>{m.label}</Text>
-            </Touchable>
-          ))}
+          {MORE.map((m) => {
+            const on = state === m.id || (m.id === 'add' && owned);
+            return (
+              <Touchable key={m.id} style={[styles.action, on && styles.actionOn]} onPress={() => onAction(work, m.id)} accessibilityLabel={m.label} accessibilityState={{ selected: on }}>
+                {m.icon ? <Ionicons name={on ? m.icon.replace('-outline', '') : m.icon} size={15} color={on ? colors.onPrimary : colors.primary} /> : null}
+                <Text style={[styles.actionText, on && styles.actionTextOn]}>{m.label}</Text>
+              </Touchable>
+            );
+          })}
         </View>
       ) : null}
     </View>
@@ -210,11 +212,11 @@ export default function ForYouView({ onOpenWork, onAddWork, isOwned }) {
       }
       await storage.setRecFeedback(work, action);
       setFeedback((f) => ({ ...f, [work.id]: action }));
-      if (['not_interested', 'read', 'dislike_kind', 'known_author', 'different'].includes(action)) {
+      if (['not_interested', 'read', 'dislike_kind', 'known_author'].includes(action)) {
         hide(work.id);
         toast.show(action === 'read' ? 'Anotado. Não vamos mais sugerir este livro.' : 'Anotado. Vamos considerar isso nas próximas sugestões.');
       } else {
-        toast.show(action === 'more_like' ? 'Vamos mostrar mais livros assim.' : 'Anotado.');
+        toast.show('Anotado.');
       }
     } catch {
       toast.show('Não foi possível registrar. Tente de novo.', 'error');

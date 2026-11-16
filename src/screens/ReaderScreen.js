@@ -12,6 +12,7 @@ import {
   AppState,
   Animated,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ChapterEditor from '../components/ChapterEditor';
@@ -175,7 +176,10 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
   useEffect(() => {
     scrollRef.current?.scrollTo({ y: 0, animated: false });
     setSelection(null);
-    if (prefs.turn !== 'simple') return;
+    if (prefs.turn !== 'simple') {
+      fade.setValue(1);
+      return;
+    }
     fade.setValue(0.25);
     Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }).start();
   }, [currentPageIndex, fade, prefs.turn]);
@@ -211,16 +215,29 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
 
   const handleTapText = (e) => {
     if (annotating) return;
-    const pageX = e?.nativeEvent?.pageX;
+    const pageX = e?.nativeEvent?.pageX ?? e?.nativeEvent?.locationX;
+    const windowWidth = Dimensions.get('window').width;
     const stage = stageRef.current;
     if (typeof pageX === 'number' && stage?.measureInWindow) {
       stage.measureInWindow((x, y, w) => {
-        const rel = (pageX - x) / w;
-        if (rel < 0.22) turnerRef.current?.turn('prev');
-        else if (rel > 0.78) turnerRef.current?.turn('next');
+        const width = w || windowWidth;
+        const rel = typeof x === 'number' ? (pageX - x) / width : pageX / windowWidth;
+        if (rel < 0.25) turnerRef.current?.turn('prev');
+        else if (rel > 0.75) turnerRef.current?.turn('next');
         else if (prefs.autoHide) setChromeVisible((v) => !v);
       });
       return;
+    }
+    if (typeof pageX === 'number') {
+      const rel = pageX / windowWidth;
+      if (rel < 0.25) {
+        turnerRef.current?.turn('prev');
+        return;
+      }
+      if (rel > 0.75) {
+        turnerRef.current?.turn('next');
+        return;
+      }
     }
     if (prefs.autoHide) setChromeVisible((v) => !v);
   };
@@ -591,19 +608,19 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
     const last = i >= pages.length - 1;
     return (
         <ScrollView
-            key={i}
+            key={interactive ? `page-main-${i}` : `page-neighbor-${i}`}
             ref={interactive ? scrollRef : undefined}
             scrollEnabled={interactive}
-            style={styles.readerScroll}
+            style={[styles.readerScroll, { width: '100%', height: '100%' }]}
             contentContainerStyle={[
               styles.readerContentContainer,
-              { paddingHorizontal: 0, flexGrow: 1 },
+              { paddingHorizontal: 0, flexGrow: 1, minHeight: '100%', width: '100%' },
               prefs.autoHide && !focusMode && { paddingTop: 96 },
               annotating && { paddingBottom: 170 },
-              focusMode && { paddingTop: 68 },
+              focusMode && { paddingTop: 96 },
             ]}
           >
-            <Pressable onPress={interactive ? handleTapText : undefined} accessible={false} style={{ flexGrow: 1, paddingHorizontal: prefs.margin }}>
+            <Pressable onPress={interactive ? handleTapText : undefined} accessible={false} style={{ width: '100%', flexGrow: 1, paddingHorizontal: prefs.margin }}>
             <View style={[styles.column, widthMax && { maxWidth: widthMax }]}>
             {bookmark && (
               <Touchable style={styles.bookmarkNote} onPress={interactive ? openBookmarkSheet : undefined} activeOpacity={0.7}>
@@ -626,7 +643,24 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
               />
             )}
 
-            {(annotating ? [{ type: 'text', content: pg.content, marks: pg.marks, first: true }] : splitPage(pg)).map((part, partIndex) => (
+            {pg.empty && !pg.photo ? (
+              <View style={styles.emptyChapterHint}>
+                <Ionicons name="document-outline" size={40} color={mutedColor} style={{ marginBottom: 12, opacity: 0.5 }} />
+                <Text style={[styles.emptyChapterText, { color: mutedColor }]}>
+                  Este capítulo ainda não tem conteúdo.
+                </Text>
+                {isOwnBook && (
+                  <Touchable
+                    style={[styles.emptyChapterEditBtn, { borderColor: mutedColor }]}
+                    onPress={() => setEditorMode('edit')}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="create-outline" size={16} color={mutedColor} />
+                    <Text style={[styles.emptyChapterEditText, { color: mutedColor }]}>Escrever conteúdo</Text>
+                  </Touchable>
+                )}
+              </View>
+            ) : (annotating ? [{ type: 'text', content: pg.content, marks: pg.marks, first: true }] : splitPage(pg)).map((part, partIndex) => (
               part.type === 'image' ? (
                 <PageFigure
                   key={`fig-${part.image.id}`}
@@ -867,7 +901,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
         </View>
       )}
 
-      <View ref={stageRef} collapsable={false} style={showOriginal ? { height: 0, overflow: 'hidden' } : styles.readerScroll}>
+      <View ref={stageRef} collapsable={false} style={showOriginal ? { height: 0, overflow: 'hidden' } : [styles.readerScroll, { width: '100%', height: '100%' }]}>
         <PageTurner
           ref={turnerRef}
           mode={prefs.turn}
@@ -878,7 +912,7 @@ function ReaderContent({ route, navigation, isDark, prefs, updatePrefs, resetPre
           renderPage={renderPage}
           onCommit={commitPage}
         >
-          <Animated.View style={{ flex: 1, opacity: fade }}>
+          <Animated.View style={{ flex: 1, width: '100%', height: '100%', opacity: fade }}>
             {renderPage(pageIndex, true)}
           </Animated.View>
         </PageTurner>
@@ -1351,14 +1385,20 @@ const createStyles = (colors) => StyleSheet.create({
   },
   focusExit: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    top: 50,
+    right: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.85,
+    opacity: 0.9,
+    zIndex: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   safeArea: {
     flex: 1,
@@ -1376,6 +1416,7 @@ const createStyles = (colors) => StyleSheet.create({
   },
   column: {
     width: '100%',
+    flexGrow: 1,
     alignSelf: 'center',
   },
   readerNavHeader: {
@@ -1823,5 +1864,34 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.onPrimary,
+  },
+  emptyChapterHint: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 24,
+  },
+  emptyChapterText: {
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontFamily: 'serif',
+    fontStyle: 'italic',
+  },
+  emptyChapterEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+  },
+  emptyChapterEditText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

@@ -62,30 +62,86 @@ export function paginate(chapters) {
 
   chapters.forEach((chapter, chapterIndex) => {
     const content = chapter.content || '';
+    const figures = (chapter.images || []).map((image) => ({ ...image, offset: Math.min(image.offset || 0, content.length) }));
+
+    // Skip chapters with no meaningful text content
+    if (!content.trim() && !chapter.photo && figures.length === 0) {
+      // Still create one placeholder page so the chapter appears in the reader
+      pages.push({
+        chapterIndex,
+        chapterId: chapter.id,
+        opensChapter: true,
+        continues: false,
+        start: 0,
+        content: '',
+        marks: [],
+        photo: chapter.photo || null,
+        images: [],
+        empty: true,
+      });
+      return;
+    }
+
     let start = 0;
     let first = true;
     let previousEnd = 0;
-    const figures = (chapter.images || []).map((image) => ({ ...image, offset: Math.min(image.offset || 0, content.length) }));
 
     do {
       while (start < content.length && /\s/.test(content[start])) start += 1;
       const end = cutPoint(content, start);
-      pages.push({
-        chapterIndex,
-        chapterId: chapter.id,
-        opensChapter: first,
-        continues: !first && !/\n\s*\n/.test(content.slice(previousEnd, start)),
-        start,
-        content: content.slice(start, end),
-        marks: marksFor(chapter.marks, start, end),
-        photo: first ? chapter.photo : null,
-        images: figures.filter((image) => image.offset >= previousEnd && (image.offset < end || end >= content.length)),
-      });
-      first = false;
+      const slice = content.slice(start, end);
+      // Only push pages that have actual content (or are the first page of a chapter with a photo)
+      if (slice.trim() || (first && chapter.photo) || figures.some((img) => img.offset >= previousEnd && (img.offset < end || end >= content.length))) {
+        pages.push({
+          chapterIndex,
+          chapterId: chapter.id,
+          opensChapter: first,
+          continues: !first && !/\n\s*\n/.test(content.slice(previousEnd, start)),
+          start,
+          content: slice,
+          marks: marksFor(chapter.marks, start, end),
+          photo: first ? chapter.photo : null,
+          images: figures.filter((image) => image.offset >= previousEnd && (image.offset < end || end >= content.length)),
+        });
+        first = false;
+      }
       previousEnd = end;
       start = end;
     } while (start < content.length);
+
+    // If we skipped all content (e.g. chapter is only whitespace but has no photo/images),
+    // add a placeholder so the chapter is still navigable
+    if (first) {
+      pages.push({
+        chapterIndex,
+        chapterId: chapter.id,
+        opensChapter: true,
+        continues: false,
+        start: 0,
+        content: '',
+        marks: [],
+        photo: chapter.photo || null,
+        images: figures,
+        empty: true,
+      });
+    }
   });
+
+  // Always return at least one page
+  if (pages.length === 0) {
+    pages.push({
+      chapterIndex: 0,
+      chapterId: chapters[0]?.id || 'empty',
+      opensChapter: true,
+      continues: false,
+      start: 0,
+      content: '',
+      marks: [],
+      photo: null,
+      images: [],
+      empty: true,
+    });
+  }
 
   return pages;
 }

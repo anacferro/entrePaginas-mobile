@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { View, Animated, PanResponder, StyleSheet, Easing } from 'react-native';
+import { View, Animated, PanResponder, StyleSheet, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const DISTANCE_TO_COMMIT = 0.3;
@@ -14,7 +14,7 @@ const PageTurner = forwardRef(function PageTurner(
   { mode, enabled, index, count, background, renderPage, onCommit, children },
   ref
 ) {
-  const [width, setWidth] = useState(0);
+  const [width, setWidth] = useState(() => Dimensions.get('window').width || 0);
   const [direction, setDirection] = useState(null);
   const [progress] = useState(() => new Animated.Value(0));
   const [nudge] = useState(() => new Animated.Value(0));
@@ -58,12 +58,14 @@ const PageTurner = forwardRef(function PageTurner(
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start(() => {
+      if (commit) live.current.onCommit(target);
+      progress.setValue(0);
+      nudge.setValue(0);
       state.direction = null;
       state.busy = false;
       setDirection(null);
-      if (commit) live.current.onCommit(target);
     });
-  }, [progress, targetOf]);
+  }, [progress, targetOf, nudge]);
 
   useEffect(() => {
     if (direction && current.current.autoCommit) {
@@ -179,7 +181,10 @@ const PageTurner = forwardRef(function PageTurner(
   return (
     <View
       style={styles.stage}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onLayout={(e) => {
+        const w = e.nativeEvent.layout.width;
+        if (w > 0) setWidth(w);
+      }}
       {...(pan ? pan.panHandlers : null)}
     >
       {turning && target !== null && (
@@ -194,7 +199,9 @@ const PageTurner = forwardRef(function PageTurner(
       <Animated.View
         style={[styles.layer, { backgroundColor: background, zIndex: 1, transform: mainTransform }]}
       >
-        {children}
+        <View style={styles.childContainer}>
+          {children}
+        </View>
         {turning && mainShade && <Shade opacity={mainShade} flip={!neighborOnTop} />}
       </Animated.View>
     </View>
@@ -217,10 +224,19 @@ function Shade({ opacity, flip }) {
 const styles = StyleSheet.create({
   stage: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     overflow: 'hidden',
   },
   layer: {
     ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  childContainer: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
   },
 });
 

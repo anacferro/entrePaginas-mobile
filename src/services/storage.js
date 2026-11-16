@@ -464,6 +464,25 @@ export const storage = {
     return list;
   },
 
+  async moveBooksToChest(ids) {
+    const json = await AsyncStorage.getItem(KEYS.BOOKS);
+    const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
+    const targetSet = new Set(ids);
+    const now = new Date().toISOString();
+    let modified = false;
+    for (const book of list) {
+      if (targetSet.has(book.id)) {
+        book.status = 'bau';
+        book.updatedAt = now;
+        modified = true;
+      }
+    }
+    if (modified) {
+      await saveBooks(list);
+    }
+    return list;
+  },
+
   async restoreFromChest(id) {
     const json = await AsyncStorage.getItem(KEYS.BOOKS);
     const list = json ? JSON.parse(json) : [...INITIAL_BOOKS];
@@ -750,7 +769,7 @@ export const storage = {
 [
   'syncFromCloud', 'addBook', 'updateBook', 'setBookContent', 'setBookLocked', 'addChapter', 'updateChapter',
   'moveChapter', 'deleteChapter', 'updateChapterMarks', 'addBookmark', 'addComment', 'removeComment',
-  'removeBookmark', 'moveToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
+  'removeBookmark', 'moveToChest', 'moveBooksToChest', 'restoreFromChest', 'restoreAllFromChest', 'emptyChest',
   'setReadingPosition', 'setCharacterMap', 'openReading', 'recordReadingStep', 'registerReadingPage', 'setReadingFinished', 'setReadingAbandoned',
   'updatePersonal', 'recordRecsShown', 'setRecFeedback', 'clearRecFeedback', 'saveCuratorChat', 'rateWork', 'rateDetails', 'unrateWork', 'saveDeclared', 'setPersonalSettings', 'clearPersonal',
   'addReadingTime', 'setReadingGoal', 'deleteBookPermanently', 'deleteBooksPermanently', 'deleteAllData',

@@ -40,6 +40,7 @@ export default function ChestScreen({ navigation }) {
   const [personal, setPersonal] = useState(null);
   const [onlyUnrated, setOnlyUnrated] = useState(false);
   const [rating, setRating] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const loadChestData = async (isPull = false) => {
     try {
@@ -260,18 +261,6 @@ export default function ChestScreen({ navigation }) {
                   size="medium"
                 />
 
-                <Touchable
-                  style={[styles.rateRow, { width: coverWidth }]}
-                  onPress={() => setRating(book)}
-                  accessibilityLabel={starsOf(book) ? `Editar nota de ${book.title}` : `Avaliar ${book.title}`}
-                >
-                  {starsOf(book) ? (
-                    <StarRating value={starsOf(book)} size={16} gap={2} />
-                  ) : (
-                    <Text style={styles.rateText}>Dar nota</Text>
-                  )}
-                </Touchable>
-
                 <View style={[styles.cardButtonsRow, { width: coverWidth }]}>
                   <Touchable
                     style={styles.restoreBookBtn}
@@ -283,13 +272,39 @@ export default function ChestScreen({ navigation }) {
                   </Touchable>
 
                   <Touchable
-                    style={styles.deleteBookBtn}
+                    style={styles.moreBookBtn}
                     activeOpacity={0.8}
-                    onPress={() => handleDeletePermanently(book.id)}
+                    onPress={() => setOpenMenuId(openMenuId === book.id ? null : book.id)}
+                    accessibilityLabel="Mais opções"
                   >
-                    <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                    <Ionicons name="ellipsis-horizontal" size={16} color={colors.primary} />
                   </Touchable>
                 </View>
+
+                {openMenuId === book.id && (
+                  <View style={[styles.moreMenu, { width: coverWidth }]}>
+                    <Touchable
+                      style={styles.moreMenuItem}
+                      onPress={() => { setOpenMenuId(null); setRating(book); }}
+                      accessibilityLabel={starsOf(book) ? `Editar nota de ${book.title}` : `Avaliar ${book.title}`}
+                    >
+                      <Ionicons name="star-outline" size={15} color={colors.primary} />
+                      <Text style={styles.moreMenuText}>
+                        {starsOf(book) ? 'Editar nota' : 'Dar nota'}
+                      </Text>
+                      {starsOf(book) ? <StarRating value={starsOf(book)} size={13} gap={1} /> : null}
+                    </Touchable>
+                    <View style={styles.moreMenuDivider} />
+                    <Touchable
+                      style={styles.moreMenuItem}
+                      onPress={() => { setOpenMenuId(null); handleDeletePermanently(book.id); }}
+                      accessibilityLabel={`Excluir ${book.title}`}
+                    >
+                      <Ionicons name="trash-outline" size={15} color={colors.danger} />
+                      <Text style={[styles.moreMenuText, { color: colors.danger }]}>Excluir</Text>
+                    </Touchable>
+                  </View>
+                )}
               </View>
             ))}
           </View>
@@ -379,19 +394,6 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.onPrimary,
     fontWeight: '700',
   },
-  rateRow: {
-    height: 32,
-    marginTop: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surfaceSoft,
-  },
-  rateText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.primary,
-  },
   actionRow: {
     flexDirection: 'row',
     gap: 12,
@@ -460,6 +462,47 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: colors.onDark,
+  },
+  moreBookBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreMenu: {
+    marginTop: 6,
+    borderRadius: 10,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  moreMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+  },
+  moreMenuText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
+    flex: 1,
+  },
+  moreMenuDivider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginHorizontal: 8,
   },
   deleteBookBtn: {
     width: 34,

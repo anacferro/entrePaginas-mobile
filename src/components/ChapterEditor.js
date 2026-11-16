@@ -189,12 +189,12 @@ export default function ChapterEditor({
 
             {keyboardVisible && (
               <Touchable
-                style={styles.cameraBtn}
+                style={styles.dismissBtn}
                 onPress={() => Keyboard.dismiss()}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessibilityLabel="Recolher teclado"
               >
-                <Ionicons name="chevron-down" size={18} color={colors.primary} />
-                <Text style={styles.cameraText}>Recolher teclado</Text>
+                <Ionicons name="chevron-down" size={20} color={colors.primary} />
               </Touchable>
             )}
 
@@ -340,6 +340,11 @@ const createStyles = (colors) => StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: colors.primary,
+  },
+  dismissBtn: {
+    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cameraBtn: {
     flexDirection: 'row',
